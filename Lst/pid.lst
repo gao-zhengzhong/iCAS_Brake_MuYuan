@@ -1,0 +1,887 @@
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE PID
+OBJECT MODULE PLACED IN .\Obj\pid.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\pid.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\sr
+                    -c\driver;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\
+                    -mode control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measur
+                    -e;.\src\app\rte) MODV2 DEBUG PRINT(.\Lst\pid.lst) OBJECT(.\Obj\pid.obj) 
+
+ stmt lvl     source
+
+    1         /***********************************************************************
+    2         *   Copyright (C) JWD Automotive Co., Ltd.                                             * 
+    3         *       All Rights Reserved.                                                               *
+    4         *   Department : iCAS SW                                                                               *
+    5         *   AUTHOR         :                                                                                               *
+    6         ************************************************************************
+    7         * Object        : 
+    8         * Module        : pid.c
+    9         * Instance      : 
+   10         * Description   : PID control algorithm
+   11         *-----------------------------------------------------------------------
+   12         * Version: v0.1
+   13         * Date   : Dec 7,2019 
+   14         * Author : Gao zehngzhong
+   15         ***********************************************************************/
+   16         /*-History--------------------------------------------------------------
+   17         * Version    Date           Name            Changes and comments
+   18         ------------------------------------------------------------------------
+   19         * 0.1        Dec 7,2019     Gao Zhengzhong  Initial version
+   20         *=====================================================================*/
+   21         
+   22         #include <stdlib.h>
+   23         #include <string.h>
+   24         
+   25         #include "pid.h"
+   26         #include "pwm.h"
+   27         #include "adc_sample.h"
+   28         #include "booster.h"
+   29         #include "FLTD.h"
+   30         
+   31         #define PID_GLOBALS
+   32         
+   33         
+   34         /**** Definition of variables ****/
+   35         PID_STAT T_PID tPid = {0u};
+   36         
+   37         static INT16U Pid_Current_Kp = 0;
+   38         static INT16U Pid_Current_Ki = 0;
+   39         static INT16U Pid_Current_Kd = 0;
+   40         
+   41         /**** Declaration of functions ****/
+   42         PID_STAT INT16S Pid_LimitingAmplitude(INT16S inValue, INT16U thesholdValue);
+   43         
+   44         /***********************************************************************
+   45         *  Name        : Pid_Init
+   46         *  Description : After power on, initiliaze booster alogrithm variable
+   47         *  Parameter   : None
+   48         *  Returns     : None
+   49         ***********************************************************************/
+   50         void Pid_Init(void)
+   51         {
+   52  1              memset(&tPid, 0, sizeof(tPid));
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 2   
+
+   53  1      
+   54  1              Pid_Current_Kp = PID_PARA_CURRENT_Kp;
+   55  1              Pid_Current_Ki = PID_PARA_CURRENT_Ki;
+   56  1              Pid_Current_Kd = PID_PARA_CURRENT_Kd;
+   57  1              return;
+   58  1      }
+   59         
+   60         /***********************************************************************
+   61         *  Name        : Pid_DeInit
+   62         *  Description : During running, need initilize booster algorithm variable
+   63         *  Parameter   : None
+   64         *  Returns     : None
+   65         ***********************************************************************/
+   66         void Pid_DeInit(void)
+   67         {
+   68  1              return;
+   69  1      }
+   70         
+   71         
+   72         /***********************************************************************
+   73         *  Name        : Pid_CurrentFilter
+   74         *  Description : Current sampling filter in current closed-loop control.
+   75         *  Parameter   : None
+   76         *  Returns     : None
+   77         ***********************************************************************/
+   78         PID_STAT INT16S Pid_CurrentFilter(void)
+   79         {
+   80  1              INT8U currentIndex = 0;
+   81  1              PID_STAT INT8U currentFilterCnt = 0;
+   82  1              PID_STAT INT16S currentFilterArray[8] = {0u};
+   83  1              INT32S currentFilterArraySum = 0;
+   84  1              PID_STAT INT16S currentFilterAverage = 0;
+   85  1              
+   86  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+   87  1      
+   88  1              if(currentFilterCnt < 8)
+   89  1              {
+   90  2                      currentFilterAverage = ptr_adc->brakeMotorCurrent;
+   91  2                      
+   92  2                      currentFilterArray[currentFilterCnt] = ptr_adc->brakeMotorCurrent;
+   93  2                      currentFilterCnt++;
+   94  2              }
+   95  1              else
+   96  1              {
+   97  2                      currentFilterCnt = 8;
+   98  2                      currentFilterArraySum = 0;
+   99  2                      
+  100  2                      //if(ABSOLUTE(ptr_adc->brakeMotorCurrent, currentFilterArray[7]) > 50)
+  101  2                      {
+  102  3                              for(currentIndex = 0; currentIndex < 7; currentIndex++)
+  103  3                              {
+  104  4                                      currentFilterArray[currentIndex] = currentFilterArray[currentIndex + 1];
+  105  4                                      currentFilterArraySum = currentFilterArraySum + currentFilterArray[currentIndex];
+  106  4                              }
+  107  3      
+  108  3                              if(ptr_adc->brakeMotorCurrent > currentFilterArray[7] + 60)
+  109  3                              {
+  110  4                                      currentFilterArray[7] = currentFilterArray[7] + 60;
+  111  4                              }
+  112  3                              else if(ptr_adc->brakeMotorCurrent < currentFilterArray[7] - 60)
+  113  3                              {
+  114  4                                      currentFilterArray[7] = currentFilterArray[7] - 60;
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 3   
+
+  115  4                              }
+  116  3                              else
+  117  3                              {
+  118  4                                      currentFilterArray[7] = ptr_adc->brakeMotorCurrent;
+  119  4                              }
+  120  3                                      
+  121  3                      
+  122  3                              currentFilterArraySum = currentFilterArraySum + currentFilterArray[7];
+  123  3                              currentFilterAverage = (INT16S)(currentFilterArraySum / 8);     
+  124  3                      }
+  125  2              }
+  126  1              
+  127  1              return currentFilterAverage;
+  128  1      }
+  129         
+  130         
+  131         /***********************************************************************
+  132         *  Name        : Pid_CurrentCloseLoopControlFilter
+  133         *  Description : Control result filter in current closed-loop control.
+  134         *  Parameter   : None
+  135         *  Returns     : None
+  136         ***********************************************************************/
+  137         void Pid_CurrentCloseLoopControlFilter(void)
+  138         {
+  139  1              INT8U sumCnt = 0;
+  140  1              INT16S filterSum = 0;
+  141  1              static INT8U filterCnt = 0;
+  142  1              static INT16S filterBuffer[5] = {0u};
+  143  1              
+  144  1              if(filterCnt < 5)
+  145  1              {
+  146  2                      filterBuffer[filterCnt] = tPid.current.incrementValue;
+  147  2                      filterCnt++;
+  148  2              }
+  149  1              else
+  150  1              {
+  151  2                      filterCnt = 5;
+  152  2                      filterSum = 0;
+  153  2                      for(sumCnt = 0; sumCnt < 4; sumCnt++)
+  154  2                      {
+  155  3                              filterBuffer[sumCnt] = filterBuffer[sumCnt + 1];
+  156  3                              filterSum = filterSum + filterBuffer[sumCnt];
+  157  3                      }
+  158  2                      
+  159  2                      filterBuffer[4] = tPid.current.incrementValue;
+  160  2                      filterSum = filterSum + filterBuffer[4];
+  161  2                      tPid.current.incrementValue = filterSum / 5;
+  162  2              }
+  163  1      }
+  164         
+  165         
+  166         /***********************************************************************
+  167         *  Name        : Pid_CurrentClosedLoopControl
+  168         *  Description : Brake motor current closed-loop PID control.
+  169         *  Parameter   : object current
+  170         *  Returns     : None
+  171         ***********************************************************************/
+  172         void Pid_CurrentClosedLoopControl(INT16S objCurrent)
+  173         {
+  174  1              INT16S tempKp = 0;
+  175  1              INT16S tempKi = 0;
+  176  1              INT16S tempKd = 0;
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 4   
+
+  177  1              INT32U current = 0;
+  178  1              INT32U u = 0;
+  179  1              INT16S delta_error = 0;
+  180  1              INT16S dead_error = 0;
+  181  1              static INT16S current_error[7] = {0};
+  182  1              static INT16S Previous_PWM = 0;
+  183  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();      
+  184  1              
+  185  1              current = ABS(objCurrent);
+  186  1      
+  187  1              /*Set FeedForward PWM Value.*/
+  188  1      #if 1   // 20200913 pm; modified for MuYuan CurrentLoopOnly, for WireControl
+  189  1              if (current < 0)
+  190  1              {
+  191  2                      u = 0; 
+  192  2              }
+  193  1              else if (current < 50)
+  194  1              {
+  195  2                      u = current * 3;
+  196  2              }
+  197  1              else if (current < 800)
+  198  1              {
+  199  2                      u = current * 3/5;
+  200  2                      u = u + 120;
+  201  2              }
+  202  1              else if (current < 1800)
+  203  1              {
+  204  2                      u = current / 4;
+  205  2                      u = u + 400;
+  206  2              }
+  207  1              else if (current < 3600)
+  208  1              {
+  209  2                      u = current * 2 / 5;
+  210  2                      u = u + 130;
+  211  2              }
+  212  1              if (u > 1600)
+  213  1              {       u = 1600u;      }
+  214  1              
+  215  1      #else
+                      
+                      // former one
+                      if (current < 200u)
+                      {
+                              u = current * 215;
+                              u = u / 100;
+                      }
+                      else if (current < 4500u)
+                      {
+                              u = current / 5 + ((current >> 4) + (current >> 2) + (current >> 1)) / 100u ;// u = 20.814 * u + 388.37;
+             -                
+                              u = u + 388u;
+                      }
+                      else
+                      {
+                              u = 1260u;
+                      }
+                      
+                      
+              #endif
+  235  1              
+  236  1              if(objCurrent < 0)
+  237  1              {
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 5   
+
+  238  2                      tPid.current.PWMForwardBack = -u;
+*** WARNING C115 IN LINE 238 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 238 OF src\app\alogrithm\pid.c: '=': value truncated
+  239  2              }
+  240  1              else
+  241  1              {
+  242  2                      tPid.current.PWMForwardBack = u;
+*** WARNING C192 IN LINE 242 OF src\app\alogrithm\pid.c: '=': value truncated
+  243  2              }
+  244  1                              
+  245  1              tPid.current.ObjectValue = objCurrent;                  
+  246  1              tPid.current.actualValue = Pid_CurrentFilter();         
+  247  1              tPid.current.error = tPid.current.ObjectValue - tPid.current.actualValue;
+  248  1              
+  249  1        /* Add a dead zoon to reduce current vibrate. */ 
+  250  1              dead_error = tPid.current.error; 
+  251  1              if(ABS(dead_error) <= 50)
+  252  1              {
+  253  2                      dead_error = 0;
+  254  2                      tPid.current.error = dead_error;
+  255  2              }
+  256  1              else
+  257  1              {
+  258  2                      dead_error = dead_error - 50;
+  259  2                      tPid.current.error = dead_error;
+  260  2              }
+  261  1              
+  262  1              if(tPid.current.error > 1000)
+  263  1              {
+  264  2                      tPid.current.error = 1000;
+  265  2              }       
+  266  1              else if(tPid.current.error < -1000)
+  267  1              {
+  268  2                      tPid.current.error = -1000;
+  269  2              }
+  270  1                      
+  271  1              /* Integral term  damping process,damping factor mean 63/64 = 0.984; */         
+  272  1              {
+  273  2                  if(tPid.current.integral < 0)
+  274  2                  {
+  275  3                              u = - tPid.current.integral;
+  276  3                              u = u - (u >> 7);
+  277  3                      
+  278  3                              if(tPid.current.error < 0)
+  279  3                              {
+  280  4                                      u = u - tPid.current.error;
+  281  4                                      if(u > 30000) u = 30000;
+  282  4                                      tPid.current.integral = -u;
+*** WARNING C115 IN LINE 282 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 282 OF src\app\alogrithm\pid.c: '=': value truncated
+  283  4                              }
+  284  3                              else
+  285  3                              {
+  286  4                                      tPid.current.integral = -u + tPid.current.error;
+*** WARNING C115 IN LINE 286 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 286 OF src\app\alogrithm\pid.c: '=': value truncated
+  287  4                              }
+  288  3                  }
+  289  2                  else
+  290  2                  {
+  291  3                              u = tPid.current.integral;
+  292  3                              u = u - (u >> 7);
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 6   
+
+  293  3      
+  294  3                              if(tPid.current.error > 0)
+  295  3                      {
+  296  4                          u = u + tPid.current.error;
+  297  4                          if(u > 30000) u = 30000;
+  298  4                          tPid.current.integral = u;
+*** WARNING C192 IN LINE 298 OF src\app\alogrithm\pid.c: '=': value truncated
+  299  4                      }
+  300  3                      else
+  301  3                      {
+  302  4                          tPid.current.integral = u + tPid.current.error;
+*** WARNING C192 IN LINE 302 OF src\app\alogrithm\pid.c: '=': value truncated
+  303  4                      }
+  304  3                  }
+  305  2              }
+  306  1              
+  307  1              /* PID */
+  308  1              //delta_error = 2 * tPid.current.error + current_error[3] -  current_error[1] - 2 * current_error[0];
+  309  1              
+  310  1              //u = 2 * tPid.current.error + current_error[3] -  current_error[1] - 2 * current_error[0];
+  311  1              
+  312  1              /*==========================================================================
+  313  1               * Estimated y_dot = (-7y1 - 5y2 -3y3 - y4 + y5 + 3y6 + 5y7 + 7y8) / (84 Ts)
+  314  1               *==========================================================================*/
+  315  1              delta_error = 7 * (tPid.current.error - current_error[0]) + 5 * (current_error[6] - current_error[1])
+  316  1                            + 3 * (current_error[5] - current_error[2]) + (current_error[4] - current_error[3]);
+  317  1              
+  318  1              /* Set KP  KI  KD */
+  319  1              
+  320  1              /* KP Factor  */
+  321  1              if(tPid.current.error < 0)
+  322  1              {
+  323  2                      u = - tPid.current.error;
+  324  2                      if(u > 2000)
+  325  2                              u = 2000;
+  326  2      
+  327  2                      u = u ;
+  328  2                      tempKp = -u;
+*** WARNING C115 IN LINE 328 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 328 OF src\app\alogrithm\pid.c: '=': value truncated
+  329  2              }
+  330  1              else
+  331  1              {
+  332  2                      u = tPid.current.error;
+  333  2                      if(u > 2000)
+  334  2                              u = 2000;
+  335  2                      
+  336  2                      u = u;
+  337  2                      tempKp = u ;
+*** WARNING C192 IN LINE 337 OF src\app\alogrithm\pid.c: '=': value truncated
+  338  2              }
+  339  1              
+  340  1              /* KI Factor  */
+  341  1              if(tPid.current.integral < 0)
+  342  1              {
+  343  2                      u = - tPid.current.integral;
+  344  2                      u = (u + 9u) / 18u;
+  345  2                      tempKi = -u;          
+*** WARNING C115 IN LINE 345 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 345 OF src\app\alogrithm\pid.c: '=': value truncated
+  346  2              }
+  347  1              else
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 7   
+
+  348  1              {
+  349  2                      u = tPid.current.integral;
+  350  2                      u = (u + 9u) / 18u;
+  351  2                      tempKi  = u;    
+*** WARNING C192 IN LINE 351 OF src\app\alogrithm\pid.c: '=': value truncated
+  352  2              }
+  353  1                      
+  354  1              /* KD Factor  */        
+  355  1              if(delta_error < 0)
+  356  1              {
+  357  2                      u = - delta_error;
+  358  2                      u = u >> 7;
+  359  2                      tempKd = - u;
+*** WARNING C115 IN LINE 359 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 359 OF src\app\alogrithm\pid.c: '=': value truncated
+  360  2              }
+  361  1              else
+  362  1              {
+  363  2                      u = delta_error;
+  364  2                      u = u >> 7;
+  365  2                      tempKd = u;
+*** WARNING C192 IN LINE 365 OF src\app\alogrithm\pid.c: '=': value truncated
+  366  2              }
+  367  1              tempKd = 0;
+  368  1              /*------PID factor change --------*/
+  369  1              
+  370  1              /* PID term limit amplitude */
+  371  1              tempKp = Pid_LimitingAmplitude(tempKp, 1600u);
+  372  1              tempKi = Pid_LimitingAmplitude(tempKi, 1200u);
+  373  1              tempKd = Pid_LimitingAmplitude(tempKd, 300u);
+  374  1              
+  375  1              tPid.current.term_Kp = tempKp;
+  376  1              tPid.current.term_Ki = tempKi;
+  377  1              tPid.current.term_Kd = tempKd;
+  378  1              
+  379  1              /* Update diviation value. */       
+  380  1              current_error[0] = current_error[1];
+  381  1              current_error[1] = current_error[2];
+  382  1              current_error[2] = current_error[3];
+  383  1              current_error[3] = current_error[4];
+  384  1              current_error[4] = current_error[5];
+  385  1              current_error[5] = current_error[6];
+  386  1              current_error[6] = tPid.current.error;
+  387  1              
+  388  1      /*      if(tPid.current.ObjectValue == 0)
+  389  1              {
+  390  1                      tPid.current.incrementValue = 0;   
+  391  1              }
+  392  1              else
+  393  1              {
+  394  1                      tPid.current.incrementValue = tPid.current.term_Kp + tPid.current.term_Ki + tPid.current.term_Kd + tPid.
+             -current.PWMForwardBack;
+  395  1      
+  396  1              }*/
+  397  1              
+  398  1              //tPid.current.term_Kp = 0;
+  399  1              //tPid.current.term_Ki = 0;
+  400  1              //tPid.current.term_Kd = 0;
+  401  1              
+  402  1              tPid.current.incrementValue = tPid.current.term_Kp + tPid.current.term_Ki + tPid.current.term_Kd + tPid.c
+             -urrent.PWMForwardBack;
+  403  1              tPid.current.incrementValue = Pid_LimitingAmplitude(tPid.current.incrementValue, MAXIMUM_OUTPUT_THRESHOLD
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 8   
+
+             -);
+  404  1              //Pid_CurrentCloseLoopControlFilter();
+  405  1      
+  406  1              /* PWM output. */
+  407  1              FunctionPWMOutFilter();
+  408  1      
+  409  1              Pwm_Control(tPid.current.incrementValue);
+  410  1              return;
+  411  1      }
+  412         /***********************************************************************
+  413         *  Name        : FunctionPWMOutFilter
+  414         *  Description : PWM OUT value Filter.
+  415         *  Parameter   : NONE
+  416         *  Returns     : NONE
+  417         ***********************************************************************/
+  418         void FunctionPWMOutFilter(void)
+  419         {       
+  420  1              INT8U PwmIndex = 0;
+  421  1              PID_STAT INT8U PwmFilterCnt = 0;
+  422  1              PID_STAT INT16S PwmFilterArray[8] = {0u};
+  423  1              INT16S PwmFilterArraySum = 0;
+  424  1              PID_STAT INT16S PwmFilterAverage = 0;
+  425  1              static INT8U prohibitControlFlag = TRUE;
+  426  1              static INT8U prohibitControlTimeCnt = 0;
+  427  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
+  428  1      
+  429  1              PwmFilterArray[0] = PwmFilterArray[1];
+  430  1              PwmFilterArray[1] = PwmFilterArray[2];
+  431  1              PwmFilterArray[2] = PwmFilterArray[3];
+  432  1              PwmFilterArray[3] = PwmFilterArray[4];
+  433  1              PwmFilterArray[4] = PwmFilterArray[5];
+  434  1              PwmFilterArray[5] = PwmFilterArray[6];  
+  435  1              PwmFilterArray[6] = PwmFilterArray[7];
+  436  1              PwmFilterArray[7] = tPid.current.incrementValue;        
+  437  1                      
+  438  1              for(PwmIndex = 0; PwmIndex < 7; PwmIndex++)
+  439  1              {
+  440  2                      PwmFilterArray[PwmIndex] = PwmFilterArray[PwmIndex + 1];
+  441  2                      PwmFilterArraySum = PwmFilterArraySum + PwmFilterArray[PwmIndex];
+  442  2              }       
+  443  1          tPid.current.incrementValue = PwmFilterArraySum / 8;        
+  444  1      
+  445  1              
+  446  1                      
+  447  1              if(tPid.current.incrementValue < -1000)
+  448  1              {
+  449  2                      tPid.current.incrementValue = -1000;
+  450  2              }
+  451  1              
+  452  1      #if 0   // 20200913 pm; change 1 into 0, for MuYuan WireControl Method, CurrentLoopOnly
+                      if((ptr_Booster->brakePedalLocation <= 100) 
+                              && (ptr_Booster->pedalRate == 0))
+                      {
+                              if((ptr_Booster->mainCylinderLocation < 200)
+                                      && (ptr_Booster->cylinderRate <= 0))
+                              {
+                                      tPid.current.incrementValue = 0;
+                                      tPid.current.integral = 0;      
+                              }
+                      }
+                      //else if(((ptr_Booster->pedalRate > 0) && (ptr_Booster->pedalRate < 160)))
+                      else if(((ABS(ptr_Booster->pedalRate) < 160)))
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 9   
+
+                      {
+                              
+                              if((tPid.current.incrementValue) > ptr_Booster->brakePedalLocation * 2)
+                              {
+                                      tPid.current.incrementValue = ptr_Booster->brakePedalLocation * 2;
+                              }
+                      }
+                      else
+                      {
+                              
+                      }
+              #endif          
+  477  1      }
+  478         
+  479         /***********************************************************************
+  480         *  Name        : Pid_LocationClosedLoopControl
+  481         *  Description : Brake main cylinder location closed-loop PID control.
+  482         *  Parameter   : object location
+  483         *  Returns     : INT16S
+  484         ***********************************************************************/
+  485         INT16S Pid_LocationClosedLoopControl(INT16U objLocation)
+  486         {
+  487  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  488  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
+  489  1              INT16U u = 0; // Temp var
+  490  1              INT16S v = 0; // Temp var
+  491  1      
+  492  1              /* Set location PID control object value. */
+  493  1              tPid.location.ObjectValue = objLocation;
+  494  1              tPid.location.actualValue = ptr_adc->mainCylinderLocation1;
+  495  1              tPid.location.error = tPid.location.ObjectValue - tPid.location.actualValue;
+  496  1      
+  497  1              /********************************************************************************
+  498  1              *  Description        :   Integration with forgetting factor to avoid saturation
+  499  1              *  Main Parameter :   forgetting factor = 63/64, i.e. 0.984375
+  500  1              *  Measure for overflow :   displacement error limited to 5 mm when added
+  501  1              ********************************************************************************/
+  502  1              if(tPid.location.integral < 0)
+  503  1              {
+  504  2                  u = 32 - tPid.location.integral; 
+  505  2                  u = (u >> 6);
+  506  2                  tPid.location.integral = tPid.location.integral + u;
+  507  2              }
+  508  1              else
+  509  1              {
+  510  2                  u = 32 + tPid.location.integral;
+  511  2                  u = (u >> 6);
+  512  2                  tPid.location.integral = tPid.location.integral - u;
+  513  2              }
+  514  1              
+  515  1              
+  516  1              if((ptr_Booster->brakePedalLocation <= 100) 
+  517  1                      && (ptr_Booster->pedalRate == 0))
+  518  1              {
+  519  2                      if((ptr_Booster->mainCylinderLocation < 200)
+  520  2                              && (ptr_Booster->cylinderRate <= 0))
+  521  2                      {
+  522  3                              tPid.location.error = 0;
+  523  3                              v = tPid.location.error;
+  524  3                      }
+  525  2              }
+  526  1              //else if(((ptr_Booster->pedalRate > 0) && (ptr_Booster->pedalRate < 160)))
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 10  
+
+  527  1              else if(((ABS(ptr_Booster->pedalRate) < 160)))
+  528  1              {
+  529  2                      if((tPid.current.incrementValue) > ptr_Booster->brakePedalLocation * 2)
+  530  2                      {
+  531  3                              //tPid.current.incrementValue = ptr_Booster->brakePedalLocation * 2;
+  532  3                      }
+  533  2                      
+  534  2                      v = tPid.location.error;
+  535  2                      if(v < -100) v = - 100 ;
+  536  2                      else if(v > 100) v = 100 ;
+  537  2                      tPid.location.error = v;
+  538  2                      
+  539  2                      
+  540  2              }
+  541  1              else
+  542  1              {
+  543  2                      v = tPid.location.error;
+  544  2                      if(v < -500) v = - 500 ;
+  545  2                      else if(v > 500) v = 500 ;
+  546  2                      
+  547  2              }
+  548  1              
+  549  1      
+  550  1      
+  551  1              tPid.location.integral = tPid.location.integral + v;
+  552  1      
+  553  1              /* PID */
+  554  1              tPid.location.term_Kp = PID_PARA_LOCATION_Kp * tPid.location.error;
+  555  1      
+  556  1              if(tPid.location.integral < 0)
+  557  1              {
+  558  2                  INT16U temp;
+  559  2      
+  560  2                  temp = PID_PARA_LOCATION_Ki_CONST; // reverse of integration coefficient 2020/3/25
+  561  2                  temp = (temp>>1);
+  562  2                  u = temp - tPid.location.integral;
+  563  2                  u = u / PID_PARA_LOCATION_Ki_CONST;
+  564  2                  tPid.location.term_Ki = - u;
+*** WARNING C115 IN LINE 564 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  565  2              }
+  566  1              else
+  567  1              {
+  568  2                  INT16U temp;
+  569  2                  temp = PID_PARA_LOCATION_Ki_CONST;
+  570  2                  temp = (temp>>1);
+  571  2                  u = temp + tPid.location.integral;
+  572  2                  u = u / PID_PARA_LOCATION_Ki_CONST;
+  573  2                  tPid.location.term_Ki = u;
+  574  2              }
+  575  1              
+  576  1              v = tPid.location.error - tPid.location.errorPre;
+  577  1              if(v < 0)
+  578  1              {
+  579  2                  u = - v;
+  580  2                  u = ((u + 8) >> 4) + ((u + 16) >> 5); // equivalent to KD = 0.1
+  581  2                  tPid.location.term_Kd = - u;
+*** WARNING C115 IN LINE 581 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  582  2              }
+  583  1              else
+  584  1              {
+  585  2                  tPid.location.term_Kd = ((v + 8) >> 4) + ((v + 16) >> 5); // equivalent to KD = 0.1
+  586  2              }
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 11  
+
+  587  1      
+  588  1              /* PID term limit amplitude */
+  589  1              //tPid.location.term_Kp = Pid_LimitingAmplitude(tPid.location.term_Kp, 3000u);
+  590  1              //tPid.location.term_Ki = Pid_LimitingAmplitude(tPid.location.term_Ki, 3000u);
+  591  1              //tPid.location.term_Kd = Pid_LimitingAmplitude(tPid.location.term_Kd, 500u);
+  592  1      
+  593  1              /* Update diviation value. */   
+  594  1              tPid.location.errorPre = tPid.location.error;
+  595  1              tPid.location.incrementValue = tPid.location.term_Kp + tPid.location.term_Ki + tPid.location.term_Kd;
+  596  1              tPid.location.incrementValue = Pid_LimitingAmplitude(tPid.location.incrementValue, 4000u);
+  597  1              
+  598  1              return (tPid.location.incrementValue);
+  599  1      }
+  600         
+  601         
+  602         /***********************************************************************
+  603         *  Name        : Pid_OnlyLocationClosedLoopControl
+  604         *  Description : Brake main cylinder location closed-loop PID control.
+  605         *  Parameter   : object location
+  606         *  Returns     : None
+  607         ***********************************************************************/
+  608         void Pid_OnlyLocationClosedLoopControl(INT16U objLocation)
+  609         {
+  610  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  611  1              
+  612  1              INT16U u = 0;
+  613  1              INT16S tempKp = 0;
+  614  1              INT16S tempKi = 0;
+  615  1              INT16S tempKd = 0;
+  616  1      
+  617  1              /* Set location PID control object value. */
+  618  1              tPid.onlyLocation.ObjectValue = objLocation;
+  619  1              tPid.onlyLocation.actualValue = ptr_adc->mainCylinderLocation1;
+  620  1              tPid.onlyLocation.error = tPid.onlyLocation.ObjectValue - tPid.onlyLocation.actualValue;
+  621  1              
+  622  1              /*------------Integral term damping process,damping factor = 63/64--------*/
+  623  1              /*----Customary Integral damping factor is 0.994,when objLocation >=1mm---*/
+  624  1              /*--------------damping factor is 0.95,when objLocation == 1mm------------*/
+  625  1              
+  626  1              if(tPid.onlyLocation.integral < 0)
+  627  1              {
+  628  2                      u = - tPid.onlyLocation.integral;
+  629  2                      u = u - (u >> 6);
+  630  2      
+  631  2                      if(tPid.onlyLocation.error < 0)
+  632  2                      {
+  633  3                              u = u - tPid.onlyLocation.error;
+  634  3                              if(u > 30000) u = 30000;
+  635  3                              tPid.onlyLocation.integral = -u;
+*** WARNING C115 IN LINE 635 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  636  3                      }
+  637  2                      else
+  638  2                      {
+  639  3                              tPid.onlyLocation.integral = -u + tPid.onlyLocation.error;
+*** WARNING C115 IN LINE 639 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  640  3                      }
+  641  2              }
+  642  1              else
+  643  1              {
+  644  2                      u = tPid.onlyLocation.integral;
+  645  2                      u = u - (u >> 6);
+  646  2      
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 12  
+
+  647  2                      if(tPid.onlyLocation.error > 0)
+  648  2                      {
+  649  3                              u = u + tPid.onlyLocation.error;
+  650  3                              if(u > 30000) u = 30000;
+  651  3                              tPid.onlyLocation.integral = u;
+  652  3                      }
+  653  2                      else
+  654  2                      {
+  655  3                              tPid.onlyLocation.integral = u + tPid.onlyLocation.error;
+  656  3                      }
+  657  2              }
+  658  1              
+  659  1              
+  660  1              /* Set KP  KI  KD */
+  661  1              
+  662  1              /* KP Factor  */
+  663  1              if(tPid.onlyLocation.error < 0)
+  664  1              {
+  665  2                      u = - tPid.onlyLocation.error;
+  666  2                      if(u > 3000)
+  667  2                              u = 3000;
+  668  2                      u = u << 2;  //  mean KP = 4;
+  669  2                      tempKp = -u;
+*** WARNING C115 IN LINE 669 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  670  2              }
+  671  1              else
+  672  1              {
+  673  2                      u = tPid.onlyLocation.error;
+  674  2                      if(u > 3000)
+  675  2                              u = 3000;       
+  676  2                      u = u << 2;  //  mean KP = 4;
+  677  2                      tempKp = u ;
+  678  2              }
+  679  1              
+  680  1              /* KI Factor  */
+  681  1              if(tPid.onlyLocation.integral < 0)
+  682  1              {
+  683  2                      u = - tPid.onlyLocation.integral;
+  684  2                      u = (u + 13u) / 26u;
+  685  2                      tempKi = -u;          
+*** WARNING C115 IN LINE 685 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  686  2              }
+  687  1              else
+  688  1              {
+  689  2                      u = tPid.onlyLocation.integral;
+  690  2                      u = (u + 13u) / 26u;
+  691  2                      tempKi  = u;    
+  692  2              }
+  693  1              
+  694  1              /* PID term limit amplitude */
+  695  1              tempKp = Pid_LimitingAmplitude(tempKp, 1600u);
+  696  1              tempKi = Pid_LimitingAmplitude(tempKi, 1200u);
+  697  1              tempKd = Pid_LimitingAmplitude(tempKd, 300u);
+  698  1              
+  699  1              tPid.onlyLocation.term_Kp = tempKp;
+  700  1              tPid.onlyLocation.term_Ki = tempKi;
+  701  1              tPid.onlyLocation.term_Kd = tempKd;
+  702  1              
+  703  1              /* Update diviation value. */   
+  704  1              tPid.onlyLocation.errorPre = tPid.onlyLocation.error;
+  705  1              tPid.onlyLocation.incrementValue = tPid.onlyLocation.term_Kp + tPid.onlyLocation.term_Ki + tPid.onlyLocat
+             -ion.term_Kd;
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 13  
+
+  706  1              tPid.onlyLocation.incrementValue = Pid_LimitingAmplitude(tPid.onlyLocation.incrementValue, MAXIMUM_OUTPUT
+             -_THRESHOLD);
+  707  1      
+  708  1              /* PWM output. */
+  709  1              Pwm_Control(tPid.onlyLocation.incrementValue);                  
+  710  1              return;
+  711  1      }
+  712         
+  713         /***********************************************************************
+  714         *  Name        : Pid_PressureClosedLoopControl
+  715         *  Description : Brake main cylinder pressure closed-loop PID control.
+  716         *  Parameter   : object pressure
+  717         *  Returns     : None
+  718         ***********************************************************************/
+  719         void Pid_PressureClosedLoopControl(INT16U objPressure)
+  720         {
+  721  1              INT16S incrementValue;
+  722  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  723  1      
+  724  1              /* Set pressure PID control object value. */
+  725  1              tPid.pressure.ObjectValue = objPressure;
+  726  1              tPid.pressure.actualValue = ptr_adc->mainCylinderPressure;
+  727  1      
+  728  1              /* Object brake main cylinder pressure lower than 100kpa and actual brake
+  729  1               * main cylinder pressure lower than 100kpa, not excute pressure PID. */
+  730  1              if ((objPressure < PID_PARA_PRESSURE_THRESHOLD) && (tPid.pressure.actualValue < PID_PARA_PRESSURE_THRESHO
+             -LD))
+  731  1              {
+  732  2                      //return;
+  733  2              }
+  734  1      
+  735  1              /* Calculate pressure PID control deviation value. */
+  736  1              tPid.pressure.error = tPid.pressure.ObjectValue - tPid.pressure.actualValue;
+  737  1              
+  738  1              /* Only diviation value more than 100kpa, update integral parameter. */
+  739  1              if (abs(tPid.pressure.error) > PID_PARA_PRESSURE_THRESHOLD)
+  740  1              {
+  741  2                      tPid.pressure.integral = (tPid.pressure.integral * PID_PARA_PRESSURE_INTEGRAL) / 1000u + tPid.pressure.e
+             -rror;
+  742  2              }
+  743  1      
+  744  1              /* PID */
+  745  1              tPid.pressure.term_Kp = PID_PARA_PRESSURE_Kp * tPid.pressure.error;
+  746  1              tPid.pressure.term_Ki = PID_PARA_PRESSURE_Ki * tPid.pressure.integral / 100u;
+  747  1              tPid.pressure.term_Kd = PID_PARA_PRESSURE_Kd * (tPid.pressure.error - tPid.pressure.errorPre);
+  748  1              tPid.pressure.incrementValue = (tPid.pressure.term_Kp + tPid.pressure.term_Ki + tPid.pressure.term_Kd) / 
+             -100u;
+  749  1              
+  750  1              /* Update diviation value and control brake motor output. */    
+  751  1              tPid.pressure.errorPre = tPid.pressure.error;
+  752  1              incrementValue = Pid_LimitingAmplitude(tPid.pressure.incrementValue, MAXIMUM_OUTPUT_THRESHOLD);
+  753  1              
+  754  1              Pwm_Control(incrementValue);
+  755  1              return;
+  756  1      }
+  757         
+  758         /***********************************************************************
+  759         *  Name        : Pid_LimitingAmplitude
+  760         *  Description : Limiting output value amplitude
+  761         *  Parameter   : inValue
+  762         *  Returns     : OutValue
+  763         ***********************************************************************/
+C166 COMPILER V7.57.0, PID                                                                 11/13/2020 15:09:24 PAGE 14  
+
+  764         PID_STAT INT16S Pid_LimitingAmplitude(INT16S inValue, INT16U thresholdValue)
+  765         {
+  766  1              INT16S outValue;
+  767  1      
+  768  1              if (abs(inValue) > thresholdValue)
+  769  1              {
+  770  2                      outValue = thresholdValue * SIGN(inValue);
+  771  2              }
+  772  1              else
+  773  1              {
+  774  2                      outValue = inValue;
+  775  2              }
+  776  1              
+  777  1              return outValue;
+  778  1      }
+  779         
+  780         
+  781         
+  782         /***********************************************************************
+  783         *  Name        : Pid_AlogrithmData
+  784         *  Description : PID control alogrithm data
+  785         *  Parameter   : None
+  786         *  Returns     : PID control alogrithm data structure access address
+  787         ***********************************************************************/
+  788         const T_PID* Pid_AlogrithmData(void)
+  789         {
+  790  1              return (&tPid);
+  791  1      }       
+  792         
+  793         
+  794         
+  795         /* _END_OF_PID_ */
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =        3082     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =          17     --------
+  FAR-DATA SIZE    =         136     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =         232     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  24 WARNING(S),  0 ERROR(S)

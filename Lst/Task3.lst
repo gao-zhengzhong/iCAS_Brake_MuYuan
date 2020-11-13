@@ -1,0 +1,376 @@
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK3
+OBJECT MODULE PLACED IN .\Obj\Task3.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\d
+                    -river;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mod
+                    -e control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;.
+                    -\src\app\rte) MODV2 DEBUG PRINT(.\Lst\Task3.lst) OBJECT(.\Obj\Task3.obj) 
+
+ stmt lvl     source
+
+    1         
+    2         #include "MAIN.h"
+    3         #include "can_diag.h"
+    4         #include "rte.h"
+    5         #include "FLTD.h"
+    6         #include "adc_if.h"
+    7         #include "pwm.h"
+    8         #include "time_measure.h"
+    9         #include "eepRom.h"
+   10         #include "desc_ser.h"
+   11         #include "adc_sample.h"
+   12         
+   13         #define MAIN_RELAY_OFF_DELAYTIME        8
+   14         
+   15         /*********************************************************************************************************
+   16         *                                               VARIABLES
+   17         *********************************************************************************************************/
+   18         static EcmControlStates PowerUpTestState;
+   19         static EcmControlStates PowerDownTestState;
+   20         
+   21         
+   22         
+   23         /*
+   24         *********************************************************************************************************
+   25         *                                          FUNCTION PROTOTYPES
+   26         *********************************************************************************************************
+   27         */
+   28         void task3(void);
+   29         void task3Normal_v_s(void);
+   30         void task3PowerUpTest_v_s(void);
+   31         void task3PowerDownTest_v_s(void);
+   32         void task3PowerDown_v_s(void);
+   33         void task3Fault_v_s(void);
+   34         
+   35         /*
+   36         *********************************************************************************************************
+   37         *                                             C ENTRY POINT
+   38         *********************************************************************************************************
+   39         */
+   40         
+   41         /*!************************************************************************************
+   42         *       @fn             void task3(void)
+   43         *       @brief            任务3函数
+   44         *       @author     Matt Zhang
+   45         *       @param[in]      void
+   46         *       @return     void
+   47         *       @note       在GPT1.c中GPT1_viTmr3()函数中调用
+   48         *       @Data       2019-3-12
+   49         ****************************************************************************************/
+   50         
+   51         void task3(void)
+   52         {
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 2   
+
+   53  1              switch(SystemMode_u8_Sig)
+   54  1              {
+   55  2                      case PowerUpTestMode:
+   56  2                              task3PowerUpTest_v_s();
+   57  2                      break;
+   58  2      
+   59  2                      case NormalMode:
+   60  2                              task3Normal_v_s();
+   61  2                      break;
+   62  2      
+   63  2                      case FaultMode:
+   64  2                              task3Fault_v_s();
+   65  2                      break;
+   66  2      
+   67  2                      case PowerDownTestMode:
+   68  2                              task3PowerDownTest_v_s();
+   69  2                      break;
+   70  2      
+   71  2                      case PowerDownMode:
+   72  2                              task3PowerDown_v_s();
+   73  2                      break;
+   74  2      
+   75  2                      default:
+   76  2      
+   77  2                      break;
+   78  2              }
+   79  1      }
+   80         /*!************************************************************************************
+   81         *       @fn             void task3PowerUpTest_v_s(void)
+   82         *       @brief            任务3上电测试函数
+   83         *       @author     Matt Zhang
+   84         *       @param[in]      void
+   85         *       @return     void
+   86         *       @note       此函 数是上电自检函数，每检测信号通过继续往下检测直至检测全部通过;在Task3.c的task3()函数中
+   87         *       @Data       2019-3-12
+   88         ****************************************************************************************/
+   89         void task3PowerUpTest_v_s(void)
+   90         {
+   91  1              const T_ADC_IF* ptr_AdcIf = AdcIf_InterfaceData();
+   92  1              switch (PowerUpTestState) 
+   93  1              {
+   94  2                      case EcmStart:
+   95  2                              IO_vSetPin(IO_P1_7); /* open main power */
+   96  2                              IO_vSetPin(IO_P7_0); /* open pressure sensor power */
+   97  2                              IO_vSetPin(IO_P7_1); /* open main cylinser sensor power */
+   98  2                              IO_vSetPin(IO_P7_4); /* open pedal sensor power */
+   99  2                              IO_vResetPin(IO_P6_2); /* close brake lamp */
+  100  2                              PowerUpTestState = EcmWait1;
+  101  2                      break;
+  102  2      
+  103  2                      case EcmWait1:
+  104  2                              PowerUpTestState = EcmWait2;//Step置位下一步
+  105  2                      break;
+  106  2      
+  107  2                      case EcmWait2:
+  108  2                              ReadData_v_g();  /* read data from eeprom */
+  109  2                              PowerUpTestState = EcmWait3;
+  110  2                      break;
+  111  2      
+  112  2                      case EcmWait3:                  
+  113  2                              AdcIf_Func();
+  114  2                              PowerUpTestState = EcmWait4;
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 3   
+
+  115  2                      break;
+  116  2      
+  117  2                      case EcmWait4:
+  118  2                              uCanVoltageValue = ptr_AdcIf->vehiclePowerVoltage_Adc;
+  119  2      
+  120  2                              PowerUpTestState = EcmWait5;
+  121  2                      break;
+  122  2      
+  123  2                      case EcmWait5:
+  124  2                              if(0x01 == descDataIdentifier.pedalCylinderInitValue[PEDAL_CYLINDER_INIT_LOCATION_VALUE_LENGTH - 1])
+  125  2                              {
+  126  3                                      g_brakePedalInitLocationValue = *((INT16U*)(&descDataIdentifier.pedalCylinderInitValue[0]));
+  127  3                                      g_cylinderInitLocationValue = *((INT16U*)(&descDataIdentifier.pedalCylinderInitValue[2]));
+  128  3                              }
+  129  2                              else
+  130  2                              {
+  131  3                                      g_brakePedalInitLocationValue = BRAKE_PEDAL_INIT_LOCATION;
+  132  3                                      g_cylinderInitLocationValue = MAIN_CYLINDER_INIT_LOCATION;
+  133  3                              }
+  134  2                              
+  135  2                              PowerUpTestState = EcmWait6;
+  136  2                      break;
+  137  2      
+  138  2                      case EcmWait6:                  
+  139  2                              IO_vSetPin(IO_P10_4); /* open main relay */
+  140  2                              PowerUpTestState = EcmWait7;
+  141  2                      break;
+  142  2      
+  143  2                      case EcmWait7:
+  144  2                              if(Rte_PreDriverOpenDelay() == 1)       //预驱动打开
+  145  2                              {
+  146  3                                      PowerUpTestState = EcmWait8;
+  147  3                              }
+  148  2                      break;
+  149  2      
+  150  2                      case EcmWait8:
+  151  2                   ReadString_v_g(&SensorInitFlag, SENSOR_INIT_FLAG_ADDRESS, LONG_SENSOR_INIT_FLAG_ADDRESS);
+  152  2                              if(SensorInitFlag == 10)
+  153  2                              {
+  154  3                                      ReadString_v_g(&PadalInitAD0_Init_EEPM, PEDAL_AD0_INIT_ADDRESS, LONG_PEDAL_AD0_INIT_ADDRESS);   
+  155  3                                      ReadString_v_g(&PadalInitAD1_Init_EEPM, PEDAL_AD1_INIT_ADDRESS, LONG_PEDAL_AD1_INIT_ADDRESS);
+  156  3                                      ReadString_v_g(&CylinderInitAD0_Init_EEPM, CYLINDER_AD0_INIT_ADDRESS, LONG_CYLINDER_AD0_INIT_ADDRESS);
+  157  3                                      ReadString_v_g(&CylinderInitAD1_Init_EEPM, CYLINDER_AD1_INIT_ADDRESS, LONG_CYLINDER_AD1_INIT_ADDRESS);
+             -                                                        
+  158  3                              }
+  159  2                  else
+  160  2                              {
+  161  3                                      PadalInitAD0_Init_EEPM = BRAKE_PEDAL_INIT_LOCATION;
+  162  3                                  PadalInitAD1_Init_EEPM = BRAKE_PEDAL_INIT_LOCATION / 2;
+  163  3                                      CylinderInitAD0_Init_EEPM = MAIN_CYLINDER_INIT_LOCATION;
+  164  3                                      CylinderInitAD1_Init_EEPM = MAIN_CYLINDER_INIT_LOCATION / 2;
+  165  3                              }                               
+  166  2                              PowerUpTestState = EcmWait9;
+  167  2                      break;
+  168  2                      
+  169  2                      case EcmWait9:
+  170  2                              PowerUpTestState = EcmEnd;
+  171  2                      break;
+  172  2      
+  173  2                      case EcmEnd:                    
+  174  2                              PUTFinish_u8_Sig = 1;                   //上电测试模式结束
+  175  2                              PowerUpTestState = EcmStart;    //重新转换到初始状态
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 4   
+
+  176  2                              TimeMeasure_StartTimer(); /* start GPT2 Timer5 used for task time measure */
+  177  2                      break;
+  178  2      
+  179  2                      default:
+  180  2                      break;
+  181  2              }
+  182  1      }
+  183         
+  184         /*!************************************************************************************
+  185         *       @fn             void task3Normal_v_s(void)
+  186         *       @brief            任务3正常模式函数
+  187         *       @author     Matt Zhang
+  188         *       @param[in]      void
+  189         *       @return     void
+  190         *       @note       电源信号的采样及诊断，诊断方面可后续增加;在Task3.c的task3()函数中
+  191         *       @Data       2019-3-12
+  192         ****************************************************************************************/
+  193         void task3Normal_v_s(void)
+  194         {
+  195  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
+  196  1      
+  197  1              if(FALSE == g_pvTestFlag)
+  198  1              {
+  199  2                      FLTD_Runnable();
+  200  2              }
+  201  1              
+  202  1              if(TRUE == FLTDAct_ptr->closeMainRelayFlg)
+  203  1              {
+  204  2                      IO_vResetPin(IO_P10_4); /* close main relay */
+  205  2              }
+  206  1              else
+  207  1              {
+  208  2                      IO_vSetPin(IO_P10_4); /* open main relay */
+  209  2              }
+  210  1              
+  211  1              if(TRUE == FLTDAct_ptr->closePedalPowerFlg)
+  212  1              {
+  213  2                      IO_vResetPin(IO_P7_4); /* close pedal sensor power */
+  214  2              }
+  215  1              else
+  216  1              {
+  217  2                      IO_vSetPin(IO_P7_4); /* open pedal sensor power */
+  218  2              }
+  219  1              
+  220  1              if(TRUE == FLTDAct_ptr->closeCylinderPowerFlg)
+  221  1              {
+  222  2                      IO_vResetPin(IO_P7_1); /* close main cylinser sensor power */
+  223  2              }
+  224  1              else
+  225  1              {
+  226  2                      IO_vSetPin(IO_P7_1); /* open main cylinser sensor power */
+  227  2              }
+  228  1      
+  229  1              if(TRUE == FLTDAct_ptr->closePredriverFlg)
+  230  1              {
+  231  2                      IO_vResetPin(IO_P0_7); /* close pre driver */
+  232  2              }
+  233  1              else
+  234  1              {
+  235  2                      IO_vSetPin(IO_P0_7); /* open pre driver */
+  236  2              }
+  237  1      
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 5   
+
+  238  1      
+  239  1          /* --- 等待100ms的驱动 ramp down 结束后置位正常模式结束 --- */
+  240  1              Rte_WaitDriverRampDown();
+  241  1      
+  242  1      }
+  243         /*!************************************************************************************
+  244         *       @fn             void task3PowerDownTest_v_s(void)
+  245         *       @brief            任务3下电测试函数
+  246         *       @author     Matt Zhang
+  247         *       @param[in]      void
+  248         *       @return     void
+  249         *       @note       下电测试主要是PWM占空比50%设定、关闭预驱、关闭主继电器;在Task3.c的task3()函数中
+  250         *       @Data       2019-3-12
+  251         ****************************************************************************************/
+  252         void task3PowerDownTest_v_s(void)
+  253         {
+  254  1              static INT8U Delay=0;
+  255  1              
+  256  1              switch (PowerDownTestState) 
+  257  1              {
+  258  2                      case EcmStart:
+  259  2      
+  260  2                              Pwm_Control(0);
+  261  2                              PowerDownTestState = EcmWait1;
+  262  2      
+  263  2                      break;
+  264  2      
+  265  2                      case EcmWait1:
+  266  2                              
+  267  2                              IO_vResetPin(IO_P0_7); /* close pre driver */
+  268  2                              PowerDownTestState = EcmWait2;
+  269  2                      break;
+  270  2      
+  271  2                      case EcmWait2:
+  272  2                              
+  273  2                              IO_vResetPin(IO_P10_4); /* close main relay */
+  274  2                      
+  275  2                              Delay++;
+  276  2                              if(Delay == MAIN_RELAY_OFF_DELAYTIME)//主继电器关闭延时30ms
+  277  2                              {
+  278  3                                      Delay=0;
+  279  3                                      PowerDownTestState = EcmEnd;
+  280  3                              }
+  281  2                      break;
+  282  2      
+  283  2                      case EcmEnd:
+  284  2                              /* --- 下电测试模式结束 --- */
+  285  2      
+  286  2                              PDTFinish_u8_Sig = 1;
+  287  2                               /* --- 重新转换到初始状态 --- */
+  288  2                              PowerDownTestState = EcmStart;
+  289  2      
+  290  2                      break;
+  291  2      
+  292  2                      default:
+  293  2                      break;
+  294  2              }
+  295  1      }
+  296         /*!************************************************************************************
+  297         *       @fn             void task3PowerDown_v_s(void)
+  298         *       @brief            任务3下电函数
+  299         *       @author     Matt Zhang
+C166 COMPILER V7.57.0, TASK3                                                               11/13/2020 15:09:29 PAGE 6   
+
+  300         *       @param[in]      void
+  301         *       @return     void
+  302         *       @note       在Task3的task3()函数中
+  303         *       @Data       2019-3-12
+  304         ****************************************************************************************/
+  305         void task3PowerDown_v_s(void)
+  306         {
+  307  1              PDFinish_u8_Sig = 1;
+  308  1              
+  309  1              IO_vResetPin(IO_P1_7); /* close main power */
+  310  1      }
+  311         /*!************************************************************************************
+  312         *       @fn             void task3Fault_v_s(void)
+  313         *       @brief            任务3故障模式函数
+  314         *       @author     Matt Zhang
+  315         *       @param[in]      void
+  316         *       @return     void
+  317         *       @note       在Task3.c的task3()函数中
+  318         *       @Data       2019-3-12
+  319         ****************************************************************************************/
+  320         void task3Fault_v_s(void)
+  321         {
+  322  1      
+  323  1      }
+  324         
+  325         
+  326         
+  327         
+  328         
+  329         
+  330         
+  331         
+  332         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =         842     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =           5     --------
+  FAR-DATA SIZE    =    --------     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =           6     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1749 @@
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE CCP
+OBJECT MODULE PLACED IN .\Obj\ccp.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\ccp\ccp.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\driv
+                    -er;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mode c
+                    -ontrol;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;.\sr
+                    -c\app\rte) MODV2 DEBUG PRINT(.\Lst\ccp.lst) OBJECT(.\Obj\ccp.obj) 
+
+ stmt lvl     source
+
+    1         /*****************************************************************************
+    2         | Project Name:   C C P - Driver
+    3         |    File Name:   CCP.C
+    4         |
+    5         |  Description:
+    6         |   Implements the CCP module .
+    7         |   used by the CANape CAN Calibration Tool.
+    8         |
+    9         |-----------------------------------------------------------------------------
+   10         |               C O P Y R I G H T
+   11         |-----------------------------------------------------------------------------
+   12         | Copyright (c)  2001-2003 by Vector Informatik GmbH.     All rights reserved.
+   13         |-----------------------------------------------------------------------------
+   14         |               A U T H O R   I D E N T I T Y
+   15         |-----------------------------------------------------------------------------
+   16         | Initials     Name                      Company
+   17         | --------     ---------------------     -------------------------------------
+   18         | Bus          Sabine Bücherl            Vector Informatik GmbH
+   19         | Ds           Sven Deckardt             Vector Informatik GmbH
+   20         | Hp           Armin Happel              Vector Informatik GmbH
+   21         | Tri          Frank Triem               Vector Informatik GmbH
+   22         | Za           Rainer Zaiser             Vector Informatik GmbH
+   23         |-----------------------------------------------------------------------------
+   24         |               R E V I S I O N   H I S T O R Y
+   25         |-----------------------------------------------------------------------------
+   26         |  Date       Version  Author  Description
+   27         | ----------  -------  ------  -----------------------------------------------
+   28         | 2000-24-09  1.29.00  Za      - New define CCP_CHECKSUM_BLOCKSIZE
+   29         | 2000-29-11  1.30.00  Za      - #ifndef CCP_EXTERNAL_STATION_ID
+   30         | 2001-08-02  1.31.00  Za      - new define CCP_DAQ_BASE_ADDR
+   31         |                              - new function ccpGetDaqPointer
+   32         | 2001-30-05  1.32.00  Za      - Reserved word "data" in KEIL Compiler for C5x5
+   33         |                              - Prefix CCP_ for all #defines
+   34         | 2001-14-09  1.33.00  Za      - #define CCP_ODT_ENTRY_SIZE
+   35         |                              - #define CCP_INTEL,CCP_MOTOROLA
+   36         | 2001-28-10  1.34.00  Za      - ccpSend return value removed
+   37         |                              - Transmission error handling should be done by the user
+   38         | 2002-08-04  1.35.00  Za      - #define CCP_CPUTYPE_32BIT
+   39         |                              - Max checksum block size is DWORD on 32 bit CPUs
+   40         | 2002-02-06  1.36.00  Za      - #undef CCP_DAQ for drivers without DAQ fixed
+   41         |                              - double - float conversion for SHORT_UPLOAD, DNLOAD and DAQ
+   42         | 2002-17-07  1.37.00  Ds      - Fixed the version nr. because the version was in
+   43         |                                the comment 1.36 but 135 was define.
+   44         |                              - Set #define CCP_DRIVER_VERSION to 137
+   45         | 2002-14-11  1.37.01  Hp      - define CCP_MAX_DAQ only if CCP_DAQ is defined
+   46         | 2002-27-11  1.37.02  Ds      - delete the query of extended id
+   47         | 2003-05-28  1.37.02  Bus     - added V_MEMROM0
+   48         | 2003-08-11  1.37.03  Tri     - implemented P_MEM_ROM and P_MEM_RAM to support M16C Mitsubishi.
+   49         | 2003-10-14  1.38.00  Tri     - version skipped due to special version for TMS320
+   50         | 2003-10-14  1.39.00  Tri     - version skipped due to special version for TMS320
+   51         | 2003-10-14  1.40.00  Tri     - merge of versions: 1.37.03, 1.37.02
+   52         | 2003-10-16  1.41.00  Ds      - minor bugfix set ROM to CCP_ROM
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 2   
+
+   53         | 2003-10-16  1.41.01  Ds      - change the position of CCP_ROM
+   54         | 2003-10-21  1.42.00  Tri     - change the position of CCP_ROM
+   55         |***************************************************************************/
+   56         
+   57         /* CCP Definitions and Parameters */
+   58         #include "ccp.h"
+   59         #include "MAIN.h"
+   60         
+   61         #ifndef C_DISABLE_CCP
+   62         
+   63         
+   64         /******************************************************************************/
+   65         /* Version check                                                              */
+   66         /******************************************************************************/
+   67         #if( CCP_DRIVER_VERSION != 142)
+               #error "Source and Header file of CCP-Module inconsistent!"
+              #endif
+   70         #if( CCP_DRIVER_BUGFIX_VERSION != 0)
+               #error "Source and Header file of CCP-Module inconsistent!"
+              #endif
+   73         
+   74         #if( CCP_DRIVER_VERSION > 255)
+               #error "Version decreased in CCP-Module"
+              #endif
+   77         
+   78         /*--------------------------------------------------------------------------*/
+   79         /* Performance measurements */
+   80         
+   81         #ifndef CCP_PROFILE
+   82         
+   83           #define SET_PORT_BIT(i)
+   84           #define RST_PORT_BIT(i)
+   85         
+   86         #else
+              
+                /*
+                t[0] - ccpCommand
+                t[1] - ccpCallBack
+                t[2] - ccpBackground
+                t[3] - ccpDaq
+                */
+                unsigned int t0[4],t[4];
+                #define SET_PORT_BIT(i) t0[i-1]=ccpGetTimestamp();
+                #define RST_PORT_BIT(i) t[i-1]=T3-t0[i-1];
+              
+              #endif
+   99         
+  100         
+  101         /*--------------------------------------------------------------------------*/
+  102         /* Test */
+  103         
+  104         #ifdef CCP_TESTMODE
+                #include <stdio.h>
+                static void ccpPrintCANapeSettings( void );
+                static void ccpPrintDaqList( CCP_BYTE daq );
+              #endif
+  109         
+  110         
+  111         /*--------------------------------------------------------------------------*/
+  112         /* ROM */
+  113         /*--------------------------------------------------------------------------*/
+  114         
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 3   
+
+  115         /*
+  116            Identification
+  117            Must be 0 terminated !!
+  118         
+  119            This string is used by CANape as the ASAP2 database filename
+  120            The extension .A2L or .DB is added by CANape
+  121         */
+  122         #ifdef CCP_EXTERNAL_STATION_ID
+                 CCP_MEMROM0 extern CCP_ROM CCP_BYTE ccpStationId[];
+              #else
+  125            CCP_MEMROM0 CCP_ROM CCP_BYTE ccpStationId[] = CCP_STATION_ID;
+  126         #endif
+  127         
+  128         
+  129         /*--------------------------------------------------------------------------*/
+  130         /* RAM */
+  131         /*--------------------------------------------------------------------------*/
+  132         
+  133         /*
+  134            The following structure containes all RAM locations needed by the CCP driver
+  135            It has to be word aligned on a C167 !!!
+  136         */
+  137         
+  138         /* ##Hp - rename struct ccp */
+  139         CCP_RAM struct ccp ccp;
+  140         
+  141         /*--------------------------------------------------------------------------*/
+  142         /* CODE */
+  143         /*--------------------------------------------------------------------------*/
+  144         
+  145         /*--------------------------------------------------------------------------*/
+  146         /* Transmit */
+  147         /*--------------------------------------------------------------------------*/
+  148         
+  149         /* Send a CRM, if no other message is pending */
+  150         void ccpSendCrm( void ) {
+  151  1        //OS_CPU_SR   cpu_sr = 0;
+  152  1      
+  153  1        CCP_DISABLE_INTERRUPT;
+  154  1      
+  155  1        if (ccp.SendStatus&CCP_SEND_PENDING) {
+  156  2      
+  157  2          ccp.SendStatus |= CCP_CRM_REQUEST;
+  158  2      
+  159  2        } else {
+  160  2      
+  161  2          ccp.SendStatus |= CCP_CRM_PENDING;
+  162  2          ccpSend(ccp.Crm);
+  163  2      
+  164  2        }
+  165  1      
+  166  1        CCP_ENABLE_INTERRUPT;
+  167  1      }
+  168         
+  169         
+  170         /* Send a DTM, if no other message is pending */
+  171         #ifdef CCP_DAQ
+  172         #ifndef CCP_SEND_QUEUE
+              static void ccpSendDtm( void ) {
+              
+                CCP_DISABLE_INTERRUPT;
+              
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 4   
+
+                if (ccp.SendStatus&CCP_SEND_PENDING) {
+              
+                  ccp.SendStatus |= CCP_DTM_REQUEST;
+              
+                } else {
+              
+                  ccp.SendStatus |= CCP_DTM_PENDING;
+                  ccpSend(ccp.Dtm);
+              
+                }
+              
+                CCP_ENABLE_INTERRUPT;
+              }
+              #endif
+  191         #endif
+  192         
+  193         
+  194         /*--------------------------------------------------------------------------*/
+  195         /* Transmit Queue */
+  196         /*--------------------------------------------------------------------------*/
+  197         #ifdef CCP_SEND_QUEUE
+  198         
+  199         void ccpQueueInit(void) {
+  200  1      
+  201  1        ccp.Queue.len = 0;
+  202  1        ccp.Queue.rp = 0;
+  203  1      }
+  204         
+  205         CCP_BYTE ccpQueueWrite(ccpMsg_t *msg) {
+  206  1      
+  207  1        if (ccp.Queue.len>=CCP_SEND_QUEUE_SIZE) return 0;
+  208  1        ccp.Queue.msg[(ccp.Queue.rp+ccp.Queue.len)%CCP_SEND_QUEUE_SIZE] = *msg;
+  209  1        ccp.Queue.len++;
+  210  1        return 1;
+  211  1      }
+  212         
+  213         #endif
+  214         
+  215         
+  216         /*--------------------------------------------------------------------------*/
+  217         /* Handle MTAs (Memory-Transfer-Address) */
+  218         /*--------------------------------------------------------------------------*/
+  219         
+  220         /* Assign a pointer to a MTA */
+  221         #define ccpSetMTA(n,p) ccp.MTA[n] = p;
+  222         
+  223         /* Write n bytes */
+  224         static CCP_BYTE ccpWriteMTA( CCP_BYTE n, CCP_BYTE size, CCP_BYTEPTR d ) {
+  225  1      
+  226  1        /* EEPROM write access */
+  227  1        #ifdef CCP_WRITE_EEPROM
+                  CCP_BYTE r = ccpCheckWriteEEPROM(ccp.MTA[n],size,d);
+                  if (r) { /* EEPROM write access */
+                    ccp.MTA[n] += size;
+                    return r;
+                  }
+                #endif
+  234  1      
+  235  1        /* Checked ram memory write access */
+  236  1        #ifdef CCP_WRITE_PROTECTION
+                  if (!ccpCheckWriteAccess(ccp.MTA[n],size)) {
+                    ccp.MTA[n] += size;
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 5   
+
+                    return CCP_WRITE_DENIED;
+                  }
+                #endif
+  242  1      
+  243  1         /* double conversion */
+  244  1         #ifdef CCP_DOUBLE_FLOAT
+                   if (size==8) {
+                     *(double*)ccp.MTA[n] = *(float*)d;
+                     #ifdef CCP_TESTMODE
+                       if (gDebugLevel>=2) CCPPRINT("[ccpWriteMTA] conversion -> double %g\n",*(double*)ccp.MTA[n]);
+                     #endif
+                     ccp.MTA[n] += 8;
+                     return CCP_WRITE_OK;
+                   }
+                 #endif
+  254  1      
+  255  1         while (size-->0) {
+  256  2           /* COSMIC Compiler Bug: *(ccp.MTA[n]++) = *(d++);  */
+  257  2           *(ccp.MTA[n]) = *d;
+  258  2           ccp.MTA[n]++;
+  259  2           d++;
+  260  2         }
+  261  1         return CCP_WRITE_OK;
+  262  1      }
+  263         
+  264         /* Read n bytes */
+  265         static void ccpReadMTA( CCP_BYTE n, CCP_BYTE size, CCP_BYTEPTR d ) {
+  266  1      
+  267  1        /* EEPROM read access */
+  268  1        #ifdef CCP_READ_EEPROM
+                  if (ccpCheckReadEEPROM(ccp.MTA[n],size,d)) {
+                    ccp.MTA[n] += size;
+                    return;
+                  }
+                #endif
+  274  1      
+  275  1        /* double conversion */
+  276  1        #ifdef CCP_DOUBLE_FLOAT
+                  if (size==8) {
+                    *(float*)d = (float)(*(double*)(ccp.MTA[n]));
+                    #ifdef CCP_TESTMODE
+                      if (gDebugLevel>=2) CCPPRINT("[ccpReadMTA] conversion -> float %g\n",(double)(*(float*)d));
+                    #endif
+                    return;
+                  }
+                #endif
+  285  1      
+  286  1        while (size-->0) {
+  287  2          *d = *(ccp.MTA[n]);
+  288  2          d++;
+  289  2          ccp.MTA[n]++;
+  290  2        }
+  291  1      }
+  292         
+  293         
+  294         /*--------------------------------------------------------------------------*/
+  295         /* Data Aquisition Setup */
+  296         /*--------------------------------------------------------------------------*/
+  297         
+  298         #ifdef CCP_DAQ
+  299         
+  300         /* Clear DAQ list */
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 6   
+
+  301         static CCP_BYTE ccpClearDaqList( CCP_BYTE daq ) {
+  302  1      
+  303  1        CCP_BYTEPTR p;
+  304  1        CCP_BYTEPTR pl;
+  305  1      
+  306  1        if (daq>=CCP_MAX_DAQ) return 0;
+  307  1      
+  308  1        /* Clear this daq list to zero */
+  309  1        p = (CCP_BYTEPTR)&ccp.DaqList[daq];
+  310  1        pl = p+sizeof(ccpDaqList_t);
+  311  1        while (p<pl) *p++ = 0;
+  312  1      
+  313  1        /* @@@@ Not DAQ list specific */
+  314  1        ccp.SessionStatus |= SS_DAQ;
+  315  1        #ifdef CCP_SEND_SINGLE
+                  ccp.CurrentDaq = 0;
+                  ccp.CurrentOdt = 0;
+                #endif
+  319  1        #ifdef CCP_SEND_QUEUE
+  320  1          ccpQueueInit();
+  321  1        #endif
+  322  1      
+  323  1        return CCP_MAX_ODT;
+  324  1      }
+  325         
+  326         /* Prepare DAQ */
+  327         static CCP_BYTE ccpPrepareDaq(  CCP_BYTE daq, CCP_BYTE last, CCP_BYTE eventChannel, CCP_WORD prescaler ) {
+  328  1      
+  329  1        if (daq>=CCP_MAX_DAQ) return 0;
+  330  1      
+  331  1        ccp.DaqList[daq].eventChannel = eventChannel;
+  332  1        if (prescaler==0) prescaler = 1;
+  333  1        ccp.DaqList[daq].prescaler = prescaler;
+  334  1        ccp.DaqList[daq].cycle = 1;
+  335  1        ccp.DaqList[daq].last = last;
+  336  1        ccp.DaqList[daq].flags = DAQ_FLAG_PREPARED;
+  337  1        return 1;
+  338  1      }
+  339         
+  340         /* Start DAQ */
+  341         static CCP_BYTE ccpStartDaq( CCP_BYTE daq ) {
+  342  1      
+  343  1        if (daq>=CCP_MAX_DAQ) return 0;
+  344  1      
+  345  1        ccp.DaqList[daq].flags = DAQ_FLAG_START;
+  346  1        ccp.SessionStatus |= SS_RUN;
+  347  1      
+  348  1        #ifdef CCP_TIMESTAMPING
+                  ccpClearTimestamp();
+                #endif
+  351  1      
+  352  1        return 1;
+  353  1      }
+  354         
+  355         /* Start all prepared DAQs */
+  356         static void ccpStartAllPreparedDaq(void) {
+  357  1      
+  358  1        CCP_BYTE q;
+  359  1      
+  360  1        for (q=0;q<CCP_MAX_DAQ;q++) {
+  361  2          if (ccp.DaqList[q].flags==DAQ_FLAG_PREPARED) ccp.DaqList[q].flags = DAQ_FLAG_START;
+  362  2        }
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 7   
+
+  363  1        ccp.SessionStatus |= SS_RUN;
+  364  1      
+  365  1        #ifdef CCP_TIMESTAMPING
+                  ccpClearTimestamp();
+                #endif
+  368  1      }
+  369         
+  370         /* Stop DAQ */
+  371         static void ccpStopDaq ( CCP_BYTE daq ) {
+  372  1      
+  373  1        CCP_BYTE i;
+  374  1      
+  375  1        if (daq>=CCP_MAX_DAQ) return;
+  376  1        ccp.DaqList[daq].flags = 0;
+  377  1      
+  378  1        /* check if all DAQ lists are stopped */
+  379  1        for (i=0;i<CCP_MAX_DAQ;i++) {
+  380  2          if (ccp.DaqList[i].flags&DAQ_FLAG_START) return;
+  381  2        }
+  382  1      
+  383  1        ccp.SessionStatus &= ~SS_RUN;
+  384  1      }
+  385         
+  386         /* Stop all DAQs */
+  387         static void ccpStopAllDaq( void ) {
+  388  1      
+  389  1        CCP_BYTE q;
+  390  1      
+  391  1        for (q=0;q<CCP_MAX_DAQ;q++) ccp.DaqList[q].flags = 0;
+  392  1        ccp.SessionStatus &= ~SS_RUN;
+  393  1      }
+  394         
+  395         
+  396         /*--------------------------------------------------------------------------*/
+  397         /* Data Aquisition Processor */
+  398         /*--------------------------------------------------------------------------*/
+  399         
+  400         #ifndef CCP_SEND_SINGLE
+  401         
+  402         /* Sample and transmit a DTM */
+  403         static int ccpSampleAndTransmitDtm( CCP_BYTE pid, CCP_BYTE daq, CCP_BYTE odt ) {
+  404  1        //OS_CPU_SR   cpu_sr = 0;
+  405  1      
+  406  1        #ifdef CCP_SEND_QUEUE
+  407  1          CCP_BYTE dtm[8];
+  408  1        #else
+                  #define dtm ccp.Dtm
+                #endif
+  411  1        #ifdef CCP_DAQ_BASE_ADDR
+                  CCP_BYTEPTR p;
+                #else
+  414  1          CCP_DAQBYTEPTR p;
+  415  1        #endif
+  416  1        #ifdef CCP_ODT_ENTRY_SIZE
+                  CCP_BYTE s;
+                  CCP_BYTE *d,*dl;
+                  ccpOdtEntry_t *e,*el;
+                #else
+  421  1          CCP_BYTE i;
+  422  1          ccpOdtEntry_t *e;
+  423  1        #endif
+  424  1      
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 8   
+
+  425  1        /* PID */
+  426  1        dtm[0] = pid;
+  427  1      
+  428  1        /* Assure data consistency */
+  429  1        CCP_DISABLE_INTERRUPT;
+  430  1      
+  431  1        /* Sample */
+  432  1        #ifdef CCP_ODT_ENTRY_SIZE
+              
+                  e = &ccp.DaqList[daq].odt[odt][0];
+                  el = e+8;
+                  d = &dtm[1];
+                  dl = d+7;
+                  while (d<dl && e<el && e->ptr) {
+                    #ifdef CCP_DAQ_BASE_ADDR
+                      p = (CCP_BYTEPTR)( e->ptr ) + CCP_DAQ_BASE_ADDR;
+                    #else
+                      p = e->ptr;
+                    #endif
+                    s = e->siz;
+                    #ifdef CCP_DOUBLE_FLOAT
+                      if (s==8) {
+                         *(float*)d = (float)(*(double*)p);
+                        s = 4;
+                        #ifdef CCP_TESTMODE
+                         if (gDebugLevel>=2) CCPPRINT("[ccpSampleAndTransmitDtm] conversion -> float %g\n",*(float*)d);
+                        #endif
+                      } else
+                    #endif
+                    if (s==4) {
+                      *(CCP_DWORD*)d = *(CCP_DWORD*)p;
+                    } else if (s==2) {
+                      *(CCP_WORD*)d = *(CCP_WORD*)p;
+                    } else {
+                      *d = *p;
+                    }
+                    d += s;
+                    e++;
+                  }
+              
+                #else
+  466  1      
+  467  1          e =  &ccp.DaqList[daq].odt[odt][0];
+  468  1          for (i=1;i<8;i++) {
+  469  2            #ifdef CCP_DAQ_BASE_ADDR
+                      p = (CCP_BYTEPTR)( (e++)->ptr ) + CCP_DAQ_BASE_ADDR;
+                    #else
+  472  2              p = (e++)->ptr;
+  473  2            #endif
+  474  2            if (p) dtm[i] = *p;
+  475  2          }
+  476  1      
+  477  1        #endif
+  478  1      
+  479  1        /* Optional for CANape: Put a timestamp in the first ODT (Byte6+7) of each DAQ */
+  480  1        #ifdef CCP_TIMESTAMPING
+                  if (odt==0) {
+                    *(CCP_WORD*)&dtm[6] = ccpGetTimestamp();
+                  }
+                #endif
+  485  1      
+  486  1        /* Queue or transmit the DTM */
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 9   
+
+  487  1        #ifdef CCP_SEND_QUEUE
+  488  1      
+  489  1          if (ccp.SendStatus&CCP_SEND_PENDING) {
+  490  2            if (!ccpQueueWrite((ccpMsg_t*)dtm)) {
+  491  3              /* Overun */
+  492  3              CCP_ENABLE_INTERRUPT;
+  493  3              return 0;
+  494  3            }
+  495  2          } else {
+  496  2            ccp.SendStatus |= CCP_DTM_PENDING;
+  497  2            ccpSend(dtm);
+  498  2          }
+  499  1      
+  500  1        #else
+              
+                  if (ccp.SendStatus&CCP_DTM_REQUEST) {
+                    /* Overun */
+                    CCP_ENABLE_INTERRUPT;
+                    return 0;
+                  }
+                  if (ccp.SendStatus&CCP_SEND_PENDING) {
+                    ccp.SendStatus |= CCP_DTM_REQUEST;
+                  } else {
+                    ccp.SendStatus |= CCP_DTM_PENDING;
+                    ccpSend(dtm);
+                  }
+              
+                #endif
+  515  1      
+  516  1        CCP_ENABLE_INTERRUPT;
+  517  1        return 1;
+  518  1      
+  519  1      }
+  520         
+  521         
+  522         #else
+              
+              
+              /* Sample and transmit the next DTM in SEND_SINGLE mode */
+              static void ccpSampleAndSendNextDtm( void ) {
+              
+                CCP_BYTE i,j;
+                CCP_DAQBYTEPTR p;
+                ccpOdtEntry_t *e;
+              
+                /* Request for DTM transmission pending */
+                if (ccp.SendStatus&CCP_DTM_REQUEST) return;
+              
+                /* Find a DAQ list marked for transmission */
+                for (i=0;i<CCP_MAX_DAQ;i++) {
+              
+                  if (ccp.DaqList[ccp.CurrentDaq].flags&DAQ_FLAG_SEND) {
+              
+                    /* PID */
+                    ccp.Dtm[0] = ccp.CurrentDaq*CCP_MAX_ODT+ccp.CurrentOdt;
+              
+                    /* Sample */
+                    e =  &ccp.DaqList[ccp.CurrentDaq].odt[ccp.CurrentOdt][0];
+                    for (j=1;j<8;j++) {
+                      p = (e++)->ptr;
+                      if (p) ccp.Dtm[j] = *p;
+                    }
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 10  
+
+              
+                    /* Send */
+                    ccpSendDtm();
+              
+                    /* Increment ODT */
+                    if (++ccp.CurrentOdt>ccp.DaqList[ccp.CurrentDaq].last) {
+              
+                      /* DAQ list done */
+                      ccp.CurrentOdt = 0;
+                      ccp.DaqList[ccp.CurrentDaq].flags &= ~DAQ_FLAG_SEND;
+              
+                      /* Increment DAQ */
+                      if (++ccp.CurrentDaq>=CCP_MAX_DAQ) ccp.CurrentDaq = 0;
+              
+                    }
+              
+                    break;
+              
+                  } else {
+              
+                    /* Increment DAQ */
+                    if (++ccp.CurrentDaq>=CCP_MAX_DAQ) ccp.CurrentDaq = 0;
+              
+                  }
+              
+              
+                }
+              
+              }
+              
+              #endif
+  580         
+  581         /* Data aquisition */
+  582         void ccpDaq( CCP_BYTE eventChannel )
+  583         {
+  584  1        CCP_BYTE q,o;
+  585  1        #ifndef CCP_SEND_SINGLE
+  586  1          CCP_BYTE j;
+  587  1        #endif
+  588  1      
+  589  1        if (!(ccp.SessionStatus&SS_RUN)) return;
+  590  1      
+  591  1        SET_PORT_BIT(4); /* Timingtest */
+  592  1      
+  593  1        for (o=0,q=0; q<CCP_MAX_DAQ; o+=CCP_MAX_ODT,q++) {
+  594  2      
+  595  2          if (!(ccp.DaqList[q].flags&DAQ_FLAG_START)) continue;
+  596  2      
+  597  2          if (ccp.DaqList[q].eventChannel!=eventChannel) continue;
+  598  2          if (--ccp.DaqList[q].cycle!=0) continue;
+  599  2          ccp.DaqList[q].cycle = ccp.DaqList[q].prescaler;
+  600  2      
+  601  2          #ifdef CCP_SEND_SINGLE
+              
+                    /* Just mark DAQ for transmission */
+                    ccp.DaqList[q].flags |= DAQ_FLAG_SEND;
+              
+                  #else
+  607  2      
+  608  2            /* Check that the current queue space fits a complete cycle */
+  609  2            #if defined(CCP_SEND_QUEUE) && defined(CCP_SEND_QUEUE_OVERRUN_INDICATION)
+  610  2              if (CCP_SEND_QUEUE_SIZE-ccp.Queue.len<=ccp.DaqList[q].last) {
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 11  
+
+  611  3                ccp.DaqList[q].flags |= DAQ_FLAG_OVERRUN;
+  612  3                continue; /* Skip this DAQ list on overrun */
+  613  3              }
+  614  2            #endif
+  615  2      
+  616  2            /* Use BIT7 of PID to indicate overruns (CANape special feature) */
+  617  2            #ifdef CCP_SEND_QUEUE_OVERRUN_INDICATION
+  618  2      
+  619  2              for (j=0;j<=ccp.DaqList[q].last;j++) {
+  620  3                if (!ccpSampleAndTransmitDtm((o+j)|(ccp.DaqList[q].flags&DAQ_FLAG_OVERRUN),q,j)) {
+  621  4                  ccp.DaqList[q].flags |= DAQ_FLAG_OVERRUN;
+  622  4                } else {
+  623  4                  ccp.DaqList[q].flags &= ~DAQ_FLAG_OVERRUN;
+  624  4                }
+  625  3              } /* j */
+  626  2      
+  627  2            #else
+              
+                      for (j=0;j<=ccp.DaqList[q].last;j++) {
+                        ccpSampleAndTransmitDtm(o+j,q,j);
+                      } /* j */
+              
+                    #endif
+  634  2      
+  635  2          #endif
+  636  2      
+  637  2        } /* q */
+  638  1      
+  639  1        /* Check for the next ODT to send */
+  640  1        #ifdef CCP_SEND_SINGLE
+                  ccpSampleAndSendNextDtm();
+                #endif
+  643  1      
+  644  1        RST_PORT_BIT(4); /* Timingtest */
+  645  1      
+  646  1      }
+  647         
+  648         #endif /* CCP_DAQ */
+  649         
+  650         
+  651         /*--------------------------------------------------------------------------*/
+  652         /* Background Processing */
+  653         /* Used for Checksum Calculation */
+  654         /*--------------------------------------------------------------------------*/
+  655         
+  656         /* Table for CCITT checksum calculation */
+  657         #ifdef CCP_CHECKSUM_CCITT
+                 CCP_MEMROM0 CCP_ROM CCP_WORD CRC16CCITTtab[256] = {
+              
+                  0x0000,0x1189,0x2312,0x329B,0x4624,0x57AD,0x6536,0x74BF,
+                  0x8C48,0x9DC1,0xAF5A,0xBED3,0xCA6C,0xDBE5,0xE97E,0xF8F7,
+                  0x1081,0x0108,0x3393,0x221A,0x56A5,0x472C,0x75B7,0x643E,
+                  0x9CC9,0x8D40,0xBFDB,0xAE52,0xDAED,0xCB64,0xF9FF,0xE876,
+                  0x2102,0x308B,0x0210,0x1399,0x6726,0x76AF,0x4434,0x55BD,
+                  0xAD4A,0xBCC3,0x8E58,0x9FD1,0xEB6E,0xFAE7,0xC87C,0xD9F5,
+                  0x3183,0x200A,0x1291,0x0318,0x77A7,0x662E,0x54B5,0x453C,
+                  0xBDCB,0xAC42,0x9ED9,0x8F50,0xFBEF,0xEA66,0xD8FD,0xC974,
+                  0x4204,0x538D,0x6116,0x709F,0x0420,0x15A9,0x2732,0x36BB,
+                  0xCE4C,0xDFC5,0xED5E,0xFCD7,0x8868,0x99E1,0xAB7A,0xBAF3,
+                  0x5285,0x430C,0x7197,0x601E,0x14A1,0x0528,0x37B3,0x263A,
+                  0xDECD,0xCF44,0xFDDF,0xEC56,0x98E9,0x8960,0xBBFB,0xAA72,
+                  0x6306,0x728F,0x4014,0x519D,0x2522,0x34AB,0x0630,0x17B9,
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 12  
+
+                  0xEF4E,0xFEC7,0xCC5C,0xDDD5,0xA96A,0xB8E3,0x8A78,0x9BF1,
+                  0x7387,0x620E,0x5095,0x411C,0x35A3,0x242A,0x16B1,0x0738,
+                  0xFFCF,0xEE46,0xDCDD,0xCD54,0xB9EB,0xA862,0x9AF9,0x8B70,
+                  0x8408,0x9581,0xA71A,0xB693,0xC22C,0xD3A5,0xE13E,0xF0B7,
+                  0x0840,0x19C9,0x2B52,0x3ADB,0x4E64,0x5FED,0x6D76,0x7CFF,
+                  0x9489,0x8500,0xB79B,0xA612,0xD2AD,0xC324,0xF1BF,0xE036,
+                  0x18C1,0x0948,0x3BD3,0x2A5A,0x5EE5,0x4F6C,0x7DF7,0x6C7E,
+                  0xA50A,0xB483,0x8618,0x9791,0xE32E,0xF2A7,0xC03C,0xD1B5,
+                  0x2942,0x38CB,0x0A50,0x1BD9,0x6F66,0x7EEF,0x4C74,0x5DFD,
+                  0xB58B,0xA402,0x9699,0x8710,0xF3AF,0xE226,0xD0BD,0xC134,
+                  0x39C3,0x284A,0x1AD1,0x0B58,0x7FE7,0x6E6E,0x5CF5,0x4D7C,
+                  0xC60C,0xD785,0xE51E,0xF497,0x8028,0x91A1,0xA33A,0xB2B3,
+                  0x4A44,0x5BCD,0x6956,0x78DF,0x0C60,0x1DE9,0x2F72,0x3EFB,
+                  0xD68D,0xC704,0xF59F,0xE416,0x90A9,0x8120,0xB3BB,0xA232,
+                  0x5AC5,0x4B4C,0x79D7,0x685E,0x1CE1,0x0D68,0x3FF3,0x2E7A,
+                  0xE70E,0xF687,0xC41C,0xD595,0xA12A,0xB0A3,0x8238,0x93B1,
+                  0x6B46,0x7ACF,0x4854,0x59DD,0x2D62,0x3CEB,0x0E70,0x1FF9,
+                  0xF78F,0xE606,0xD49D,0xC514,0xB1AB,0xA022,0x92B9,0x8330,
+                  0x7BC7,0x6A4E,0x58D5,0x495C,0x3DE3,0x2C6A,0x1EF1,0x0F78
+                };
+              #endif
+  694         
+  695         #ifndef CCP_CHECKSUM_BLOCKSIZE
+  696           #define CCP_CHECKSUM_BLOCKSIZE 256
+  697         #endif
+  698         
+  699         CCP_BYTE ccpBackground( void ) {
+  700  1      
+  701  1        SET_PORT_BIT(3); /* Timingtest */
+  702  1      
+  703  1        /* CCP command pending */
+  704  1        #ifdef CCP_CMD_NOT_IN_INTERRUPT
+                  CCP_DISABLE_INTERRUPT;
+                  if (ccp.SendStatus&CCP_CMD_PENDING) {
+                    ccp.SendStatus &= ~CCP_CMD_PENDING;
+                    ccpCommand(CCP_RX_DATA_PTR);
+                  }
+                  CCP_ENABLE_INTERRUPT;
+                #endif
+  712  1      
+  713  1        /* Call the user backgound function */
+  714  1        ccpUserBackground();
+  715  1      
+  716  1        /* CCP checksum calculation */
+  717  1        #ifdef CCP_CHECKSUM
+  718  1      
+  719  1          /*
+  720  1             Checksum algorithm is not defined by the standard
+  721  1             Type is defined by CCP_CHECKSUM_TYPE, Maximum blocksize is 64K
+  722  1          */
+  723  1      
+  724  1          /* Checksum calculation in progress */
+  725  1          if (ccp.CheckSumSize) {
+  726  2      
+  727  2            register CCP_BYTE n;
+  728  2            #ifndef CCP_CHECKSUM_CCITT
+  729  2              register CCP_BYTE b;
+  730  2            #endif
+  731  2      
+  732  2            if (ccp.CheckSumSize<=(CCP_CHECKSUM_BLOCKSIZE-1)) {
+  733  3              n = (CCP_BYTE)ccp.CheckSumSize;
+  734  3              ccp.CheckSumSize = 0;
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 13  
+
+  735  3            } else {
+  736  3              n = 0;
+  737  3              ccp.CheckSumSize -= CCP_CHECKSUM_BLOCKSIZE;
+  738  3            }
+  739  2      
+  740  2            do {
+  741  3              #ifdef CCP_CHECKSUM_CCITT
+              
+                        /* CRC */
+                        #ifdef CCP_MOTOROLA
+                          (*(CCP_WORD*)&ccp.Crm[4]) = CRC16CCITTtab[ccp.Crm[5] ^ *(ccp.MTA[CCP_INTERNAL_MTA]++)] ^ ccp.C
+             -rm[4];
+                        #else
+                          (*(CCP_WORD*)&ccp.Crm[4]) = CRC16CCITTtab[ccp.Crm[4] ^ *(ccp.MTA[CCP_INTERNAL_MTA]++)] ^ ccp.C
+             -rm[5];
+                        #endif
+              
+                      #else
+  751  3      
+  752  3                /* Compiler Error BSO Tasking 16x */
+  753  3                /* *(CCP_CHECKSUM_TYPE*)&ccp.Crm[4] += *(ccp.MTA[CCP_INTERNAL_MTA]++); does not work */
+  754  3      
+  755  3                /* Sum */
+  756  3                b = *(ccp.MTA[CCP_INTERNAL_MTA]);
+  757  3                *(CCP_CHECKSUM_TYPE*)&ccp.Crm[4] += b;
+  758  3                ccp.MTA[CCP_INTERNAL_MTA]++;
+  759  3      
+  760  3              #endif
+  761  3            } while (--n!=0);
+  762  2      
+  763  2            /* Checksum calculation finished ? */
+  764  2            if (ccp.CheckSumSize) {
+  765  3              RST_PORT_BIT(3); /* Timingtest */
+  766  3              return 1; /* Still pending */
+  767  3            }
+  768  2      
+  769  2            ccpSendCrm();
+  770  2      
+  771  2          } /* ccp.CheckSumSize */
+  772  1        #endif
+  773  1      
+  774  1        RST_PORT_BIT(3); /* Timingtest */
+  775  1      
+  776  1        return 0;
+  777  1      }
+  778         
+  779         
+  780         /*--------------------------------------------------------------------------*/
+  781         /* Command Processor */
+  782         /*--------------------------------------------------------------------------*/
+  783         
+  784         void ccpCommand( CCP_BYTEPTR com ) {
+  785  1      
+  786  1        SET_PORT_BIT(1); /* Timingtest */
+  787  1      
+  788  1        #define cmd com[0]
+  789  1        #define ctr com[1]
+  790  1      
+  791  1        /* Handle CONNECT or TEST command */
+  792  1        if (cmd==CC_CONNECT||cmd==CC_TEST) {
+  793  2      
+  794  2          #define stationAddr (*(CCP_WORD*)&com[2]) /* Has to be Intel-Format ! */
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 14  
+
+  795  2      
+  796  2          #ifdef CCP_TESTMODE
+                    if (gDebugLevel) CCPPRINT("\n%u: %s addr=%u\n",ctr,cmd==CC_CONNECT?"CONNECT":"TEST",stationAddr);
+                  #endif
+  799  2      
+  800  2          /* This station */
+  801  2          if (stationAddr==CCP_STATION_ADDR||stationAddr==CCP_BROADCAST_STATION_ADDR) { /* This station */
+  802  3      
+  803  3            if (cmd==CC_CONNECT) {
+  804  4              #ifdef CCP_DAQ
+  805  4                if (!(ccp.SessionStatus&SS_TMP_DISCONNECTED)) {
+  806  5                  ccpStopAllDaq();
+  807  5                  ccp.SendStatus = 0; /* Clear all transmission flags */
+  808  5                }
+  809  4              #endif
+  810  4              ccp.SessionStatus |= SS_CONNECTED;
+  811  4              ccp.SessionStatus &= ~SS_TMP_DISCONNECTED;
+  812  4      
+  813  4              #ifdef CCP_TESTMODE
+                        if (gDebugLevel) CCPPRINT("*** connected ***\n");
+                      #endif
+  816  4            }
+  817  3      
+  818  3            /* Responce */
+  819  3            /* Station addresses in Intel Format */
+  820  3            ccp.Crm[0] = 0xFF;
+  821  3            ccp.Crm[1] = CRC_OK;
+  822  3            ccp.Crm[2] = ctr;
+  823  3            ccp.Crm[3] = 0xFE;
+  824  3            *(CCP_WORD*)&ccp.Crm[4] = CCP_STATION_ADDR;
+  825  3            *(CCP_WORD*)&ccp.Crm[6] = CCP_BROADCAST_STATION_ADDR;
+  826  3      
+  827  3            /* responce */
+  828  3            /* |||| */
+  829  3          }
+  830  2      
+  831  2          /* Another station */
+  832  2          else {
+  833  3      
+  834  3            /* If connected, temporary disconnect */
+  835  3            if (ccp.SessionStatus&SS_CONNECTED) {
+  836  4      
+  837  4              ccp.SessionStatus &= ~SS_CONNECTED;
+  838  4              ccp.SessionStatus |= SS_TMP_DISCONNECTED;
+  839  4      
+  840  4              #ifdef CCP_TESTMODE
+                        if (gDebugLevel) CCPPRINT("*** temporary disconnect ***\n");
+                      #endif
+  843  4      
+  844  4            }
+  845  3      
+  846  3            RST_PORT_BIT(1); /* Timingtest */
+  847  3      
+  848  3            /* no responce */
+  849  3            return;
+  850  3      
+  851  3          }
+  852  2      
+  853  2        }
+  854  1      
+  855  1        /* Handle other commands only if connected */
+  856  1        else if (ccp.SessionStatus&SS_CONNECTED) {
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 15  
+
+  857  2      
+  858  2          /* prepare the responce */
+  859  2          ccp.Crm[0] = 0xFF;
+  860  2          ccp.Crm[1] = CRC_OK;
+  861  2          ccp.Crm[2] = ctr;
+  862  2      
+  863  2          switch (cmd) {
+  864  3      
+  865  3            case CC_DISCONNECT:
+  866  3              {
+  867  4                #define disconnectCmd com[2]
+  868  4                #define disconnectStationAddr (*(CCP_WORD*)&com[4])
+  869  4      
+  870  4                ccp.SessionStatus &= ~SS_CONNECTED;
+  871  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: DISCONNECT cmd=%u\n",ctr,disconnectCmd);
+                        #endif
+  874  4      
+  875  4                if (disconnectCmd==0x00) { /* Temporary */
+  876  5                  ccp.SessionStatus |= SS_TMP_DISCONNECTED;
+  877  5                  #ifdef CCP_TESTMODE
+                            if (gDebugLevel) CCPPRINT("*** temporary disconnect ***\n");
+                          #endif
+  880  5                } else {           /* End of session */
+  881  5                  #ifdef CCP_DAQ
+  882  5                    ccpStopAllDaq();
+  883  5                  #endif
+  884  5                  #ifdef CCP_SEED_KEY
+                            ccp.ProtectionStatus = 0; /* Clear Protection Status */
+                          #endif
+  887  5                  #ifdef CCP_TESTMODE
+                            if (gDebugLevel) CCPPRINT("*** end of session ***\n");
+                          #endif
+  890  5                }
+  891  4              }
+  892  3              break;
+  893  3      
+  894  3            case CC_EXCHANGE_ID: /* Exchange Station Identifications */
+  895  3              {
+  896  4                CCP_BYTE i;
+  897  4                #define masterId com[2]
+  898  4                for(i=0;ccpStationId[i]!=0;i++) ;
+  899  4                ccp.Crm[3] = i; /* Lenght of slave device identifier */
+  900  4                ccp.Crm[4] = 0;
+  901  4                /* Build the Resource Availability and Protection Mask */
+  902  4                ccp.Crm[5] = PL_CAL; /* Default: Calibration available */
+  903  4                ccp.Crm[6] = 0;      /* Default: No Protection */
+  904  4                #ifdef CCP_SEED_KEY
+                          ccp.Crm[6] |= PL_CAL;   /* Protected Calibration */
+                        #endif
+  907  4                #ifdef CCP_DAQ
+  908  4                  ccp.Crm[5] |= PL_DAQ;     /* Data Acquisition */
+  909  4                  #ifdef CCP_SEED_KEY
+                            ccp.Crm[6] |= PL_DAQ;   /* Protected Data Acquisition */
+                          #endif
+  912  4                #endif
+  913  4                #if defined(CCP_PROGRAM) || defined(CCP_BOOTLOADER_DOWNLOAD)
+  914  4                  ccp.Crm[5] |= PL_PGM;     /* Flash Programming */
+  915  4                  #ifdef CCP_SEED_KEY
+                            ccp.Crm[6] |= PL_PGM;   /* Protected Flash Programming */
+                          #endif
+  918  4                #endif
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 16  
+
+  919  4                ccp.Crm[7] = CCP_DRIVER_VERSION; /* Driver version number */
+  920  4                ccpSetMTA(0,(CCP_MTABYTEPTR)ccpStationId);
+  921  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: EXCANGE_ID master_id=%u\n",ctr,masterId);
+                        #endif
+  924  4              }
+  925  3              break;
+  926  3      
+  927  3            #ifdef CCP_SEED_KEY
+              
+                    case CC_GET_SEED: /* Get Seed for Key */
+                      {
+                        #define privilegeLevel com[2]
+                        ccp.Crm[3] = 0; /* Protection Status: No key required */
+                        *(CCP_DWORD*)&ccp.Crm[4] = 0;
+                        #ifdef CCP_SEED_KEY
+                          /* Keys required for CAL or PGM */
+                          switch (privilegeLevel) {
+                            case PL_CAL:
+                              ccp.Crm[3] = (0==(ccp.ProtectionStatus&PL_CAL)); /* Protection Status */
+                              *(CCP_DWORD*)&ccp.Crm[4] = ccpGetSeed(PL_CAL);
+                              break;
+                            case PL_PGM:
+                              ccp.Crm[3] = (0==(ccp.ProtectionStatus&PL_PGM)); /* Protection Status */
+                              *(CCP_DWORD*)&ccp.Crm[4] = ccpGetSeed(PL_PGM);
+                              break;
+                            case PL_DAQ:
+                              ccp.Crm[3] = (0==(ccp.ProtectionStatus&PL_DAQ)); /* Protection Status */
+                              *(CCP_DWORD*)&ccp.Crm[4] = ccpGetSeed(PL_DAQ);
+                              break;
+                            default:
+                              ccp.Crm[1] = CRC_CMD_SYNTAX;
+                              /* Error */
+                          }
+                        #endif
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: GET_SEED resource=%02X, protection_status=%u\n",ctr,privilegeLe
+             -vel,ccp.Crm[3]);
+                        #endif
+                      }
+                      break;
+              
+                    case CC_UNLOCK: /* Unlock Protection */
+                      {
+                        #define key com[2] /* Key may be up to 6 Bytes */
+                        /* Check key */
+                        ccp.ProtectionStatus |= ccpUnlock(&com[2]); /* Reset the appropriate resource protection mask bi
+             -t */
+                        ccp.Crm[3] = ccp.ProtectionStatus; /* Current Protection Status */
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: UNLOCK protection_status=%02X\n",ctr,ccp.ProtectionStatus);
+                        #endif
+                      }
+                      break;
+              
+                    #endif /* CCP_SEED_KEY */
+  973  3      
+  974  3            case CC_SET_MTA: /* Set transfer address */
+  975  3              {
+  976  4                #define mta     com[2]
+  977  4                #define addrExt com[3]
+  978  4                #define addr    (*(CCP_DWORD*)&com[4])
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 17  
+
+  979  4               if (mta<CCP_MAX_MTA-1) {
+  980  5                  ccpSetMTA(mta,ccpGetPointer(addrExt,addr));
+  981  5               } else {
+  982  5                  ccp.Crm[1] = CRC_OUT_OF_RANGE;
+  983  5               }
+  984  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: SET_MTA %u to %08lX,%u\n",ctr,mta,addr,addrExt);
+                        #endif
+  987  4      
+  988  4                #undef mta
+  989  4                #undef addrExt
+  990  4                #undef addr
+  991  4              }
+  992  3              break;
+  993  3      
+  994  3            case CC_DNLOAD: /* Download */
+  995  3              {
+  996  4                CCP_BYTE r;
+  997  4                #define size com[2]
+  998  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_CAL)) {
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                            r = 0;
+                          }
+                          else
+                        #endif
+ 1005  4                r = ccpWriteMTA(0,size,&com[3]);
+ 1006  4                #ifdef CCP_STANDARD
+                          ccpGetMTA0((CCP_BYTE*)&ccp.Crm[3],(CCP_DWORD*)&ccp.Crm[4]);
+                        #endif
+ 1009  4                if (r==CCP_WRITE_PENDING) return; /* EEPROM write pending */
+ 1010  4                if (r==CCP_WRITE_DENIED||r==CCP_WRITE_ERROR) ccp.Crm[1] = CRC_ACCESS_DENIED; /* No write access 
+             -*/
+ 1011  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            int i;
+                            CCPPRINT("%u: DNLOAD n=%u, ",ctr,size);
+                            for (i=3;i<3+size&&i<8;i++) CCPPRINT("%02X ",com[i]);
+                            CCPPRINT("\n");
+                          }
+                        #endif
+ 1019  4      
+ 1020  4                #undef size      /* avoid compiler re-definition warning */
+ 1021  4              }
+ 1022  3              break;
+ 1023  3      
+ 1024  3            case CC_DNLOAD6: /* Download */
+ 1025  3              {
+ 1026  4                CCP_BYTE r;
+ 1027  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_CAL)) {
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                            r = 0;
+                          }
+                          else
+                        #endif
+ 1034  4                r = ccpWriteMTA(0,6,&com[2]);
+ 1035  4                #ifdef CCP_STANDARD
+                          ccpGetMTA0((CCP_BYTE*)&ccp.Crm[3],(CCP_DWORD*)&ccp.Crm[4]);
+                        #endif
+ 1038  4                if (r==CCP_WRITE_PENDING) return; /* EEPROM write pending */
+ 1039  4                if (r==CCP_WRITE_DENIED||r==CCP_WRITE_ERROR) ccp.Crm[1] = CRC_ACCESS_DENIED; /* No write access 
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 18  
+
+             -*/
+ 1040  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            int i;
+                            CCPPRINT("%u: DNLOAD6 ",ctr);
+                            for (i=2;i<8;i++) CCPPRINT("%02X ",com[i]);
+                            CCPPRINT("\n");
+                        }
+                        #endif
+ 1048  4              }
+ 1049  3              break;
+ 1050  3      
+ 1051  3            case CC_UPLOAD: /* Upload */
+ 1052  3              {
+ 1053  4                #define size com[2]
+ 1054  4                ccpReadMTA(0,size,&ccp.Crm[3]);
+ 1055  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            int i;
+                            CCPPRINT("%u: UPLOAD n=%u, ",ctr,size);
+                            for (i=3;i<3+size;i++) CCPPRINT("%02X ",ccp.Crm[i]);
+                            CCPPRINT("\n");
+                          }
+                        #endif
+ 1063  4      
+ 1064  4                #undef size      /* avoid compiler re-definition warning */
+ 1065  4              }
+ 1066  3              break;
+ 1067  3      
+ 1068  3            case CC_SHORT_UPLOAD: /* Upload with Address */
+ 1069  3              {
+ 1070  4                #define size    com[2]
+ 1071  4                #define addrExt com[3]
+ 1072  4                #define addr    (*(CCP_DWORD*)&com[4])
+ 1073  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_CAL)) {
+                                      ccp.Crm[3] = 0;
+                                      ccp.Crm[4] = 0;
+                                      ccp.Crm[5] = 0;
+                                      ccp.Crm[6] = 0;
+                                      ccp.Crm[7] = 0;
+                          }
+                          else {
+                              ccpSetMTA(CCP_INTERNAL_MTA,ccpGetPointer(addrExt,addr));
+                            ccpReadMTA(CCP_INTERNAL_MTA,size,&ccp.Crm[3]);
+                              }
+                         #else
+ 1086  4                      ccpSetMTA(CCP_INTERNAL_MTA,ccpGetPointer(addrExt,addr));
+ 1087  4                    ccpReadMTA(CCP_INTERNAL_MTA,size,&ccp.Crm[3]);
+ 1088  4                #endif
+ 1089  4      
+ 1090  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            int i;
+                            CCPPRINT("%u: SHORT_UPLOAD p=%08lX,%u,n=%u, ",ctr,addr,addrExt,size);
+                            for (i=3;i<3+size&&i<8;i++) CCPPRINT("%02X ",ccp.Crm[i]);
+                            CCPPRINT("\n");
+                          }
+                        #endif
+ 1098  4      
+ 1099  4                #undef size
+ 1100  4                #undef addrExt
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 19  
+
+ 1101  4                #undef addr
+ 1102  4              }
+ 1103  3              break;
+ 1104  3      
+ 1105  3            case CC_GET_DAQ_SIZE: /* Return the size of a DAQ list and clear */
+ 1106  3              {
+ 1107  4                #define daqList com[2]
+ 1108  4                #define daqId   (*(CCP_DWORD*)&com[4])
+ 1109  4                #ifdef CCP_DAQ
+ 1110  4                  ccpStopDaq(daqList); /* Stop this daq list */
+ 1111  4      
+ 1112  4                  ccp.Crm[3] = ccpClearDaqList(daqList); /* Number of  ODTs */
+ 1113  4                  ccp.Crm[4] = daqList*CCP_MAX_ODT; /* PID of the first ODT */
+*** WARNING C192 IN LINE 1113 OF src\app\ccp\ccp.c: '=': value truncated
+ 1114  4                  #ifdef CCP_TESTMODE
+                            if (gDebugLevel) CCPPRINT("%u: GET_DAQ_SIZE daq=%u,id=%lu,size=%u,pid=%u\n",ctr,daqList,daqI
+             -d,ccp.Crm[3],daqList*CCP_MAX_ODT);
+                          #endif
+ 1117  4                #else
+                          ccp.Crm[3] = 0;
+                          ccp.Crm[4] = 0;
+                          #ifdef CCP_TESTMODE
+                            if (gDebugLevel) CCPPRINT("%u: GET_DAQ_SIZE daq=%u,size=0\n",ctr,daqList,daqId);
+                          #endif
+                        #endif
+ 1124  4                #undef daqList
+ 1125  4                #undef daqId
+ 1126  4              }
+ 1127  3              break;
+ 1128  3      
+ 1129  3            #ifdef CCP_DAQ
+ 1130  3      
+ 1131  3            case CC_SET_DAQ_PTR: /* Set DAQ pointer */
+ 1132  3              {
+ 1133  4                #define comDaq  com[2]
+ 1134  4                #define comOdt  com[3]
+ 1135  4                #define comIdx  com[4]
+ 1136  4                if (comDaq>=CCP_MAX_DAQ||comOdt>=CCP_MAX_ODT||comIdx>7) {
+ 1137  5                  ccp.Crm[1] = CRC_CMD_SYNTAX;
+ 1138  5                  ccp.DaqListPtr = 0;
+ 1139  5                } else {
+ 1140  5                  ccp.DaqListPtr = &ccp.DaqList[comDaq].odt[comOdt][comIdx];
+ 1141  5                }
+ 1142  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: SET_DAQ_PTR daq=%u,odt=%u,idx=%u\n",ctr,comDaq,comOdt,comIdx);
+                        #endif
+ 1145  4      
+ 1146  4                #undef comDaq
+ 1147  4                #undef comOdt
+ 1148  4                #undef comIdx
+ 1149  4              }
+ 1150  3              break;
+ 1151  3      
+ 1152  3            case CC_WRITE_DAQ: /* Write DAQ entry */
+ 1153  3              {
+ 1154  4                #define writeDaqSize    com[2]
+ 1155  4                #define writeDaqAddrExt com[3]
+ 1156  4                #define writeDaqAddr    (*(CCP_DWORD*)&com[4])
+ 1157  4                if (
+ 1158  4                  #ifdef CCP_ODT_ENTRY_SIZE
+                            #ifdef CCP_DOUBLE_FLOAT
+                              (writeDaqSize!=8) &&
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 20  
+
+                            #endif
+                            (writeDaqSize!=1&&writeDaqSize!=2&&writeDaqSize!=4)
+                          #else
+ 1164  4                    writeDaqSize!=1
+ 1165  4                  #endif
+ 1166  4                  || ccp.DaqListPtr==0) {
+ 1167  5                  ccp.Crm[1] = CRC_CMD_SYNTAX;
+ 1168  5                } else {
+ 1169  5                  #ifdef CCP_DAQ_BASE_ADDR
+                            ccp.DaqListPtr->ptr = ccpGetDaqPointer(writeDaqAddrExt,writeDaqAddr);
+                          #else
+ 1172  5                    ccp.DaqListPtr->ptr = (CCP_DAQBYTEPTR)ccpGetPointer(writeDaqAddrExt,writeDaqAddr);
+ 1173  5                  #endif
+ 1174  5                  #ifdef CCP_ODT_ENTRY_SIZE
+                            ccp.DaqListPtr->siz = writeDaqSize;
+                          #endif
+ 1177  5                }
+ 1178  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: WRITE_DAQ size=%u,ext=%u,addr=%lu\n",ctr,writeDaqSize,writeDaqA
+             -ddrExt,writeDaqAddr);
+                        #endif
+ 1181  4      
+ 1182  4                #undef writeDaqSize
+ 1183  4                #undef writeDaqAddrExt
+ 1184  4                #undef writeDaqAddr
+ 1185  4              }
+ 1186  3              break;
+ 1187  3      
+ 1188  3            case CC_START_STOP: /* Cyclic aquisition start/stop */
+ 1189  3              {
+ 1190  4                #define ssCmd                 com[2]  /* Start or Stop */
+ 1191  4                #define ssDaq                 com[3]  /* DAQ list */
+ 1192  4                #define ssLast                com[4]  /* Last ODT to send */
+ 1193  4                #define ssEventChannel        com[5]  /* Event Channel Number */
+ 1194  4                #define ssPrescaler (*(CCP_WORD*)&com[6]) /* Prescaler */
+ 1195  4      
+ 1196  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_DAQ))
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                          else
+                        #endif
+ 1201  4                if (!(ccp.SessionStatus&SS_DAQ)) { /* Not initialized */
+ 1202  5                 ccp.Crm[1] = CRC_DAQ_INIT_REQUEST;
+ 1203  5                }
+ 1204  4                else {
+ 1205  5                  switch (ssCmd) {
+ 1206  6                    case 0: /* stop */
+ 1207  6                      ccpStopDaq(ssDaq);
+ 1208  6                      break;
+ 1209  6                    case 1: /* start */
+ 1210  6                      ccpPrepareDaq(ssDaq,ssLast,ssEventChannel,ssPrescaler);
+ 1211  6                      ccpStartDaq(ssDaq);
+ 1212  6                      #ifdef CCP_TESTMODE
+                                if (gDebugLevel) ccpPrintDaqList(ssDaq);
+                              #endif
+ 1215  6                      break;
+ 1216  6                    case 2: /* prepare */
+ 1217  6                      ccpPrepareDaq(ssDaq,ssLast,ssEventChannel,ssPrescaler);
+ 1218  6                      #ifdef CCP_TESTMODE
+                                if (gDebugLevel) ccpPrintDaqList(ssDaq);
+                              #endif
+ 1221  6                      break;
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 21  
+
+ 1222  6                    default:
+ 1223  6                      ccp.Crm[1] = CRC_CMD_SYNTAX;
+ 1224  6                      break;
+ 1225  6                  }
+ 1226  5                }
+ 1227  4      
+ 1228  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: START_STOP cmd=%u,daq=%u,last=%u,eventChannel=%u,prescaler=%u\n
+             -",ctr,ssCmd,ssDaq,ssLast,ssEventChannel,ssPrescaler);
+                        #endif
+ 1231  4      
+ 1232  4                #undef ssCmd
+ 1233  4                #undef ssDaq
+ 1234  4                #undef ssLast
+ 1235  4                #undef ssEventChannel
+ 1236  4                #undef ssPrescaler
+ 1237  4              }
+ 1238  3              break;
+ 1239  3      
+ 1240  3            case CC_START_STOP_ALL: /* Cyclic aquisition start/stop */
+ 1241  3              {
+ 1242  4                #define ssCmd                 com[2]  /* Start or Stop */
+ 1243  4      
+ 1244  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_DAQ))
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                          else
+                        #endif
+ 1249  4                if (!(ccp.SessionStatus&SS_DAQ)) { /* Not initialized */
+ 1250  5                 ccp.Crm[1] = CRC_DAQ_INIT_REQUEST;
+ 1251  5                } else {
+ 1252  5                  switch (ssCmd) {
+ 1253  6                    case 0: /* Stop */
+ 1254  6                      ccpStopAllDaq();
+ 1255  6                      break;
+ 1256  6                    case 1: /* Start */
+ 1257  6                      ccpStartAllPreparedDaq();
+ 1258  6                      break;
+ 1259  6                    default:
+ 1260  6                      ccp.Crm[1] = CRC_CMD_SYNTAX;
+ 1261  6                      break;
+ 1262  6                  }
+ 1263  5                }
+ 1264  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: START_STOP_ALL cmd=%u\n",ctr,ssCmd);
+                        #endif
+ 1267  4      
+ 1268  4                #undef ssCmd
+ 1269  4              }
+ 1270  3              break;
+ 1271  3      
+ 1272  3            #endif /* CCP_DAQ */
+ 1273  3      
+ 1274  3            #ifdef CCP_CHECKSUM
+ 1275  3      
+ 1276  3            case CC_BUILD_CHKSUM: /* Build Checksum */
+ 1277  3              {
+ 1278  4                CCP_DWORD s;
+ 1279  4      
+ 1280  4                /* Initialize Responce */
+ 1281  4                ccp.Crm[3] = sizeof(CCP_CHECKSUM_TYPE); /* Checksum Size */
+ 1282  4                #ifdef CCP_CHECKSUM_CCITT               /* Checksum */
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 22  
+
+                          *(CCP_DWORD*)&ccp.Crm[4] = 0xFFFFFFFF;
+                        #else
+ 1285  4                  *(CCP_DWORD*)&ccp.Crm[4] = 0;
+ 1286  4                #endif
+ 1287  4                ccp.MTA[CCP_INTERNAL_MTA] = ccp.MTA[0];        /* MTA[0] is not affected */
+ 1288  4                #ifdef CCP_MOTOROLA
+ 1289  4                  s = (*(CCP_WORD*)&com[4]) | ((*(CCP_WORD*)&com[2])<<16);
+*** WARNING C200 IN LINE 1289 OF src\app\ccp\ccp.c: '<<': shift factor out of range, truncated
+ 1290  4                #else
+                          s = (*(CCP_WORD*)&com[2]) | ((*(CCP_WORD*)&com[4])<<16);
+                        #endif
+ 1293  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: BUILD_CHKSUM size=%u\n",ctr,s);
+                        #endif
+ 1296  4                #ifndef CCP_CPUTYPE_32BIT
+ 1297  4                  if (s&0xffff0000) ccp.Crm[1] = CRC_OUT_OF_RANGE; /* Range, max. 64K-1 on <32Bit CPUs */
+ 1298  4                  ccp.CheckSumSize = (CCP_WORD)s;
+ 1299  4                #else
+                          ccp.CheckSumSize = s;
+                        #endif
+ 1302  4                if (ccp.Crm[1]==0) {
+ 1303  5                  RST_PORT_BIT(1); /* Timingtest */
+ 1304  5                  return; /* Checksum calculation will be performed by ccpBackground() */
+ 1305  5                }
+ 1306  4      
+ 1307  4              }
+ 1308  3              break;
+ 1309  3      
+ 1310  3            #endif /* CCP_CHECKSUM */
+ 1311  3      
+ 1312  3            /* Flash Programming Kernel Download */
+ 1313  3            #ifdef CCP_BOOTLOADER_DOWNLOAD
+ 1314  3      
+ 1315  3            case CC_PROGRAM_PREPARE: /* Prepare flash kernel download */
+ 1316  3              {
+ 1317  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: PROGRAM_PREPARE\n",ctr);
+                        #endif
+ 1320  4                if (!ccpDisableNormalOperation(ccp.MTA[0],*(CCP_WORD*)&com[2])) {
+ 1321  5                  ccp.Crm[1] = CRC_ACCESS_DENIED;
+ 1322  5                }
+ 1323  4              }
+ 1324  3              break;
+ 1325  3      
+ 1326  3            case CC_PROGRAM_START:   /* Start flash kernel */
+ 1327  3              {
+ 1328  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: PROGRAM_START\n",ctr);
+                        #endif
+ 1331  4                #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_PGM))
+                          {
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                          }
+                          else
+                          {
+              
+                          }
+                        #endif
+ 1341  4               // ((ccpBootLoader_t)ccp.MTA[0])(&ccp,com);
+ 1342  4              }
+ 1343  3              break;
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 23  
+
+ 1344  3      
+ 1345  3            #endif /* CCP_BOOTLOADER_DOWNLOAD */
+ 1346  3      
+ 1347  3            /* Flash Programming */
+ 1348  3            #ifdef CCP_PROGRAM
+              
+                    case CC_CLEAR_MEMORY: /* Clear Memory */
+                      {
+                        CCP_DWORD s;
+              
+                        #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_PGM))
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                          else
+                        #endif
+              
+                        #ifdef CCP_BOOTLOADER
+                          /* Transfer control to the CCP bootloader */
+                          ccpBootLoaderStartup(&ccp,com); /* Never returns */
+                        #else
+                          /* Clear flash sector */
+                          #ifdef CCP_MOTOROLA
+                            s = (*(CCP_WORD*)&com[4]) | ((*(CCP_WORD*)&com[2])<<16);
+                          #else
+                            s = (*(CCP_WORD*)&com[2]) | ((*(CCP_WORD*)&com[4])<<16);
+                          #endif
+                          ccpFlashClear(ccp.MTA[0],s);
+                        #endif
+              
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: CLEAR_MEMORY size=%u\n",ctr,s);
+                        #endif
+                      }
+                      break;
+              
+                    /* Flash Programming */
+                    #ifndef CCP_BOOTLOADER
+              
+                    case CC_PROGRAM: /* Program */
+                      {
+                        CCP_BYTE r;
+                        #define size com[2]
+                        #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_PGM)) {
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                            r = 0;
+                          }
+                          else
+                        #endif
+                        r = ccpFlashProgramm(&com[3],ccp.MTA[0],size);
+                        ccp.MTA[0] += size;
+                        if (r==CCP_WRITE_PENDING) return; /* FLASH write pending */
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            CCPPRINT("%u: PROGRAM ",ctr);
+                            if (size==0) {
+                              CCPPRINT("EOS\n");
+                            } else {
+                              int i;
+                              for (i=0;i<size;i++) CCPPRINT("%02X ",com[3+i]);
+                              CCPPRINT("\n");
+                            }
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 24  
+
+                          }
+                        #endif
+              
+                        #undef size
+                      }
+                      break;
+              
+                    case CC_PROGRAM6: /* Program */
+                      {
+                        CCP_BYTE r;
+                        #ifdef CCP_SEED_KEY
+                          if (!(ccp.ProtectionStatus&PL_PGM)) {
+                            ccp.Crm[1] = CRC_ACCESS_DENIED;
+                            r = 0;
+                          }
+                          else
+                        #endif
+                        r = ccpFlashProgramm(&com[2],ccp.MTA[0],6);
+                        ccp.MTA[0] += 6;
+                        if (r==CCP_WRITE_PENDING) return; /* FLASH write pending */
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) {
+                            int i;
+                            CCPPRINT("%u: PROGRAM6: ",ctr);
+                            for (i=0;i<6;i++) CCPPRINT("%02X ",com[2+i]);
+                            CCPPRINT("\n");
+                          }
+                        #endif
+                      }
+                      break;
+              
+                    #endif /* !CCP_BOOTLOADER */
+                    #endif /* CCP_PROGRAM */
+ 1439  3      
+ 1440  3            #ifdef CCP_CALPAGE
+              
+                    case CC_SET_CAL_PAGE: /* Select Calibration Page */
+                      {
+                        ccpSetCalPage((CCP_DWORD)ccp.MTA[0]);
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: SEL_CAL_PAGE id=%08Xh\n",ctr,(CCP_DWORD)ccp.MTA[0]);
+                        #endif
+                      }
+                      break;
+              
+                    case CC_GET_CAL_PAGE: /* Get Active Calibration Page */
+                      {
+                        ccp.Crm[3] = 0; /* Address Extension */
+                        *(CCP_DWORD*)&ccp.Crm[4] = ccpGetCalPage(); /* Address */
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: GET_CAL_PAGE -> id=%08Xh\n",ctr,*(CCP_DWORD*)&ccp.Crm[4]);
+                        #endif
+                      }
+                      break;
+              
+                    #endif /* CCP_CALPAGE */
+ 1462  3      
+ 1463  3            #ifdef CCP_SET_SESSION_STATUS
+              
+                    case CC_SET_S_STATUS: /* Set Session Status */
+                      {
+                        /* Set Resume and Store mode in SessionStatus */
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 25  
+
+                        ccp.SessionStatus &= ~(SS_STORE|SS_RESUME);
+                        ccp.SessionStatus |= (com[2]&(SS_STORE|SS_RESUME));
+              
+                        /* Save as UserSessionStatus */
+                        ccp.UserSessionStatus = com[2];
+              
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: SET_S_STATUS status=%02X\n",ctr,ccp.UserSessionStatus);
+                        #endif
+                      }
+                      break;
+              
+                    case CC_GET_S_STATUS: /* Get Session Status */
+                      {
+                        ccp.Crm[3] = ccp.UserSessionStatus;
+                        ccp.Crm[4] = 0; /* No additional status */
+              
+                        #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: GET_S_STATUS -> status=%02X\n",ctr,ccp.Crm[3]);
+                        #endif
+                      }
+                      break;
+              
+                    #endif /* CCP_SET_SESSION_STATUS */
+ 1492  3      
+ 1493  3            case CC_GET_CCP_VERSION: /* Get Version */
+ 1494  3              {
+ 1495  4                ccp.Crm[3] = CCP_VERSION_MAJOR;
+ 1496  4                ccp.Crm[4] = CCP_VERSION_MINOR;
+ 1497  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("%u: GET_VERSION -> major=%02X minor=%02X\n",ctr,ccp.Crm[3],ccp.Crm[
+             -4]);
+                        #endif
+ 1500  4              }
+ 1501  3              break;
+ 1502  3      
+ 1503  3            default: /* unknown */
+ 1504  3              {
+ 1505  4                ccp.Crm[1] = CRC_CMD_UNKNOWN;
+ 1506  4                #ifdef CCP_TESTMODE
+                          if (gDebugLevel) CCPPRINT("*** UNKNOWN COMMAND ***\n");
+                        #endif
+ 1509  4                break;
+ 1510  4              }
+ 1511  3      
+ 1512  3          } /* switch */
+ 1513  2      
+ 1514  2      
+ 1515  2          /* Responce */
+ 1516  2          /* |||| */
+ 1517  2        }
+ 1518  1      
+ 1519  1        /* Not connected */
+ 1520  1        else {
+ 1521  2      
+ 1522  2          RST_PORT_BIT(1); /* Timingtest */
+ 1523  2      
+ 1524  2          /* No responce */
+ 1525  2          return;
+ 1526  2        }
+ 1527  1      
+ 1528  1        ccpSendCrm();
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 26  
+
+ 1529  1      
+ 1530  1        RST_PORT_BIT(1); /* Timingtest */
+ 1531  1      }
+ 1532         
+ 1533         
+ 1534         /*--------------------------------------------------------------------------*/
+ 1535         /* Send notification callback */
+ 1536         /* ccpSend must not fail, when called from this function */
+ 1537         /*--------------------------------------------------------------------------*/
+ 1538         CCP_BYTE ccpSendCallBack( void ) {
+ 1539  1       // OS_CPU_SR   cpu_sr = 0;
+ 1540  1      
+ 1541  1        SET_PORT_BIT(2); /* Timingtest */
+ 1542  1      
+ 1543  1        /* Clear all pending flags, except for CCP_CMD_PENDING */
+ 1544  1        ccp.SendStatus &= ~CCP_SEND_PENDING;
+ 1545  1      
+ 1546  1        /* Send a CRM message */
+ 1547  1        if (ccp.SendStatus&CCP_CRM_REQUEST) {
+ 1548  2          ccp.SendStatus &= ~CCP_CRM_REQUEST;
+ 1549  2          ccpSendCrm();
+ 1550  2          RST_PORT_BIT(2); /* Timingtest */
+ 1551  2          return 1;
+ 1552  2        }
+ 1553  1      
+ 1554  1        /* Send a DAQ message */
+ 1555  1        #ifdef CCP_DAQ
+ 1556  1          if (ccp.SessionStatus&SS_RUN) {
+ 1557  2      
+ 1558  2            /* Send a  DAQ message (DTM) from the queue */
+ 1559  2            #ifdef CCP_SEND_QUEUE
+ 1560  2      
+ 1561  2              CCP_DISABLE_INTERRUPT;
+ 1562  2              if (ccp.Queue.len) {
+ 1563  3                ccp.SendStatus |= CCP_DTM_PENDING;
+ 1564  3                ccpSend((CCP_BYTEPTR)&ccp.Queue.msg[ccp.Queue.rp]);
+ 1565  3                ccp.Queue.rp++;
+ 1566  3                if (ccp.Queue.rp>=CCP_SEND_QUEUE_SIZE) ccp.Queue.rp = 0;
+ 1567  3                ccp.Queue.len--;
+ 1568  3                CCP_ENABLE_INTERRUPT;
+ 1569  3                RST_PORT_BIT(2); /* Timingtest */
+ 1570  3                return 1;
+ 1571  3              }
+ 1572  2              CCP_ENABLE_INTERRUPT;
+ 1573  2      
+ 1574  2            /* Send a pending DAQ message (DTM) */
+ 1575  2            #else
+              
+                      if (ccp.SendStatus&CCP_DTM_REQUEST) {
+                        ccp.SendStatus &= ~CCP_DTM_REQUEST;
+                        ccpSendDtm();
+                        RST_PORT_BIT(2); /* Timingtest */
+                        return 1;
+                      }
+              
+                    #endif
+ 1585  2          }
+ 1586  1        #endif
+ 1587  1      
+ 1588  1        RST_PORT_BIT(2); /* Timingtest */
+ 1589  1        return 0;
+ 1590  1      }
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 27  
+
+ 1591         
+ 1592         
+ 1593         /*--------------------------------------------------------------------------*/
+ 1594         /* Initialization */
+ 1595         /*--------------------------------------------------------------------------*/
+ 1596         
+ 1597         void ccpInit( void ) {
+ 1598  1      
+ 1599  1        /* Initialize all CCP variables to zero */
+ 1600  1        CCP_BYTEPTR p;
+ 1601  1        CCP_BYTEPTR pl;
+ 1602  1        p = (CCP_BYTEPTR)&ccp;
+ 1603  1        pl = p+sizeof(ccp);
+ 1604  1        while (p<pl) *p++ = 0;
+ 1605  1      
+ 1606  1      }
+ 1607         
+ 1608         
+ 1609         /*--------------------------------------------------------------------------*/
+ 1610         /* Test */
+ 1611         /* Screen output for test and diagnostics */
+ 1612         /*--------------------------------------------------------------------------*/
+ 1613         
+ 1614         #ifdef CCP_TESTMODE
+              
+              #ifdef CCP_DAQ
+              
+              /* Print all DAQ lists to screen */
+              static void ccpPrintDaqList( CCP_BYTE daq )
+              {
+              
+                CCP_BYTE i,j,f;
+              
+                if (daq>=CCP_MAX_DAQ) return;
+                CCPPRINT("DAQ-List %u:\n",daq);
+                CCPPRINT(" event channel=%u,",ccp.DaqList[daq].eventChannel);
+                CCPPRINT(" prescaler=%u,",ccp.DaqList[daq].prescaler);
+                CCPPRINT(" last=%u,",ccp.DaqList[daq].last);
+                CCPPRINT(" flags=%u\n",ccp.DaqList[daq].flags);
+                for (j=0;j<CCP_MAX_ODT;j++) {
+                  for (i=0,f=1;i<=6;i++) {
+                    if (ccp.DaqList[daq].odt[j][i].ptr) {
+                      if (f) { CCPPRINT(" PID %u: ",daq*CCP_MAX_ODT+j); f = 0; }
+                      #ifdef CCP_ODT_ENTRY_SIZE
+                        CCPPRINT("[%p,%u],",ccp.DaqList[daq].odt[j][i].ptr,ccp.DaqList[daq].odt[j][i].siz);
+                      #else
+                        CCPPRINT("[%p],",ccp.DaqList[daq].odt[j][i].ptr);
+                      #endif
+                    }
+                  }
+                  if (!f) CCPPRINT("\n");
+                } /* j */
+              }
+              
+              #endif
+              
+              #endif
+ 1648         
+ 1649         #endif
+ 1650         
+
+
+C166 COMPILER V7.57.0, CCP                                                                 11/13/2020 15:09:25 PAGE 28  
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =        3086     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =    --------     --------
+  FAR-DATA SIZE    =         188     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =          14     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

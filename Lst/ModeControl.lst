@@ -1,0 +1,622 @@
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE MODECONTROL
+OBJECT MODULE PLACED IN .\Obj\ModeControl.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\mode control\ModeControl.c MODV2 LARGE BROWSE INCDIR(.\src;.\s
+                    -rc\bsw;.\src\driver;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic
+                    -;.\src\app\mode control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\
+                    -time measure;.\src\app\rte) MODV2 DEBUG PRINT(.\Lst\ModeControl.lst) OBJECT(.\Obj\ModeControl.obj) 
+
+ stmt lvl     source
+
+    1         /*
+    2          * File: ModeControl.c
+    3          *
+    4          * Code generated for Simulink model 'ModeControl'.
+    5          *
+    6          * Model version                  : 1.25
+    7          * Simulink Coder version         : 8.2 (R2012a) 29-Dec-2011
+    8          * TLC version                    : 8.2 (Dec 29 2011)
+    9          * C/C++ source code generated on : Tue Oct 23 15:44:42 2012
+   10          *
+   11          * Target selection: ert.tlc
+   12          * Embedded hardware selection: Freescale->HC(S)12
+   13          * Code generation objectives:
+   14          *    1. Execution efficiency
+   15          *    2. Safety precaution
+   16          *    3. MISRA-C:2004 guidelines
+   17          * Validation result: Not run
+   18          */
+   19         
+   20         #include "ModeControl.h"
+   21         #include "ModeControl_private.h"
+   22         
+   23         /* Named constants for Chart: '<Root>/MaintenJudge' */
+   24         #define ModeControl_IN_High            ((uint8_T)1U)
+   25         #define ModeControl_IN_Idle            ((uint8_T)1U)
+   26         #define ModeControl_IN_Low             ((uint8_T)2U)
+   27         #define ModeControl_IN_NO_ACTIVE_CHILD ((uint8_T)0U)
+   28         #define ModeControl_IN_Stage1          ((uint8_T)2U)
+   29         #define ModeControl_IN_Stage2          ((uint8_T)2U)
+   30         
+   31         /* Named constants for Chart: '<Root>/mode control' */
+   32         #define ModeControl_IN_FailureMode     ((uint8_T)1U)
+   33         #define ModeControl_IN_MaintenanceMode ((uint8_T)2U)
+   34         #define ModeControl_IN_Normal          ((uint8_T)3U)
+   35         #define ModeControl_IN_PowerDown       ((uint8_T)4U)
+   36         #define ModeControl_IN_PowerDownTest   ((uint8_T)5U)
+   37         #define ModeControl_IN_PowerUpTest     ((uint8_T)6U)
+   38         #define ModeControl_IN_dummy           ((uint8_T)7U)
+   39         
+   40         /* Block signals and states (auto storage) */
+   41         D_Work_ModeControl ModeControl_DWork;
+   42         
+   43         /* External outputs (root outports fed by signals with auto storage) */
+   44         ExternalOutputs_ModeControl ModeControl_Y;
+   45         
+   46         /* Forward declaration for local functions */
+   47         static uint8_T ModeControl_MaintenHigh(void);
+   48         static uint8_T ModeControl_MaintenLow(void);
+   49         static uint8_T ModeControl_One2Two(void);
+   50         static uint8_T ModeControl_Zero2One(void);
+   51         static uint8_T ModeControl_ignON(void);
+   52         static uint8_T ModeControl_ignOFF(void);
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 2   
+
+   53         static uint8_T ModeControl_FAILtoMTAIN(void);
+   54         static uint8_T ModeControl_NMtoPDT(void);
+   55         static uint8_T ModeControl_NMtoFAIL(void);
+   56         static uint8_T ModeControl_NMtoMTAIN(void);
+   57         static uint8_T ModeControl_PDtoOFF(void);
+   58         static uint8_T ModeControl_PDTtoPD(void);
+   59         static uint8_T ModeControl_PDTtoPUT(void);
+   60         static uint8_T ModeControl_PDTtoFAIL(void);
+   61         static uint8_T ModeControl_PUTtoNM(void);
+   62         static uint8_T ModeControl_PUTtoFAIL(void);
+   63         static uint8_T ModeControl_PUTtoPD(void);
+   64         
+   65         /* Function for Chart: '<Root>/MaintenJudge' */
+   66         static uint8_T ModeControl_MaintenHigh(void)
+   67         {
+   68  1        /* Graphical Function 'MaintenHigh': '<S1>:19' */
+   69  1        /* Transition: '<S1>:22' */
+   70  1        return (uint8_T)(MaintenLevel_u8_Sig != 0);
+   71  1      }
+   72         
+   73         /* Function for Chart: '<Root>/MaintenJudge' */
+   74         static uint8_T ModeControl_MaintenLow(void)
+   75         {
+   76  1        /* Graphical Function 'MaintenLow': '<S1>:8' */
+   77  1        /* Transition: '<S1>:11' */
+   78  1        return (uint8_T)(MaintenLevel_u8_Sig == 0);
+   79  1      }
+   80         
+   81         /* Function for Chart: '<Root>/MaintenJudge' */
+   82         static uint8_T ModeControl_One2Two(void)
+   83         {
+   84  1        /* Graphical Function 'One2Two': '<S1>:27' */
+   85  1        /* Transition: '<S1>:30' */
+   86  1        return (uint8_T)(((ModeControl_DWork.MaintenStage == 1) &&
+   87  1                          (ModeControl_DWork.MaintenLowCnt < 4000U)) &&
+   88  1                         (ModeControl_DWork.MaintenLowCnt > 2000U));
+   89  1      }
+   90         
+   91         /* Function for Chart: '<Root>/MaintenJudge' */
+   92         static uint8_T ModeControl_Zero2One(void)
+   93         {
+   94  1        /* Graphical Function 'Zero2One': '<S1>:62' */
+   95  1        /* Transition: '<S1>:64' */
+   96  1        return (uint8_T)(ModeControl_DWork.MaintenStage == 0);
+   97  1      }
+   98         
+   99         /* Function for Chart: '<Root>/mode control' */
+  100         static uint8_T ModeControl_ignON(void)
+  101         {
+  102  1        /* Graphical Function 'ignON': '<S2>:12' */
+  103  1        /* Transition: '<S2>:15' */
+  104  1        return (uint8_T)(IGNStatus_u8_Sig == 1);
+  105  1      }
+  106         
+  107         /* Function for Chart: '<Root>/mode control' */
+  108         static uint8_T ModeControl_ignOFF(void)
+  109         {
+  110  1        /* Graphical Function 'ignOFF': '<S2>:39' */
+  111  1        /* Transition: '<S2>:42' */
+  112  1        return (uint8_T)(IGNStatus_u8_Sig == 0);
+  113  1      }
+  114         
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 3   
+
+  115         /* Function for Chart: '<Root>/mode control' */
+  116         static uint8_T ModeControl_FAILtoMTAIN(void)
+  117         {
+  118  1        /* Graphical Function 'FAILtoMTAIN': '<S2>:148' */
+  119  1        /* Transition: '<S2>:151' */
+  120  1        return (uint8_T)(((IGNStatus_u8_Sig == 1) && (MaintenStatus_u8_Sig == 1)) &&
+  121  1                         ((VehicleStatus_u8_Sig == 0) || (VehSpeedFault_u8_Sig == 1)));
+  122  1      }
+  123         
+  124         /* Function for Chart: '<Root>/mode control' */
+  125         static uint8_T ModeControl_NMtoPDT(void)
+  126         {
+  127  1        /* Graphical Function 'NMtoPDT': '<S2>:164' */
+  128  1        /* Transition: '<S2>:167' */
+  129  1        return (uint8_T)(((IGNStatus_u8_Sig == 0) && (NormalFinish_u8_Sig == 1)) &&
+  130  1                         ((FaultLevel_u8_Sig == 0) || (FaultLevel_u8_Sig == 1)));
+  131  1      }
+  132         
+  133         /* Function for Chart: '<Root>/mode control' */
+  134         static uint8_T ModeControl_NMtoFAIL(void)
+  135         {
+  136  1        /* Graphical Function 'NMtoFAIL': '<S2>:110' */
+  137  1        /* Transition: '<S2>:113' */
+  138  1        return (uint8_T)((FaultLevel_u8_Sig == 2) || (FaultLevel_u8_Sig == 3));
+  139  1      }
+  140         
+  141         /* Function for Chart: '<Root>/mode control' */
+  142         static uint8_T ModeControl_NMtoMTAIN(void)
+  143         {
+  144  1        /* Graphical Function 'NMtoMTAIN': '<S2>:116' */
+  145  1        /* Transition: '<S2>:119' */
+  146  1        return (uint8_T)((MaintenStatus_u8_Sig == 1) && ((VehicleStatus_u8_Sig == 0) ||
+  147  1                          (VehSpeedFault_u8_Sig == 1)));
+  148  1      }
+  149         
+  150         /* Function for Chart: '<Root>/mode control' */
+  151         static uint8_T ModeControl_PDtoOFF(void)
+  152         {
+  153  1        /* Graphical Function 'PDtoOFF': '<S2>:142' */
+  154  1        /* Transition: '<S2>:145' */
+  155  1        return (uint8_T)(PDFinish_u8_Sig == 1);
+  156  1      }
+  157         
+  158         /* Function for Chart: '<Root>/mode control' */
+  159         static uint8_T ModeControl_PDTtoPD(void)
+  160         {
+  161  1        /* Graphical Function 'PDTtoPD': '<S2>:120' */
+  162  1        /* Transition: '<S2>:123' */
+  163  1        return (uint8_T)(((IGNStatus_u8_Sig == 0) && (PDTFinish_u8_Sig == 1)) &&
+  164  1                         ((FaultLevel_u8_Sig == 0) || (FaultLevel_u8_Sig == 1)));
+  165  1      }
+  166         
+  167         /* Function for Chart: '<Root>/mode control' */
+  168         static uint8_T ModeControl_PDTtoPUT(void)
+  169         {
+  170  1        /* Graphical Function 'PDTtoPUT': '<S2>:124' */
+  171  1        /* Transition: '<S2>:127' */
+  172  1        return (uint8_T)(((IGNStatus_u8_Sig == 1) && (PDTFinish_u8_Sig == 1)) &&
+  173  1                         ((FaultLevel_u8_Sig == 0) || (FaultLevel_u8_Sig == 1)));
+  174  1      }
+  175         
+  176         /* Function for Chart: '<Root>/mode control' */
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 4   
+
+  177         static uint8_T ModeControl_PDTtoFAIL(void)
+  178         {
+  179  1        /* Graphical Function 'PDTtoFAIL': '<S2>:128' */
+  180  1        /* Transition: '<S2>:131' */
+  181  1        return (uint8_T)((FaultLevel_u8_Sig == 2) || (FaultLevel_u8_Sig == 3));
+  182  1      }
+  183         
+  184         /* Function for Chart: '<Root>/mode control' */
+  185         static uint8_T ModeControl_PUTtoNM(void)
+  186         {
+  187  1        /* Graphical Function 'PUTtoNM': '<S2>:99' */
+  188  1        /* Transition: '<S2>:102' */
+  189  1        return (uint8_T)(((IGNStatus_u8_Sig == 1) && (PUTFinish_u8_Sig == 1)) &&
+  190  1                         ((FaultLevel_u8_Sig == 0) || (FaultLevel_u8_Sig == 1)));
+  191  1      }
+  192         
+  193         /* Function for Chart: '<Root>/mode control' */
+  194         static uint8_T ModeControl_PUTtoFAIL(void)
+  195         {
+  196  1        /* Graphical Function 'PUTtoFAIL': '<S2>:103' */
+  197  1        /* Transition: '<S2>:106' */
+  198  1        return (uint8_T)((FaultLevel_u8_Sig == 2) || (FaultLevel_u8_Sig == 3));
+  199  1      }
+  200         
+  201         /* Function for Chart: '<Root>/mode control' */
+  202         static uint8_T ModeControl_PUTtoPD(void)
+  203         {
+  204  1        /* Graphical Function 'PUTtoPD': '<S2>:160' */
+  205  1        /* Transition: '<S2>:163' */
+  206  1        return (uint8_T)((IGNStatus_u8_Sig == 0) && ((FaultLevel_u8_Sig == 0) ||
+  207  1          (FaultLevel_u8_Sig == 1)));
+  208  1      }
+  209         
+  210         /* Model step function */
+  211         void ModeControl_step(void)
+  212         {
+  213  1        boolean_T guard;
+  214  1        boolean_T guard_0;
+  215  1      
+  216  1        /* Chart: '<Root>/MaintenJudge' */
+  217  1        /* Gateway: MaintenJudge */
+  218  1        /* During: MaintenJudge */
+  219  1        if (ModeControl_DWork.is_active_c1_ModeControl == 0) {
+  220  2          /* Entry: MaintenJudge */
+  221  2          ModeControl_DWork.is_active_c1_ModeControl = 1U;
+  222  2      
+  223  2          /* Entry Internal: MaintenJudge */
+  224  2          /* Transition: '<S1>:54' */
+  225  2          ModeControl_DWork.is_c1_ModeControl = ModeControl_IN_High;
+  226  2      
+  227  2          /* Entry 'High': '<S1>:52' */
+  228  2          ModeControl_DWork.LevelHighCnt = 0U;
+  229  2          ModeControl_DWork.LevelLowCnt = 0U;
+  230  2          MaintenStatus_u8_Sig = 0U;
+  231  2      
+  232  2          /* Entry Internal 'High': '<S1>:52' */
+  233  2          /* Transition: '<S1>:58' */
+  234  2          ModeControl_DWork.is_High = ModeControl_IN_Idle;
+  235  2        } else {
+  236  2          guard = FALSE;
+  237  2          guard_0 = FALSE;
+  238  2          if (ModeControl_DWork.is_c1_ModeControl == ModeControl_IN_High) {
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 5   
+
+  239  3            /* During 'High': '<S1>:52' */
+  240  3            if (ModeControl_MaintenLow() != 0) {
+  241  4              /* Transition: '<S1>:55' */
+  242  4              ModeControl_DWork.LevelLowCnt = (uint8_T)(ModeControl_DWork.LevelLowCnt
+  243  4                + 1);
+  244  4              ModeControl_DWork.LevelHighCnt = 0U;
+  245  4              if (ModeControl_DWork.LevelLowCnt >= 20) {
+  246  5                /* Transition: '<S1>:78' */
+  247  5                /* Exit Internal 'High': '<S1>:52' */
+  248  5                ModeControl_DWork.is_High = ModeControl_IN_NO_ACTIVE_CHILD;
+  249  5                ModeControl_DWork.is_c1_ModeControl = ModeControl_IN_Low;
+  250  5      
+  251  5                /* Entry 'Low': '<S1>:53' */
+  252  5                ModeControl_DWork.LevelLowCnt = 0U;
+  253  5      
+  254  5                /* Entry Internal 'Low': '<S1>:53' */
+  255  5                /* Transition: '<S1>:68' */
+  256  5                ModeControl_DWork.is_Low = ModeControl_IN_Idle;
+  257  5              } else {
+  258  5                /* Transition: '<S1>:80' */
+  259  5                guard_0 = TRUE;
+  260  5              }
+  261  4            } else {
+  262  4              guard_0 = TRUE;
+  263  4            }
+  264  3          } else {
+  265  3            /* During 'Low': '<S1>:53' */
+  266  3            if (ModeControl_MaintenHigh() != 0) {
+  267  4              /* Transition: '<S1>:56' */
+  268  4              ModeControl_DWork.LevelHighCnt = (uint8_T)
+  269  4                (ModeControl_DWork.LevelHighCnt + 1);
+  270  4              ModeControl_DWork.LevelLowCnt = 0U;
+  271  4              if (ModeControl_DWork.LevelHighCnt >= 20) {
+  272  5                /* Transition: '<S1>:82' */
+  273  5                /* Exit Internal 'Low': '<S1>:53' */
+  274  5                ModeControl_DWork.is_Low = ModeControl_IN_NO_ACTIVE_CHILD;
+  275  5                ModeControl_DWork.is_c1_ModeControl = ModeControl_IN_High;
+  276  5      
+  277  5                /* Entry 'High': '<S1>:52' */
+  278  5                ModeControl_DWork.LevelHighCnt = 0U;
+  279  5                MaintenStatus_u8_Sig = 0U;
+  280  5      
+  281  5                /* Entry Internal 'High': '<S1>:52' */
+  282  5                /* Transition: '<S1>:58' */
+  283  5                ModeControl_DWork.is_High = ModeControl_IN_Idle;
+  284  5              } else {
+  285  5                /* Transition: '<S1>:84' */
+  286  5                guard = TRUE;
+  287  5              }
+  288  4            } else {
+  289  4              guard = TRUE;
+  290  4            }
+  291  3          }
+  292  2      
+  293  2          if (((int16_T)guard_0) == ((int16_T)TRUE)) {
+  294  3            if (ModeControl_DWork.is_High == ModeControl_IN_Idle) {
+  295  4              /* During 'Idle': '<S1>:57' */
+  296  4              if (ModeControl_One2Two() != 0) {
+  297  5                /* Transition: '<S1>:60' */
+  298  5                ModeControl_DWork.is_High = ModeControl_IN_Stage2;
+  299  5      
+  300  5                /* Entry 'Stage2': '<S1>:59' */
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 6   
+
+  301  5                ModeControl_DWork.MaintenStage = 2U;
+  302  5                ModeControl_DWork.MaintenLowCnt = 0U;
+  303  5              } else {
+  304  5                /* Transition: '<S1>:73' */
+  305  5                ModeControl_DWork.MaintenLowCnt = 0U;
+  306  5                ModeControl_DWork.MaintenStage = 0U;
+  307  5                MaintenStatus_u8_Sig = 0U;
+  308  5              }
+  309  4            } else {
+  310  4              /* During 'Stage2': '<S1>:59' */
+  311  4              MaintenStatus_u8_Sig = 1U;
+  312  4            }
+  313  3          }
+  314  2      
+  315  2          if (((int16_T)guard) == ((int16_T)TRUE)) {
+  316  3            if (ModeControl_DWork.is_Low == ModeControl_IN_Idle) {
+  317  4              /* During 'Idle': '<S1>:61' */
+  318  4              if (ModeControl_Zero2One() != 0) {
+  319  5                /* Transition: '<S1>:67' */
+  320  5                ModeControl_DWork.is_Low = ModeControl_IN_Stage1;
+  321  5      
+  322  5                /* Entry 'Stage1': '<S1>:66' */
+  323  5                ModeControl_DWork.MaintenStage = 1U;
+  324  5                ModeControl_DWork.MaintenLowCnt = 0U;
+  325  5              } else {
+  326  5                /* Transition: '<S1>:75' */
+  327  5                ModeControl_DWork.MaintenLowCnt = 0U;
+  328  5                ModeControl_DWork.MaintenStage = 0U;
+  329  5              }
+  330  4            } else {
+  331  4              /* During 'Stage1': '<S1>:66' */
+  332  4              if (ModeControl_DWork.MaintenLowCnt > 12000U) {
+  333  5                /* Transition: '<S1>:70' */
+  334  5                ModeControl_DWork.MaintenLowCnt = 0U;
+  335  5              }
+  336  4      
+  337  4              ModeControl_DWork.MaintenLowCnt = ModeControl_DWork.MaintenLowCnt +
+  338  4                ((uint16_T)1);
+  339  4            }
+  340  3          }
+  341  2        }
+  342  1      
+  343  1        /* End of Chart: '<Root>/MaintenJudge' */
+  344  1      
+  345  1        /* Chart: '<Root>/mode control' */
+  346  1        /* Gateway: mode control */
+  347  1        /* During: mode control */
+  348  1        if (ModeControl_DWork.is_active_c2_ModeControl == 0) {
+  349  2          /* Entry: mode control */
+  350  2          ModeControl_DWork.is_active_c2_ModeControl = 1U;
+  351  2      
+  352  2          /* Entry Internal: mode control */
+  353  2          /* Transition: '<S2>:2' */
+  354  2          ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_dummy;
+  355  2      
+  356  2          /* Entry 'dummy': '<S2>:1' */
+  357  2          SystemMode_u8_Sig = 0U;
+  358  2        } else {
+  359  2          switch (ModeControl_DWork.is_c2_ModeControl) {
+  360  3           case ModeControl_IN_FailureMode:
+  361  3            /* During 'FailureMode': '<S2>:5' */
+  362  3            if (ModeControl_ignOFF() != 0) {
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 7   
+
+  363  4              /* Transition: '<S2>:147' */
+  364  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerDown;
+  365  4      
+  366  4              /* Entry 'PowerDown': '<S2>:30' */
+  367  4              SystemMode_u8_Sig = 9U;
+  368  4              PDFinish_u8_Sig = 0U;
+  369  4            } else if (ModeControl_FAILtoMTAIN() != 0) {
+  370  4              /* Transition: '<S2>:152' */
+  371  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_MaintenanceMode;
+  372  4      
+  373  4              /* Entry 'MaintenanceMode': '<S2>:36' */
+  374  4              SystemMode_u8_Sig = 5U;
+  375  4            } else {
+  376  4              SystemMode_u8_Sig = 110U;
+  377  4            }
+  378  3            break;
+  379  3      
+  380  3           case ModeControl_IN_MaintenanceMode:
+  381  3            /* During 'MaintenanceMode': '<S2>:36' */
+  382  3            if (ModeControl_ignOFF() != 0) {
+  383  4              /* Transition: '<S2>:154' */
+  384  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerDown;
+  385  4      
+  386  4              /* Entry 'PowerDown': '<S2>:30' */
+  387  4              SystemMode_u8_Sig = 9U;
+  388  4              PDFinish_u8_Sig = 0U;
+  389  4            } else {
+  390  4              SystemMode_u8_Sig = 5U;
+  391  4            }
+  392  3            break;
+  393  3      
+  394  3           case ModeControl_IN_Normal:
+  395  3            /* During 'Normal': '<S2>:24' */
+  396  3            if (ModeControl_NMtoPDT() != 0) {
+  397  4              /* Transition: '<S2>:108' */
+  398  4              /* Exit 'Normal': '<S2>:24' */
+  399  4              NormalFinish_u8_Sig = 0U;
+  400  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerDownTest;
+  401  4      
+  402  4              /* Entry 'PowerDownTest': '<S2>:34' */
+  403  4              SystemMode_u8_Sig = 8U;
+  404  4              PDTFinish_u8_Sig = 0U;
+  405  4            } else if (ModeControl_NMtoFAIL() != 0) {
+  406  4              /* Transition: '<S2>:114' */
+  407  4              /* Exit 'Normal': '<S2>:24' */
+  408  4              NormalFinish_u8_Sig = 0U;
+  409  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_FailureMode;
+  410  4      
+  411  4              /* Entry 'FailureMode': '<S2>:5' */
+  412  4              SystemMode_u8_Sig = 110U;
+  413  4            } else if (ModeControl_NMtoMTAIN() != 0) {
+  414  4              /* Transition: '<S2>:115' */
+  415  4              /* Exit 'Normal': '<S2>:24' */
+  416  4              NormalFinish_u8_Sig = 0U;
+  417  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_MaintenanceMode;
+  418  4      
+  419  4              /* Entry 'MaintenanceMode': '<S2>:36' */
+  420  4              SystemMode_u8_Sig = 5U;
+  421  4            } else {
+  422  4              SystemMode_u8_Sig = 2U;
+  423  4            }
+  424  3            break;
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 8   
+
+  425  3      
+  426  3           case ModeControl_IN_PowerDown:
+  427  3            /* During 'PowerDown': '<S2>:30' */
+  428  3            if (ModeControl_PDtoOFF() != 0) {
+  429  4              /* Transition: '<S2>:141' */
+  430  4              /* Exit 'PowerDown': '<S2>:30' */
+  431  4              PDFinish_u8_Sig = 0U;
+  432  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_dummy;
+  433  4      
+  434  4              /* Entry 'dummy': '<S2>:1' */
+  435  4              SystemMode_u8_Sig = 0U;
+  436  4            } else {
+  437  4              SystemMode_u8_Sig = 9U;
+  438  4            }
+  439  3            break;
+  440  3      
+  441  3           case ModeControl_IN_PowerDownTest:
+  442  3            /* During 'PowerDownTest': '<S2>:34' */
+  443  3            if (ModeControl_PDTtoPD() != 0) {
+  444  4              /* Transition: '<S2>:133' */
+  445  4              /* Exit 'PowerDownTest': '<S2>:34' */
+  446  4              PDTFinish_u8_Sig = 0U;
+  447  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerDown;
+  448  4      
+  449  4              /* Entry 'PowerDown': '<S2>:30' */
+  450  4              SystemMode_u8_Sig = 9U;
+  451  4              PDFinish_u8_Sig = 0U;
+  452  4            } else if (ModeControl_PDTtoPUT() != 0) {
+  453  4              /* Transition: '<S2>:132' */
+  454  4              PDTtoPUTflag_u8_Sig = 1U;
+  455  4      
+  456  4              /* Exit 'PowerDownTest': '<S2>:34' */
+  457  4              PDTFinish_u8_Sig = 0U;
+  458  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerUpTest;
+  459  4      
+  460  4              /* Entry 'PowerUpTest': '<S2>:3' */
+  461  4              SystemMode_u8_Sig = 1U;
+  462  4              PUTFinish_u8_Sig = 0U;
+  463  4            } else if (ModeControl_PDTtoFAIL() != 0) {
+  464  4              /* Transition: '<S2>:134' */
+  465  4              /* Exit 'PowerDownTest': '<S2>:34' */
+  466  4              PDTFinish_u8_Sig = 0U;
+  467  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_FailureMode;
+  468  4      
+  469  4              /* Entry 'FailureMode': '<S2>:5' */
+  470  4              SystemMode_u8_Sig = 110U;
+  471  4            } else {
+  472  4              SystemMode_u8_Sig = 8U;
+  473  4            }
+  474  3            break;
+  475  3      
+  476  3           case ModeControl_IN_PowerUpTest:
+  477  3            /* During 'PowerUpTest': '<S2>:3' */
+  478  3            if (ModeControl_PUTtoNM() != 0) {
+  479  4              /* Transition: '<S2>:94' */
+  480  4              /* Exit 'PowerUpTest': '<S2>:3' */
+  481  4              PUTFinish_u8_Sig = 0U;
+  482  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_Normal;
+  483  4      
+  484  4              /* Entry 'Normal': '<S2>:24' */
+  485  4              SystemMode_u8_Sig = 2U;
+  486  4              NormalFinish_u8_Sig = 0U;
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 9   
+
+  487  4            } else if (ModeControl_PUTtoFAIL() != 0) {
+  488  4              /* Transition: '<S2>:107' */
+  489  4              /* Exit 'PowerUpTest': '<S2>:3' */
+  490  4              PUTFinish_u8_Sig = 0U;
+  491  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_FailureMode;
+  492  4      
+  493  4              /* Entry 'FailureMode': '<S2>:5' */
+  494  4              SystemMode_u8_Sig = 110U;
+  495  4            } else if (ModeControl_PUTtoPD() != 0) {
+  496  4              /* Transition: '<S2>:109' */
+  497  4              /* Exit 'PowerUpTest': '<S2>:3' */
+  498  4              PUTFinish_u8_Sig = 0U;
+  499  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerDown;
+  500  4      
+  501  4              /* Entry 'PowerDown': '<S2>:30' */
+  502  4              SystemMode_u8_Sig = 9U;
+  503  4              PDFinish_u8_Sig = 0U;
+  504  4            } else {
+  505  4              SystemMode_u8_Sig = 1U;
+  506  4            }
+  507  3            break;
+  508  3      
+  509  3           default:
+  510  3            /* During 'dummy': '<S2>:1' */
+  511  3            if (ModeControl_ignON() != 0) {
+  512  4              /* Transition: '<S2>:4' */
+  513  4              ModeControl_DWork.is_c2_ModeControl = ModeControl_IN_PowerUpTest;
+  514  4      
+  515  4              /* Entry 'PowerUpTest': '<S2>:3' */
+  516  4              SystemMode_u8_Sig = 1U;
+  517  4              PUTFinish_u8_Sig = 0U;
+  518  4            } else {
+  519  4              SystemMode_u8_Sig = 0U;
+  520  4            }
+  521  3            break;
+  522  3          }
+  523  2        }
+  524  1      
+  525  1        /* End of Chart: '<Root>/mode control' */
+  526  1      }
+  527         
+  528         /* Model initialize function */
+  529         void ModeControl_initialize(void)
+  530         {
+  531  1        /* Registration code */
+  532  1      
+  533  1        /* states (dwork) */
+  534  1        (void) memset((void *)&ModeControl_DWork, 0,
+  535  1                      sizeof(D_Work_ModeControl));
+  536  1      
+  537  1        /* external outputs */
+  538  1        (void) memset((void *)&ModeControl_Y, 0,
+  539  1                      sizeof(ExternalOutputs_ModeControl));
+  540  1      
+  541  1        /* ConstCode for Outport: '<Root>/Tssadjstatus' incorporates:
+  542  1         *  Constant: '<Root>/Constant'
+  543  1         */
+  544  1        ModeControl_Y.Tssadjstatus = 0U;
+  545  1      
+  546  1        /* InitializeConditions for Chart: '<Root>/MaintenJudge' */
+  547  1        ModeControl_DWork.is_High = 0U;
+  548  1        ModeControl_DWork.is_Low = 0U;
+C166 COMPILER V7.57.0, MODECONTROL                                                         11/13/2020 15:09:23 PAGE 10  
+
+  549  1        ModeControl_DWork.is_active_c1_ModeControl = 0U;
+  550  1        ModeControl_DWork.is_c1_ModeControl = 0U;
+  551  1        ModeControl_DWork.MaintenLowCnt = 0U;
+  552  1        ModeControl_DWork.MaintenStage = 0U;
+  553  1        ModeControl_DWork.LevelHighCnt = 0U;
+  554  1        ModeControl_DWork.LevelLowCnt = 0U;
+  555  1        MaintenStatus_u8_Sig = 0U;
+  556  1      
+  557  1        /* InitializeConditions for Chart: '<Root>/mode control' */
+  558  1        ModeControl_DWork.is_active_c2_ModeControl = 0U;
+  559  1        ModeControl_DWork.is_c2_ModeControl = 0U;
+  560  1        PDTFinish_u8_Sig = 0U;
+  561  1        PUTFinish_u8_Sig = 0U;
+  562  1        PDFinish_u8_Sig = 0U;
+  563  1        NormalFinish_u8_Sig = 0U;
+  564  1        PDTtoPUTflag_u8_Sig = 0U;
+  565  1      }
+  566         
+  567         /*
+  568          * File trailer for generated code.
+  569          *
+  570          * [EOF]
+  571          */
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =        1530     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =           1     --------
+  FAR-DATA SIZE    =          12     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =    --------     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

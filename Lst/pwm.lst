@@ -1,0 +1,181 @@
+C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE PWM
+OBJECT MODULE PLACED IN .\Obj\pwm.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\pwm.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\
+                    -driver;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mo
+                    -de control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;
+                    -.\src\app\rte) MODV2 DEBUG PRINT(.\Lst\pwm.lst) OBJECT(.\Obj\pwm.obj) 
+
+ stmt lvl     source
+
+    1         /***********************************************************************
+    2         *   Copyright (C) JWD Automotive Co., Ltd.                                                   * 
+    3         *               All Rights Reserved.                                                                       *
+    4         *   Department : iCAS SW                                                                                               *
+    5         *   AUTHOR         :                                                                                                                   *
+    6         ************************************************************************
+    7         * Object        : 
+    8         * Module        : pwm.c
+    9         * Instance      : 
+   10         * Description   : pwm output
+   11         *-----------------------------------------------------------------------
+   12         * Version: v0.1
+   13         * Date   : Dec 7,2019 
+   14         * Author : Gao zehngzhong
+   15         ***********************************************************************/
+   16         /*-History--------------------------------------------------------------
+   17         * Version    Date           Name            Changes and comments
+   18         ------------------------------------------------------------------------
+   19         * 0.1          Dec 7,2019     Gao Zhengzhong  Initial version
+   20         *=====================================================================*/
+   21         
+   22         #include <stdlib.h>
+   23         #include <string.h>
+   24         
+   25         #include "pwm.h"
+   26         #include "rte.h"
+   27         #include "booster.h"
+   28         
+   29         /**** Definition of variables ****/
+   30         PWM_STAT T_PWM tPwm = {0u};
+   31         
+   32         /**** Declaration of functions ****/
+   33         PWM_STAT void Pwm_LimitAmplitude(INT16S pwmValue);
+   34         PWM_STAT void Pwm_ControlOutput(void);
+   35         
+   36         /***********************************************************************
+   37         *  Name        : Pwm_Init
+   38         *  Description : After power on, initiliaze PWM sample variable
+   39         *  Parameter   : None
+   40         *  Returns     : None
+   41         ***********************************************************************/
+   42         void Pwm_Init(void)
+   43         {
+   44  1              tPwm.motorCtrl = PWM_AMPLITUDE_DEFAULT;
+   45  1              tPwm.channelDutyA = 1000u;
+   46  1              tPwm.channelDutyB = 1000u;
+   47  1              return;
+   48  1      }
+   49         
+   50         /***********************************************************************
+   51         *  Name        : Pwm_DeInit
+   52         *  Description : During running, need initilize PWM sample variable
+C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 2   
+
+   53         *  Parameter   : None
+   54         *  Returns     : None
+   55         ***********************************************************************/
+   56         void Pwm_DeInit(void)
+   57         {
+   58  1              return;
+   59  1      }
+   60         
+   61         /***********************************************************************
+   62         *  Name        : Pwm_Control
+   63         *  Description : PWM control function
+   64         *  Parameter   : pwm control value
+   65         *  Returns     : None
+   66         ***********************************************************************/
+   67         void Pwm_Control(INT16S pwmValue)
+   68         {
+   69  1              Pwm_LimitAmplitude(pwmValue);
+   70  1              Pwm_ControlOutput();
+   71  1              return;
+   72  1      }
+   73         
+   74         /***********************************************************************
+   75         *  Name        : Pwm_LimitAmplitude
+   76         *  Description : PWM amolitude limiting processing
+   77         *  Parameter   : None
+   78         *  Returns     : None
+   79         ***********************************************************************/
+   80         PWM_STAT void Pwm_LimitAmplitude(INT16S pwmValue)
+   81         {
+   82  1              INT16S motorDuty = 0; 
+   83  1              
+   84  1              if (abs(pwmValue) <= 10u)
+   85  1              {
+   86  2                      motorDuty = PWM_AMPLITUDE_DEFAULT;
+   87  2              }
+   88  1              else
+   89  1              {
+   90  2                      motorDuty = pwmValue + PWM_AMPLITUDE_DEFAULT;
+   91  2      
+   92  2                      if (motorDuty <= PWM_AMPLITUDE_LOWER)
+   93  2                      {
+   94  3                              motorDuty = PWM_AMPLITUDE_LOWER;
+   95  3                      }
+   96  2                      else if (motorDuty >= PWM_AMPLITUDE_UPPER)
+   97  2                      {
+   98  3                              motorDuty = PWM_AMPLITUDE_UPPER;
+   99  3                      }
+  100  2                      else
+  101  2                      {
+  102  3                              /* NOP */
+  103  3                      }
+  104  2              }
+  105  1              
+  106  1              tPwm.motorCtrl = motorDuty;
+  107  1              return;
+  108  1      }
+  109         
+  110         /***********************************************************************
+  111         *  Name        : Pwm_ControlOutput
+  112         *  Description : 
+  113         *  Parameter   : None
+  114         *  Returns     : None
+C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 3   
+
+  115         ***********************************************************************/
+  116         PWM_STAT void Pwm_ControlOutput(void)
+  117         {
+  118  1              INT32U temp;
+  119  1              
+  120  1              temp = ((INT32U)tPwm.motorCtrl * 2000u) >> 12u;
+  121  1              
+  122  1      #if (0 == HARDWARE_VERSION)
+                      tPwm.channelDutyA = (INT16U)temp;
+                      tPwm.channelDutyB = 2000u - tPwm.channelDutyA;
+              #else
+  126  1              tPwm.channelDutyB = (INT16U)temp;
+  127  1              tPwm.channelDutyA = 2000u - tPwm.channelDutyB;
+  128  1      #endif
+  129  1      
+  130  1              return;
+  131  1      }
+  132         
+  133         /***********************************************************************
+  134         *  Name        : Pwm_ControlData
+  135         *  Description : PWM module interface
+  136         *  Parameter   : None
+  137         *  Returns     : PWM data structure access address
+  138         ***********************************************************************/
+  139         const T_PWM* Pwm_ControlData(void)
+  140         {
+  141  1              return (&tPwm);
+  142  1      }
+  143         
+  144         /* _END_OF_PWM_IF_ */
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =         154     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =           6     --------
+  FAR-DATA SIZE    =    --------     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =          10     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

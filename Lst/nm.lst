@@ -1,0 +1,576 @@
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE NM
+OBJECT MODULE PLACED IN .\Obj\nm.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\bsw\nm\nm.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\driver
+                    -;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mode con
+                    -trol;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;.\src\
+                    -app\rte) MODV2 DEBUG PRINT(.\Lst\nm.lst) OBJECT(.\Obj\nm.obj) 
+
+ stmt lvl     source
+
+    1         /***********************************************************************
+    2         *   Copyright (C) JWD Automotive Co., Ltd.                                             * 
+    3         *       All Rights Reserved.                                                                   *
+    4         *   Department : iCAS SW                                                                               *
+    5         *   AUTHOR         :                                                                                               *
+    6         ************************************************************************
+    7         * Object        : 
+    8         * Module        : Nm.c
+    9         * Instance      : 
+   10         * Description   : Network Management
+   11         *-----------------------------------------------------------------------
+   12         * Version: v0.1
+   13         * Date   : Dec 7,2019 
+   14         * Author : Gao zehngzhong
+   15         ***********************************************************************/
+   16         /*-History--------------------------------------------------------------
+   17         * Version    Date           Name            Changes and comments
+   18         ------------------------------------------------------------------------
+   19         * 0.1        Dec 7,2019     Gao Zhengzhong  Initial version
+   20         *=====================================================================*/
+   21         
+   22         #include "nm.h"
+   23         
+   24         #include "can.h"
+   25         #include "can_if.h"
+   26         #include "desc_ser.h"
+   27         #include "IO.h"
+   28         
+   29         #define DESC_GLOBALS
+   30         
+   31         /**** Definition of variables ****/
+   32         NM_STAT INT16U CanNm_BusOff_REC = 0u;
+   33         NM_STAT INT16U CanNm_BusOff_TEC = 0u;
+   34         NM_STAT NM_STATUS_TYPE CanNm_NmState = NM_STATUS_OFF;
+   35         NM_STAT BUSOFF_STATUS_TYPE CanNm_BusOffState = BUSOFF_INIT;
+   36         
+   37         /**** Declaration of functions ****/
+   38         NM_STAT void CanNm_MainFunction(void);
+   39         NM_STAT void CanNm_Transmit(void);
+   40         NM_STAT void CanNm_BusOffTransmit(void);
+   41         NM_STAT void CanNm_GetBusOffRecIndication(void);
+   42         NM_STAT void CanNm_GetBusOffTecIndication(void);
+   43         NM_STAT void CanNm_NmStatus(NM_STATUS_TYPE nm_state);
+   44         NM_STAT void CanNm_NmBusOffStatus(BUSOFF_STATUS_TYPE busoff_state);
+   45         
+   46         
+   47         /*********************************************************************************************************
+             -*************
+   48          * CanNm_TaskEntry
+   49          *********************************************************************************************************
+             -*************/
+   50         /*! \brief      Application of the CAN Network Management
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 2   
+
+   51          *              By default the NM starts in the normal state Mode.
+   52          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+   53          *  \pre        Interrupts must be disabled
+   54          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+   55          *  \context    System Startup
+   56          *  \note       Called by Application (EcuM)
+   57          *********************************************************************************************************
+             -*************/
+   58         void CanNm_TaskEntry(void)
+   59         {
+   60  1              CanNm_MainFunction();
+   61  1      }
+   62         
+   63         /*********************************************************************************************************
+             -*************
+   64          * CanNm_vInit
+   65          *********************************************************************************************************
+             -*************/
+   66         /*! \brief      Initialization of the CAN Network Management
+   67          *              and its internal state machine
+   68          *              By default the NM starts in the Off state Mode.
+   69          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+   70          *  \pre        Interrupts must be disabled
+   71          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+   72          *  \context    System Startup
+   73          *  \note       Called by Application (EcuM)
+   74          *********************************************************************************************************
+             -*************/
+   75         void CanNm_vInit(void)
+   76         {
+   77  1              CanNm_BusOff_REC = 0u;
+   78  1              CanNm_BusOff_TEC = 0u;
+   79  1              CanNm_BusOffState = BUSOFF_INIT;
+   80  1              CanNm_NmState = NM_STATUS_OFF;
+   81  1      }
+   82         
+   83         /*********************************************************************************************************
+             -*************
+   84          * CanNm_MainFunction
+   85          *********************************************************************************************************
+             -*************/
+   86         /*! \brief      CAN Network Management and its internal state machine
+   87          *              By default the NM starts in the all state Mode.
+   88          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+   89          *  \pre        Interrupts must be disabled
+   90          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+   91          *  \context    System Startup
+   92          *  \note       Called by Application (EcuM)
+   93          *********************************************************************************************************
+             -*************/
+   94         NM_STAT void CanNm_MainFunction(void)
+   95         {
+   96  1              CanNm_Transmit();
+   97  1              CanNm_BusOffTransmit();
+   98  1      }
+   99         
+  100         /*********************************************************************************************************
+             -**************
+  101          *  CanNm_Transmit
+  102          *********************************************************************************************************
+             -*************/
+  103         /*! \brief      This function is called by the NM or application to transmit a NM message within the next 
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 3   
+
+             -main function
+  104          *  \param[in]  CanNmTxPduId  L-PDU handle of CAN L-PDU to be transmitted. This handle specifies the corre
+             -sponding CAN
+  105          *                            LPDU ID and implicitly the CAN Driver instance as well as the corresponding 
+             -CAN
+  106          *                            controller device.
+  107          *  \param[in]  PduInfoPtr    Pointer to a structure with CAN L-PDU related data: DLC and pointer to CAN L
+             --SDU buffer.
+  108          *  \pre        NM is initialized
+  109          *  \return     E_OK - transmit request has been accepted
+  110          *  \return     E_NOT_OK - transmit request has not been accepted due to wrong state
+  111          *  \context    Function could be called from interrupt level or from task level
+  112          *  \note       Called from PduR
+  113          *********************************************************************************************************
+             -*************/
+  114         NM_STAT void CanNm_Transmit(void)
+  115         {
+  116  1              switch (CanNm_NmState)
+  117  1              {               
+  118  2                      case NM_STATUS_OFF:
+  119  2                              
+  120  2                              if (STD_ON == IO_ubReadPin(IO_P7_3)) // Read IG signal pin status
+  121  2                              {
+  122  3                                      CanNm_NmStatus(NM_STATUS_STARTUP_MODE);                         
+  123  3                              }
+  124  2                              else
+  125  2                              {
+  126  3                                      CanNm_NmStatus(NM_STATUS_OFF);
+  127  3                              }
+  128  2      
+  129  2                              break;
+  130  2      
+  131  2                      case NM_STATUS_STARTUP_MODE:
+  132  2                              
+  133  2                              CanNm_NmStatus(NM_STATUS_NORMAL_WORKING);
+  134  2                              
+  135  2                              break;
+  136  2      
+  137  2                      case NM_STATUS_NORMAL_WORKING:
+  138  2                              
+  139  2                              if (STD_OFF == IO_ubReadPin(IO_P7_3))
+  140  2                              {
+  141  3                                      CanNm_NmStatus(NM_STATUS_SHUTDOWN_MODE);
+  142  3                              }
+  143  2                              else
+  144  2                              {
+  145  3                                      if (BUSOFF_SHUTDOWN_ERR == CanNm_BusOffState)
+  146  3                                      {
+  147  4                                              CanNm_NmStatus(NM_STATUS_BUS_ERROR);
+  148  4                                      }
+  149  3                              }
+  150  2                              
+  151  2                              break;
+  152  2      
+  153  2                      case NM_STATUS_BUS_ERROR:
+  154  2                              
+  155  2                              if (STD_OFF == IO_ubReadPin(IO_P7_3))
+  156  2                              {
+  157  3                                      CanNm_NmStatus(NM_STATUS_SHUTDOWN_MODE);
+  158  3                              }
+  159  2                              else
+  160  2                              {
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 4   
+
+  161  3                                      if (BUSOFF_SHUTDOWN_ERR != CanNm_BusOffState)
+  162  3                                      {
+  163  4                                              CanNm_NmStatus(NM_STATUS_STARTUP_MODE);
+  164  4                                      }
+  165  3                              }
+  166  2                              
+  167  2                              break;
+  168  2      
+  169  2                      case NM_STATUS_SHUTDOWN_MODE:
+  170  2                              
+  171  2                              CanNm_NmStatus(NM_STATUS_OFF);
+  172  2                              
+  173  2                              break;
+  174  2      
+  175  2                      default:
+  176  2                              
+  177  2                              CanNm_NmStatus(NM_STATUS_OFF);
+  178  2                              
+  179  2                              break;
+  180  2              }
+  181  1      }
+  182         
+  183         /*********************************************************************************************************
+             -*************
+  184          * CanNm_NmStatus
+  185          *********************************************************************************************************
+             -*************/
+  186         /*! \brief      Running of the CAN Network Management
+  187          *              and its internal state machine
+  188          *              By default the NM starts in the all state Mode.
+  189          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  190          *  \pre        Interrupts must be disabled
+  191          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  192          *  \context    System Startup
+  193          *  \note       Called by Application (EcuM)
+  194          *********************************************************************************************************
+             -*************/
+  195         NM_STAT void CanNm_NmStatus(NM_STATUS_TYPE nm_state)
+  196         {
+  197  1              /* NM_STATUS_OFF */
+  198  1              if (NM_STATUS_OFF == nm_state)
+  199  1              {
+  200  2                      CanNm_DisableCommunication();
+  201  2                      CanNm_NmState = NM_STATUS_OFF;
+  202  2              }
+  203  1      
+  204  1              /* NM_STATUS_STARTUP_MODE */
+  205  1              if (NM_STATUS_STARTUP_MODE == nm_state)
+  206  1              {
+  207  2                      Can_lInitializeController(CAN_CONTROLLER0, 0x3447);
+  208  2                      CanNm_EnableCommunication();
+  209  2                      CanNm_NmState = NM_STATUS_STARTUP_MODE;
+  210  2              }
+  211  1      
+  212  1              /* NM_STATUS_NORMAL_WORKING */
+  213  1              if (NM_STATUS_NORMAL_WORKING == nm_state)
+  214  1              {
+  215  2                      CanNm_NmState = NM_STATUS_NORMAL_WORKING;
+  216  2              }       
+  217  1      
+  218  1              /* NM_STATUS_BUS_ERROR */
+  219  1              if (NM_STATUS_BUS_ERROR == nm_state)
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 5   
+
+  220  1              {
+  221  2                      CanNm_DisableCommunication();
+  222  2                      Can_lInitializeController(CAN_CONTROLLER0, 0x3447);             
+  223  2              }               
+  224  1      
+  225  1              /* NM_STATUS_SHUTDOWN_MODE */
+  226  1              if (NM_STATUS_SHUTDOWN_MODE == nm_state)
+  227  1              {
+  228  2                      CanNm_DisableCommunication();
+  229  2              }               
+  230  1      }
+  231         
+  232         /*********************************************************************************************************
+             -*************
+  233          * CanNm_BusOffTransmit
+  234          *********************************************************************************************************
+             -*************/
+  235         /*! \brief      Running of the CAN Bus-Off
+  236          *              and its internal state machine
+  237          *              By default the NM starts in the normal state Mode.
+  238          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  239          *  \pre        Interrupts must be disabled
+  240          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  241          *  \context    System Startup
+  242          *  \note       Called by Application (EcuM)
+  243          *********************************************************************************************************
+             -*************/
+  244         NM_STAT void CanNm_BusOffTransmit(void)
+  245         {
+  246  1              CanNm_GetBusOffRecIndication();
+  247  1              CanNm_GetBusOffTecIndication();
+  248  1      
+  249  1              switch (CanNm_BusOffState)
+  250  1              {
+  251  2                      case BUSOFF_INIT:
+  252  2                              CanNm_NmBusOffStatus(BUSOFF_INIT);
+  253  2                              break;
+  254  2      
+  255  2                      case BUSOFF_NORMAL:                     
+  256  2                              CanNm_NmBusOffStatus(BUSOFF_NORMAL);
+  257  2                              break;
+  258  2      
+  259  2                      case BUSOFF_ACTIVE_ERR:                 
+  260  2                              CanNm_NmBusOffStatus(BUSOFF_ACTIVE_ERR);
+  261  2                              break;
+  262  2      
+  263  2                      case BUSOFF_PASSIVE_ERR:                        
+  264  2                              CanNm_NmBusOffStatus(BUSOFF_PASSIVE_ERR);
+  265  2                              break;
+  266  2      
+  267  2                      case BUSOFF_SHUTDOWN_ERR:                       
+  268  2                              CanNm_NmBusOffStatus(BUSOFF_SHUTDOWN_ERR);
+  269  2                              break;
+  270  2      
+  271  2                      default:
+  272  2                              CanNm_NmBusOffStatus(BUSOFF_INIT);                      
+  273  2                              break;
+  274  2              }
+  275  1      }
+  276         
+  277         /*********************************************************************************************************
+             -*************
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 6   
+
+  278          * CanNm_NmBusOffStatus
+  279          *********************************************************************************************************
+             -*************/
+  280         /*! \brief      Running of the CAN Bus-Off
+  281          *              and its internal state machine
+  282          *              By default the NM starts in the all state Mode.
+  283          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  284          *  \pre        Interrupts must be disabled
+  285          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  286          *  \context    System Startup
+  287          *  \note       Called by Application (EcuM)
+  288          *********************************************************************************************************
+             -*************/
+  289         NM_STAT void CanNm_NmBusOffStatus(BUSOFF_STATUS_TYPE busoff_state)
+  290         {
+  291  1              NM_STAT INT16U busoffResumeCnt = 0u; 
+  292  1      
+  293  1              /* BUSOFF_INIT */
+  294  1              if (BUSOFF_INIT == busoff_state)
+  295  1              {
+  296  2                      CanNm_BusOff_REC = 0u;
+  297  2                      CanNm_BusOff_TEC = 0u;
+  298  2                      CanNm_BusOffState = BUSOFF_NORMAL;
+  299  2              }
+  300  1      
+  301  1              /* BUSOFF_NORMAL */
+  302  1              if (BUSOFF_NORMAL == CanNm_BusOffState)
+  303  1              {
+  304  2                      if ((CanNm_BusOff_REC > 0u) || (CanNm_BusOff_TEC > 0u))
+  305  2                      {
+  306  3                              CanNm_BusOffState = BUSOFF_ACTIVE_ERR;
+  307  3                      }
+  308  2              }
+  309  1              
+  310  1              /* BUSOFF_ACTIVE_ERR */
+  311  1              if (BUSOFF_ACTIVE_ERR == CanNm_BusOffState)
+  312  1              {
+  313  2                      if ((CanNm_BusOff_REC > 127u) || (CanNm_BusOff_TEC > 127u))
+  314  2                      {
+  315  3                              CanNm_BusOffState = BUSOFF_PASSIVE_ERR;
+  316  3                      }
+  317  2                      else
+  318  2                      {
+  319  3                              if ((0u == CanNm_BusOff_REC) && (0u == CanNm_BusOff_TEC))
+  320  3                              {
+  321  4                                      CanNm_BusOffState = BUSOFF_NORMAL;
+  322  4                              }
+  323  3                      }
+  324  2              }
+  325  1      
+  326  1              /* BUSOFF_PASSIVE_ERR */
+  327  1              if (BUSOFF_PASSIVE_ERR == CanNm_BusOffState)
+  328  1              {
+  329  2                      if ((CanNm_BusOff_REC < 128u) && (CanNm_BusOff_TEC < 128u))
+  330  2                      {
+  331  3                              CanNm_BusOffState = BUSOFF_ACTIVE_ERR;
+  332  3                      }
+  333  2                      else
+  334  2                      {
+  335  3                              if (CanNm_BusOff_TEC > 255u)
+  336  3                              {
+  337  4                                      CanNm_BusOffState = BUSOFF_SHUTDOWN_ERR;
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 7   
+
+  338  4                                      
+  339  4                                      CanIf_ControllerBusOff(CAN_CONTROLLER0);
+  340  4                              }
+  341  3                      }
+  342  2              }
+  343  1      
+  344  1              /* BUSOFF_SHUTDOWN_ERR */
+  345  1              if (BUSOFF_SHUTDOWN_ERR == CanNm_BusOffState)
+  346  1              {
+  347  2                      busoffResumeCnt++;
+  348  2                      if (busoffResumeCnt >= 65535u)
+  349  2                      {
+  350  3                              CanNm_BusOffState = BUSOFF_ACTIVE_ERR;
+  351  3                              busoffResumeCnt = 0u;
+  352  3                      }
+  353  2              }
+  354  1      }
+  355         
+  356         /*********************************************************************************************************
+             -*************
+  357          * CanNm_GetBusOffRecIndication
+  358          *********************************************************************************************************
+             -*************/
+  359         /*! \brief      Get Rx bus-off REC value
+  360          *              By default the NM starts in the normal state Mode.
+  361          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  362          *  \pre        Interrupts must be disabled
+  363          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  364          *  \context    System Startup
+  365          *  \note       Called by Application (EcuM)
+  366          *********************************************************************************************************
+             -*************/
+  367         NM_STAT void CanNm_GetBusOffRecIndication(void)
+  368         {
+  369  1              CanNm_BusOff_REC = CAN_ubGetRxErrorCounter(CAN_CONTROLLER0);    
+  370  1      }
+  371         
+  372         /*********************************************************************************************************
+             -*************
+  373          * CanNm_GetBusOffTecIndication
+  374          *********************************************************************************************************
+             -*************/
+  375         /*! \brief      Get Tx bus-off TEC value
+  376          *              and send message to CAN bus in cycle.
+  377          *              By default the NM starts in the normal state Mode.
+  378          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  379          *  \pre        Interrupts must be disabled
+  380          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  381          *  \context    System Startup
+  382          *  \note       Called by Application (EcuM)
+  383          *********************************************************************************************************
+             -*************/
+  384         NM_STAT void CanNm_GetBusOffTecIndication(void)
+  385         {
+  386  1              CanNm_BusOff_TEC = CAN_ubGetTxErrorCounter(CAN_CONTROLLER0);            
+  387  1      }
+  388         
+  389         /*********************************************************************************************************
+             -*************
+  390          * CanNm_EnableCommunication
+  391          *********************************************************************************************************
+             -*************/
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 8   
+
+  392         /*! \brief      Enable of the CAN Network Management
+  393          *              and send message to CAN bus in cycle.
+  394          *              By default the NM starts in the normal state Mode.
+  395          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  396          *  \pre        Interrupts must be disabled
+  397          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  398          *  \context    System Startup
+  399          *  \note       Called by Application (EcuM)
+  400          *********************************************************************************************************
+             -*************/
+  401         void CanNm_EnableCommunication(void)
+  402         {       
+  403  1              if (TRUE == Can_SetControllerMode(CAN_CONTROLLER0, CAN_T_START))
+  404  1              {
+  405  2                      Can_EnableControllerInterrupts(CAN_CONTROLLER0);
+  406  2              }
+  407  1      }
+  408         
+  409         /*********************************************************************************************************
+             -*************
+  410          * CanNm_DisableCommunication
+  411          *********************************************************************************************************
+             -*************/
+  412         /*! \brief      Enable of the CAN Network Management
+  413          *              and not send message to CAN bus.
+  414          *              By default the NM starts in the normal state Mode.
+  415          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  416          *  \pre        Interrupts must be disabled
+  417          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  418          *  \context    System Startup
+  419          *  \note       Called by Application (EcuM)
+  420          *********************************************************************************************************
+             -*************/
+  421         void CanNm_DisableCommunication(void)
+  422         {       
+  423  1              if (TRUE == Can_SetControllerMode(CAN_CONTROLLER0, CAN_T_STOP))
+  424  1              {
+  425  2                      Can_DisableControllerInterrupts(CAN_CONTROLLER0);
+  426  2              }
+  427  1      }
+  428         
+  429         /*********************************************************************************************************
+             -*************
+  430          * CanNm_EnableNmCommunication
+  431          *********************************************************************************************************
+             -*************/
+  432         /*! \brief      Enable of the CAN Network Management
+  433          *              and send NM message to CAN bus in cycle.
+  434          *              By default the NM starts in the Off state Mode.
+  435          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  436          *  \pre        Interrupts must be disabled
+  437          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  438          *  \context    System Startup
+  439          *  \note       Called by Application (EcuM)
+  440          *********************************************************************************************************
+             -*************/
+  441         void CanNm_EnableNmCommunication(void)
+  442         {
+  443  1              descNmFrameTxEnable = TRUE;
+  444  1              descNmFrameRxEnable = TRUE;     
+  445  1      }
+  446         
+C166 COMPILER V7.57.0, NM                                                                  11/13/2020 15:09:32 PAGE 9   
+
+  447         /*********************************************************************************************************
+             -*************
+  448          * CanNm_DisableNmCommunication
+  449          *********************************************************************************************************
+             -*************/
+  450         /*! \brief      Enable of the CAN Network Management
+  451          *              and not send NM message to CAN bus.
+  452          *              By default the NM starts in the Off state Mode.
+  453          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  454          *  \pre        Interrupts must be disabled
+  455          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  456          *  \context    System Startup
+  457          *  \note       Called by Application (EcuM)
+  458          *********************************************************************************************************
+             -*************/
+  459         void CanNm_DisableNmCommunication(void)
+  460         {
+  461  1              descNmFrameTxEnable = FALSE;
+  462  1              descNmFrameRxEnable = FALSE;    
+  463  1      }
+  464         
+  465         /*********************************************************************************************************
+             -*************
+  466          * CanNm_GetBusoffStatus
+  467          *********************************************************************************************************
+             -*************/
+  468         /*! \brief      Get CAN Bus off status
+  469          *              By default the NM starts in the Off state Mode.
+  470          *  \param[in]  cannmConfigPtr               Configuration structure for initializing the module
+  471          *  \pre        Interrupts must be disabled
+  472          *  \pre        CANNM142: Initialization after CanIf and before call of any NM service
+  473          *  \context    System Startup
+  474          *  \note       Called by Application (EcuM)
+  475          *********************************************************************************************************
+             -*************/
+  476         BUSOFF_STATUS_TYPE CanNm_GetBusoffStatus(void)
+  477         {
+  478  1              return CanNm_BusOffState;
+  479  1      }
+  480         
+  481         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =         634     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =          10     --------
+  FAR-DATA SIZE    =    --------     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =          30     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

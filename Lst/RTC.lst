@@ -1,0 +1,411 @@
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE RTC
+OBJECT MODULE PLACED IN .\Obj\RTC.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\drive
+                    -r;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mode co
+                    -ntrol;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;.\src
+                    -\app\rte) MODV2 DEBUG PRINT(.\Lst\RTC.lst) OBJECT(.\Obj\RTC.obj) 
+
+ stmt lvl     source
+
+    1         //****************************************************************************
+    2         // @Module        Real Time Clock (RTC)
+    3         // @Filename      RTC.c
+    4         // @Project       P300.dav
+    5         //----------------------------------------------------------------------------
+    6         // @Controller    Infineon XC2365B-40F80
+    7         //
+    8         // @Compiler      Keil
+    9         //
+   10         // @Codegenerator 2.0
+   11         //
+   12         // @Description   This file contains functions that use the RTC module.
+   13         //
+   14         //----------------------------------------------------------------------------
+   15         // @Date          2020/5/8 09:17:38
+   16         //
+   17         //****************************************************************************
+   18         
+   19         // USER CODE BEGIN (RTC_General,1)
+   20         
+   21         // USER CODE END
+   22         
+   23         
+   24         
+   25         //****************************************************************************
+   26         // @Project Includes
+   27         //****************************************************************************
+   28         
+   29         #include "MAIN.h"
+   30         
+   31         // USER CODE BEGIN (RTC_General,2)
+   32         
+   33         
+   34         #include "can_com.h"
+   35         #include "rte.h"
+   36         // USER CODE END
+   37         
+   38         
+   39         //****************************************************************************
+   40         // @Macros
+   41         //****************************************************************************
+   42         
+   43         // USER CODE BEGIN (RTC_General,3)
+   44         
+   45         // USER CODE END
+   46         
+   47         
+   48         //****************************************************************************
+   49         // @Defines
+   50         //****************************************************************************
+   51         
+   52         // USER CODE BEGIN (RTC_General,4)
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 2   
+
+   53         
+   54         // USER CODE END
+   55         
+   56         
+   57         //****************************************************************************
+   58         // @Typedefs
+   59         //****************************************************************************
+   60         
+   61         // USER CODE BEGIN (RTC_General,5)
+   62         
+   63         // USER CODE END
+   64         
+   65         
+   66         //****************************************************************************
+   67         // @Imported Global Variables
+   68         //****************************************************************************
+   69         
+   70         // USER CODE BEGIN (RTC_General,6)
+   71         
+   72         // USER CODE END
+   73         
+   74         
+   75         //****************************************************************************
+   76         // @Global Variables
+   77         //****************************************************************************
+   78         
+   79         // USER CODE BEGIN (RTC_General,7)
+   80         
+   81         unsigned long uRtcSystemTickCount = 0u;
+   82         
+   83         unsigned char bRtcOsApp2msTaskEntryFlag = FALSE;
+   84         unsigned char bRtcOsApp3msTaskEntryFlag = FALSE;
+   85         unsigned char bRtcOsApp5msTaskEntryFlag = FALSE;
+   86         unsigned char bRtcOsApp10msTaskEntryFlag = FALSE;
+   87         unsigned char bRtcOsApp20msTaskEntryFlag = FALSE;
+   88         unsigned char bRtcOsApp50msTaskEntryFlag = FALSE;
+   89         unsigned char bRtcOsApp100msTaskEntryFlag = FALSE;
+   90         
+   91         // USER CODE END
+   92         
+   93         
+   94         //****************************************************************************
+   95         // @External Prototypes
+   96         //****************************************************************************
+   97         
+   98         // USER CODE BEGIN (RTC_General,8)
+   99         
+  100         // USER CODE END
+  101         
+  102         
+  103         //****************************************************************************
+  104         // @Prototypes Of Local Functions
+  105         //****************************************************************************
+  106         
+  107         // USER CODE BEGIN (RTC_General,9)
+  108         
+  109         // USER CODE END
+  110         
+  111         
+  112         //****************************************************************************
+  113         // @Function      void RTC_vInit(void) 
+  114         //
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 3   
+
+  115         //----------------------------------------------------------------------------
+  116         // @Description   This is the initialization function of the RTC function 
+  117         //                library. It is assumed that the SFRs used by this library 
+  118         //                are in reset state. 
+  119         //
+  120         //----------------------------------------------------------------------------
+  121         // @Returnvalue   None
+  122         //
+  123         //----------------------------------------------------------------------------
+  124         // @Parameters    None
+  125         //
+  126         //----------------------------------------------------------------------------
+  127         // @Date          2020/5/8
+  128         //
+  129         //****************************************************************************
+  130         
+  131         // USER CODE BEGIN (Init,1)
+  132         
+  133         // USER CODE END
+  134         
+  135         void RTC_vInit(void)
+  136         {
+  137  1      
+  138  1        volatile unsigned int uwTemp;
+  139  1      
+  140  1        // USER CODE BEGIN (Init,2)
+  141  1      
+  142  1        // USER CODE END
+  143  1      
+  144  1        ///  -----------------------------------------------------------------------
+  145  1        ///  Configuration of the RTC Kernal 
+  146  1        ///  -----------------------------------------------------------------------
+  147  1      
+  148  1        RTC_KSCCFG     =  0x0003;      // Module Enable
+  149  1      
+  150  1        uwTemp         =  RTC_KSCCFG;  // dummy read to avoid pipeline effects
+  151  1      
+  152  1        SCU_RTCCLKCON  =  0x0005;      // RTC working in synchronous mode with osc. 
+  153  1                                       // freq. as a input freq.
+  154  1      
+  155  1        ///  -----------------------------------------------------------------------
+  156  1        ///  Configuration of the RTC Counter:
+  157  1        ///  -----------------------------------------------------------------------
+  158  1        ///  - RTC input frequency is 8000.000 kHz
+  159  1        ///  - the input clock is divided by factor 32
+  160  1        ///  - the input clock is not divided
+  161  1        ///  - counter is not started after initialization
+  162  1        ///  - RTC count clock frequency is 250.000 kHz
+  163  1      
+  164  1        while(!(RTC_CON & 0x8000));       // wait until access is possible
+  165  1        RTC_CON        =  0x0000;      // load RTC control register
+  166  1      
+  167  1        ///  - overflow period on T14:  1.0000 [ms]
+  168  1        ///  - overflow period on CNT0: 1.0240 [s]
+  169  1        ///  - overflow period on CNT1: 1.0923 [min]
+  170  1        ///  - overflow period on CNT2: 1.1651 [h]
+  171  1        ///  - overflow period on CNT3: 1.6570 [months]
+  172  1      
+  173  1        RTC_T14REL     =  0xFF06;      // load T14 count/reload register
+  174  1        RTC_RTCL       =  0x0000;      // load RTC low register
+  175  1        RTC_RELL       =  0x0000;      // load RTC reload low register
+  176  1        RTC_RTCH       =  0x0000;      // load RTC high register
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 4   
+
+  177  1        RTC_RELH       =  0x0000;      // load RTC reload high register
+  178  1      
+  179  1        ///  -----------------------------------------------------------------------
+  180  1        ///  Configuration of the used RTC Interrupts:
+  181  1        ///  -----------------------------------------------------------------------
+  182  1        ///  RTC service request node configuration:
+  183  1        ///  - RTC interrupt priority level (ILVL) = 6
+  184  1        ///  - RTC interrupt group level (GLVL) = 0
+  185  1        ///  - RTC group priority extension (GPX) = 0
+  186  1      
+  187  1        RTC_IC         =  0x0058;     
+  188  1      
+  189  1        RTC_ISNC       =  0x0001;      // load RTC interrupt sub node register
+  190  1      
+  191  1      
+  192  1      
+  193  1        // USER CODE BEGIN (Init,3)
+  194  1      
+  195  1        // USER CODE END
+  196  1      
+  197  1      } //  End of function RTC_vInit
+  198         
+  199         
+  200         //****************************************************************************
+  201         // @Function      void RTC_vRTCRun(void) 
+  202         //
+  203         //----------------------------------------------------------------------------
+  204         // @Description   This function starts the RTC timer.
+  205         //
+  206         //----------------------------------------------------------------------------
+  207         // @Returnvalue   None
+  208         //
+  209         //----------------------------------------------------------------------------
+  210         // @Parameters    None
+  211         //
+  212         //----------------------------------------------------------------------------
+  213         // @Date          2020/5/8
+  214         //
+  215         //****************************************************************************
+  216         
+  217         // USER CODE BEGIN (RTCRun,1)
+  218         
+  219         // USER CODE END
+  220         
+  221         void RTC_vRTCRun(void)
+  222         {
+  223  1      
+  224  1        RTC_CON_RUN = 1;
+  225  1      
+  226  1      } //  End of function RTC_vRTCRun
+  227         
+  228         
+  229         //****************************************************************************
+  230         // @Function      void RTC_vRTCStop(void) 
+  231         //
+  232         //----------------------------------------------------------------------------
+  233         // @Description   This function stops the RTC timer.
+  234         //
+  235         //----------------------------------------------------------------------------
+  236         // @Returnvalue   None
+  237         //
+  238         //----------------------------------------------------------------------------
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 5   
+
+  239         // @Parameters    None
+  240         //
+  241         //----------------------------------------------------------------------------
+  242         // @Date          2020/5/8
+  243         //
+  244         //****************************************************************************
+  245         
+  246         // USER CODE BEGIN (RTCStop,1)
+  247         
+  248         // USER CODE END
+  249         
+  250         void RTC_vRTCStop(void)
+  251         {
+  252  1      
+  253  1        RTC_CON_RUN = 0;
+  254  1      
+  255  1      } //  End of function RTC_vRTCStop
+  256         
+  257         
+  258         //****************************************************************************
+  259         // @Function      void RTC_viRTC(void) 
+  260         //
+  261         //----------------------------------------------------------------------------
+  262         // @Description   This is the RTC interrupt service routine. It is called up 
+  263         //                when:
+  264         //                 - counter T14 overflows and is reloaded
+  265         //                 - counter CNT0 overflows and is reloaded
+  266         //                 - counter CNT1 overflows and is reloaded
+  267         //                 - counter CNT2 overflows and is reloaded
+  268         //                 - counter CNT3 overflows and is reloaded
+  269         //                This interrupt request may eg. be used to provide a system 
+  270         //                time tick independent of the CPU frequency, or to wake up 
+  271         //                regularly from idle mode.
+  272         //                
+  273         //                Please note that you have to add application specific code 
+  274         //                to this function.
+  275         //
+  276         //----------------------------------------------------------------------------
+  277         // @Returnvalue   None
+  278         //
+  279         //----------------------------------------------------------------------------
+  280         // @Parameters    None
+  281         //
+  282         //----------------------------------------------------------------------------
+  283         // @Date          2020/5/8
+  284         //
+  285         //****************************************************************************
+  286         
+  287         // USER CODE BEGIN (RTC,1)
+  288         
+  289         // USER CODE END
+  290         
+  291         void RTC_viRTC(void) interrupt RTCINT
+  292         {
+  293  1      
+  294  1        // USER CODE BEGIN (RTC,2)
+  295  1      
+  296  1        // USER CODE END
+  297  1      
+  298  1        if(RTC_ISNC_T14IR)             // if counter T14 overflow
+  299  1        {
+  300  2      
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 6   
+
+  301  2          // USER CODE BEGIN (RTC,3)
+  302  2          
+  303  2              //vTaskSuspendAll();
+  304  2      
+  305  2              //vTaskIncrementTick();
+  306  2      
+  307  2              //xTaskResumeAll();
+  308  2      
+  309  2              uRtcSystemTickCount++;
+  310  2              FinalDeskTeskTimer++;
+  311  2      
+  312  2              if ((0u == (uRtcSystemTickCount % 2u)) && (FALSE == bRtcOsApp2msTaskEntryFlag))         
+  313  2              {
+  314  3                      bRtcOsApp2msTaskEntryFlag = TRUE;
+  315  3              }
+  316  2                
+  317  2              if ((0u == (uRtcSystemTickCount % 3u)) && (FALSE == bRtcOsApp3msTaskEntryFlag))         
+  318  2              {
+  319  3                      bRtcOsApp3msTaskEntryFlag = TRUE;
+  320  3              }
+  321  2                
+  322  2              if ((0u == (uRtcSystemTickCount % 5u)) && (FALSE == bRtcOsApp5msTaskEntryFlag))         
+  323  2              {
+  324  3                      bRtcOsApp5msTaskEntryFlag = TRUE;
+  325  3              }
+  326  2      
+  327  2              if ((0u == (uRtcSystemTickCount % 10u)) && (FALSE == bRtcOsApp10msTaskEntryFlag))               
+  328  2              {
+  329  3                      bRtcOsApp10msTaskEntryFlag = TRUE;
+  330  3              }       
+  331  2      
+  332  2              if ((0u == (uRtcSystemTickCount % 20u)) && (FALSE == bRtcOsApp20msTaskEntryFlag))               
+  333  2              {
+  334  3                      bRtcOsApp20msTaskEntryFlag = TRUE;
+  335  3              }       
+  336  2      
+  337  2              if ((0u == (uRtcSystemTickCount % 50u)) && (FALSE == bRtcOsApp50msTaskEntryFlag))               
+  338  2              {
+  339  3                      bRtcOsApp50msTaskEntryFlag = TRUE;
+  340  3              }       
+  341  2      
+  342  2              if ((0u == (uRtcSystemTickCount % 100u)) && (FALSE == bRtcOsApp100msTaskEntryFlag))             
+  343  2              {
+  344  3                      bRtcOsApp100msTaskEntryFlag = TRUE;
+  345  3              }       
+  346  2              
+  347  2          // USER CODE END
+  348  2      
+  349  2          RTC_ISNC_T14IR = 0;
+  350  2      
+  351  2        }
+  352  1      
+  353  1      
+  354  1        // USER CODE BEGIN (RTC,8)
+  355  1      
+  356  1        // USER CODE END
+  357  1      
+  358  1      } //  End of function RTC_viRTC
+  359         
+  360         
+  361         
+  362         
+C166 COMPILER V7.57.0, RTC                                                                 11/13/2020 15:09:22 PAGE 7   
+
+  363         // USER CODE BEGIN (RTC_General,10)
+  364         
+  365         // USER CODE END
+  366         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =         378     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =          11     --------
+  FAR-DATA SIZE    =    --------     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =          50     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

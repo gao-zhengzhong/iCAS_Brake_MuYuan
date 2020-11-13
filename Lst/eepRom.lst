@@ -1,0 +1,360 @@
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE EEPROM
+OBJECT MODULE PLACED IN .\Obj\eepRom.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\s
+                    -rc\driver;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app
+                    -\mode control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measu
+                    -re;.\src\app\rte) MODV2 DEBUG PRINT(.\Lst\eepRom.lst) OBJECT(.\Obj\eepRom.obj) 
+
+ stmt lvl     source
+
+    1         /*
+    2          * eepRom.c
+    3          *
+    4          *  Created on: 2015-5-28
+    5          *      Author: zhangguangyao
+    6          */
+    7         #define  EEPROM_GLOBALS
+    8         #include "MAIN.h"
+    9         #include "rte.h"
+   10         #include "eepRom.h"
+   11         #include "desc_ser.h"
+   12         #include "EEPROM_Cfg.h"
+   13         
+   14         //****************************************************************************
+   15         //                                  MACROS
+   16         //****************************************************************************
+   17         
+   18         
+   19         //****************************************************************************
+   20         //                                  VARIABLES
+   21         //****************************************************************************
+   22         
+   23         
+   24         // Software version number rules:
+   25         //< hardware version >.< major version >.< subversion >.< revision version >.< date > version stage
+   26         
+   27         // Description of software version stage:
+   28         // *Alpha       : Realize software function primarily, internal version
+   29         // *Beta        : this version has no serious errors, but some defects
+   30         // *RC          : there are almost no bugs causing errors in this release
+   31         // *Release     : this Release is for final delivery
+   32         static INT8U SoftwareVersion[28] = "HW03.2.6.00.20200410_alpha";
+   33         
+   34         
+   35         //****************************************************************************
+   36         //                                  FUNCTION
+   37         //****************************************************************************
+   38         
+   39         static INT32U base;
+   40         static INT16U EepromBuf[70];
+   41         //****************************************************************************
+   42         // @Function      uword Flash_Init (ulong adr)
+   43         //
+   44         //----------------------------------------------------------------------------
+   45         // @Description   Function to Initialize Flash Programming Functions
+   46         //
+   47         //----------------------------------------------------------------------------
+   48         // @Returnvalue   uword
+   49         //
+   50         //----------------------------------------------------------------------------
+   51         // @Parameters    adr
+   52         //
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 2   
+
+   53         //----------------------------------------------------------------------------
+   54         // @Date          2013-6-25
+   55         //
+   56         //****************************************************************************
+   57         
+   58         void EepRom_Init(INT32U adr) 
+   59         {
+   60  1              base = adr;
+   61  1      }
+   62         
+   63         //****************************************************************************
+   64         // @Function      uword Flash_Check (void)
+   65         //
+   66         //----------------------------------------------------------------------------
+   67         // @Description    Function to Check Status of Flash Device
+   68         //
+   69         //----------------------------------------------------------------------------
+   70         // @Returnvalue    uword
+   71         //
+   72         //----------------------------------------------------------------------------
+   73         // @Parameters    None
+   74         //
+   75         //----------------------------------------------------------------------------
+   76         // @Date          2013-6-25
+   77         //
+   78         //****************************************************************************
+   79         
+   80         INT16U EepRom_Check (void) 
+   81         {
+   82  1              union uniIMB_FSR_BUSY fbr;
+   83  1              union uniIMB_FSR_OP fop;
+   84  1              union uniIMB_FSR_PROT fpr;
+   85  1      
+   86  1              do 
+   87  1              {
+   88  2                      fbr.v =  (IMB_FSR_BUSY);         // Read Busy Register
+   89  2              } while (fbr.b.busyfm1 || fbr.b.busyfm2 || fbr.b.busyfm3); // Wait until Flash is Busy
+   90  1      
+   91  1              fop.v =  (IMB_FSR_OP);         //Read Operation Register
+   92  1              fpr.v =  (IMB_FSR_PROT);       //Read Protection Register
+   93  1      
+   94  1              if (fop.b.prog || fop.b.erase) 
+   95  1              {
+   96  2                      (*((INT16U far *) (base |0xAA))) = 0xF5;  // Clear Status
+   97  2              }
+   98  1      
+   99  1              if (fop.b.oper || fop.b.sqer || fpr.b.proer) 
+  100  1              {
+  101  2                      (*((INT16U far *) (base |0xAA))) = 0xF0;  // Reset to Read Mode
+  102  2                      return (1);                              // Failed
+  103  2              }
+  104  1              return (0);                                // Done
+  105  1      }
+  106         
+  107         //****************************************************************************
+  108         // @Function      uword Flash_erase_sector (ulong ulSector_Addr)
+  109         //
+  110         //----------------------------------------------------------------------------
+  111         // @Description   Function to erase one sector of the flash
+  112         //
+  113         //----------------------------------------------------------------------------
+  114         // @Returnvalue    uword
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 3   
+
+  115         //
+  116         //----------------------------------------------------------------------------
+  117         // @Parameters    ulSector_Addr
+  118         //
+  119         //----------------------------------------------------------------------------
+  120         // @Date          2013-6-25
+  121         //
+  122         //****************************************************************************
+  123         
+  124         INT16U EepRom_erase_sector (INT32U ulSector_Addr) 
+  125         {
+  126  1              (*((INT16U far *) (base |0xAA))) = 0x80;       // Erase Sector (1. Cycle)
+  127  1              (*((INT16U far *) (base |0x54))) = 0xAA;       // Erase Sector (2. Cycle)
+  128  1              (*((INT16U far *) (ulSector_Addr))) = 0x33;    // Erase Sector (3. Cycle)
+  129  1              return (EepRom_Check());                        // Check until Device Ready
+  130  1      }
+  131         
+  132         //****************************************************************************
+  133         // @Function      uword Flash_erase_page (ulong ulPage_Addr)
+  134         //
+  135         //----------------------------------------------------------------------------
+  136         // @Description   Function to erase one page of the flash
+  137         //
+  138         //----------------------------------------------------------------------------
+  139         // @Returnvalue   uword
+  140         //
+  141         //----------------------------------------------------------------------------
+  142         // @Parameters    ulPage_Addr
+  143         //
+  144         //----------------------------------------------------------------------------
+  145         // @Date          2013-6-25
+  146         //
+  147         //****************************************************************************
+  148         
+  149         INT16U EepRom_erase_page (INT32U ulPage_Addr) 
+  150         {
+  151  1              (*((INT16U far *) (base |0xAA))) = 0x80;       // Erase Sector (1. Cycle)
+  152  1              (*((INT16U far *) (base |0x54))) = 0xAA;       // Erase Sector (2. Cycle)
+  153  1              (*((INT16U far *) (ulPage_Addr))) = 0x03;      // Erase Sector (3. Cycle)
+  154  1              return (EepRom_Check());                             // Check until Device Ready
+  155  1      }
+  156         
+  157         //****************************************************************************
+  158         // @Function      uword Flash_ProgramPage (ulong page_adr, void *buf)
+  159         //
+  160         //----------------------------------------------------------------------------
+  161         // @Description   Write Flash
+  162         //
+  163         //----------------------------------------------------------------------------
+  164         // @Returnvalue   INT16U uwTmp
+  165         //
+  166         //----------------------------------------------------------------------------
+  167         // @Parameters    ulong page_adr, void *buf
+  168         //
+  169         //----------------------------------------------------------------------------
+  170         // @Date          2013-6-25
+  171         //
+  172         //****************************************************************************
+  173         
+  174         INT16U EepRom_ProgramPage (INT32U page_adr, void *buf) 
+  175         {
+  176  1              INT16U cnt, uwTmp;
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 4   
+
+  177  1              // Enter Page Mode
+  178  1              (*((INT16U far *) (base |0x00AA))) = 0x50;       // 1st cycle: write 50h to xx'00AAh
+  179  1              (*((INT16U far *) (page_adr))) = 0xAA;     // 2nd cycle: write AAh to page start address
+  180  1              uwTmp = (EepRom_Check());                            // Check until Device Ready
+  181  1      
+  182  1              if (uwTmp == 0)
+  183  1              {
+  184  2                      // Load Page
+  185  2                      for (cnt = 0; cnt < 64; cnt++)  
+  186  2                      {
+  187  3                              (*((INT16U far *) (base |0x00F2))) = (*(uword *)buf);       // write word from R4 to xx'00F2h
+  188  3                              buf = (INT16U *) buf+1;
+  189  3                      }
+  190  2                      // Write Page
+  191  2                      (*((INT16U far *) (base |0x00AA))) = 0xA0;       // 1st cycle: write A0h to xx'00AAh
+  192  2                      (*((INT16U far *) (base |0x5A))) = 0xAA;         // 2nd cycle: : write AAh to xx'005A
+  193  2                      uwTmp = EepRom_Check();                          // Check until Device Ready
+  194  2              }
+  195  1              if(uwTmp == 1)
+  196  1              {
+  197  2                      uwTmp=FlashProgramError;
+  198  2              }
+  199  1              return (uwTmp);
+  200  1      }
+  201         
+  202         
+  203         void EarsePageEeprom_v_g(INT16U Page)
+  204         {
+  205  1              INT32U PageAdr;
+  206  1              PageAdr = 0xC40000+ ((INT32U)Page*128);
+  207  1              EepRom_Init(EEPROM_START);
+  208  1              while(EepRom_erase_page (PageAdr)); // Erase 128k of Flash
+  209  1      }
+  210         
+  211         
+  212         
+  213         void CopyString_v_g(void *SourceAdr, INT32U DestAdr, INT16U Len,INT8U WrBlg)
+  214         {
+  215  1              INT16U i;
+  216  1              INT8U *WrBuf;
+  217  1              INT8U *Source;
+  218  1              INT16U Page0, Page1;
+  219  1              INT32U pageStartAddress = 0;
+  220  1              INT8U page0WriteLength = 0;
+  221  1              INT8U page1WriteLength = 0;
+  222  1              
+  223  1              WrBuf = (INT8U *)EepromBuf;
+  224  1              Source = SourceAdr;
+  225  1              Page0 = (INT16U)((DestAdr - 0xC40000) / 128);
+  226  1              Page1 = (INT16U)((DestAdr - 0xC40000 + Len - 1) / 128);
+  227  1              
+  228  1              if(Page0 == Page1) // Data is written to the same page
+  229  1              {
+  230  2                      pageStartAddress = 0xC40000 | (Page0 << 7);
+  231  2                      ReadString_v_g(WrBuf, pageStartAddress, 128);
+  232  2                      
+  233  2                      // Erase the page that needs to be written 
+  234  2                      EarsePageEeprom_v_g(Page0);
+  235  2                      
+  236  2                      //Overwrite the data to be written
+  237  2                      for(i = 0; i < Len; i++)
+  238  2                      {
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 5   
+
+  239  3                              WrBuf[DestAdr - pageStartAddress + i] = Source[i];
+  240  3                      }
+  241  2                      
+  242  2                      //Write data according to page
+  243  2                      if((1 == WrBlg) && (0 != Len))
+  244  2                      {
+  245  3                              EepRom_ProgramPage(pageStartAddress, EepromBuf);
+  246  3                      }
+  247  2              }
+  248  1              else // Data is written to different pages
+  249  1              {
+  250  2                      pageStartAddress = 0xC40000 | (Page0 << 7);
+  251  2                      ReadString_v_g(WrBuf, pageStartAddress, 128);
+  252  2                      
+  253  2                      // Erase the page that needs to be written 
+  254  2                      EarsePageEeprom_v_g(Page0);
+  255  2                      
+  256  2                      //Overwrite the data to be written
+  257  2                      page0WriteLength = (INT8U)(pageStartAddress + 128 - DestAdr);
+  258  2                      for(i = 0; i < page0WriteLength; i++)
+  259  2                      {
+  260  3                              WrBuf[DestAdr - pageStartAddress + i] = Source[i];
+  261  3                      }
+  262  2                      
+  263  2                      //Write data according to page
+  264  2                      if((1 == WrBlg) && (0 != Len))
+  265  2                      {
+  266  3                              EepRom_ProgramPage(pageStartAddress, EepromBuf);
+  267  3                      }
+  268  2                      
+  269  2                      
+  270  2                      
+  271  2                      pageStartAddress = 0xC40000 | (Page1 << 7);
+  272  2                      ReadString_v_g(WrBuf, pageStartAddress, 128);
+  273  2                      
+  274  2                      // Erase the page that needs to be written 
+  275  2                      EarsePageEeprom_v_g(Page1);
+  276  2                      
+  277  2                      //Overwrite the data to be written
+  278  2                      page1WriteLength = (INT8U)(Len - page0WriteLength);
+  279  2                      for(i = 0; i < page1WriteLength; i++)
+  280  2                      {
+  281  3                              WrBuf[i] = Source[i + page0WriteLength];
+  282  3                      }
+  283  2                      
+  284  2                      //Write data according to page
+  285  2                      if((1 == WrBlg) && (0 != Len))
+  286  2                      {
+  287  3                              EepRom_ProgramPage(pageStartAddress, EepromBuf);
+  288  3                      }
+  289  2              }
+  290  1      }
+  291         
+  292         void ReadString_v_g(volatile INT8U *DestAdr,INT32U SourceAdr, INT16U Len)
+  293         {
+  294  1              INT16U i;
+  295  1              for(i = 0; i < Len; i++)
+  296  1              {
+  297  2                      DestAdr[i] = (*((INT8U far*)SourceAdr + i));
+  298  2              }
+  299  1      }
+  300         
+C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 6   
+
+  301         
+  302         void SaveData_v_g(void)
+  303         {
+  304  1              CopyString_v_g(descDataIdentifier.YEMA_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH, 1);
+  305  1              CopyString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH, 1);
+  306  1      }
+  307         
+  308         
+  309         void ReadData_v_g(void)
+  310         {
+  311  1              ReadString_v_g(descDataIdentifier.YEMA_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH);
+  312  1              ReadString_v_g(descDataIdentifier.pedalCylinderInitValue, PEDAL_CYLINDER_INIT_LOCATION_VALUE_ADDRESS, PED
+             -AL_CYLINDER_INIT_LOCATION_VALUE_LENGTH);
+  313  1              ReadString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH);
+*** WARNING C98 IN LINE 313 OF src\interaction\eepRom.c: parameter 1: pointer to different objects
+  314  1      }
+  315         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =        1358     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =           4     --------
+  FAR-DATA SIZE    =         168     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =          34     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,242 @@
+C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE GPT1
+OBJECT MODULE PLACED IN .\Obj\GPT1.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\GPT1.c MODV2 LARGE BROWSE INCDIR(.\src;.\src\bsw;.\src\driv
+                    -er;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnostic;.\src\app\mode c
+                    -ontrol;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app\time measure;.\sr
+                    -c\app\rte) MODV2 DEBUG PRINT(.\Lst\GPT1.lst) OBJECT(.\Obj\GPT1.obj) 
+
+ stmt lvl     source
+
+    1         //****************************************************************************
+    2         // @Module        General Purpose Timer Unit (GPT1)
+    3         // @Filename      GPT1.c
+    4         // @Project       P300.dav
+    5         //----------------------------------------------------------------------------
+    6         // @Controller    Infineon XC2365B-40F80
+    7         //
+    8         // @Compiler      Keil
+    9         //
+   10         // @Codegenerator 2.0
+   11         //
+   12         // @Description   This file contains functions that use the GPT1 module.
+   13         //
+   14         //----------------------------------------------------------------------------
+   15         // @Date          2020/5/15 11:26:18
+   16         //
+   17         //****************************************************************************
+   18         
+   19         // USER CODE BEGIN (GPT1_General,1)
+   20         
+   21         // USER CODE END
+   22         
+   23         
+   24         
+   25         //****************************************************************************
+   26         // @Project Includes
+   27         //****************************************************************************
+   28         
+   29         #include "MAIN.h"
+   30         
+   31         // USER CODE BEGIN (GPT1_General,2)
+   32         
+   33         // USER CODE END
+   34         
+   35         
+   36         //****************************************************************************
+   37         // @Macros
+   38         //****************************************************************************
+   39         
+   40         // USER CODE BEGIN (GPT1_General,3)
+   41         
+   42         // USER CODE END
+   43         
+   44         
+   45         //****************************************************************************
+   46         // @Defines
+   47         //****************************************************************************
+   48         
+   49         // USER CODE BEGIN (GPT1_General,4)
+   50         
+   51         // USER CODE END
+   52         
+C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 2   
+
+   53         
+   54         //****************************************************************************
+   55         // @Typedefs
+   56         //****************************************************************************
+   57         
+   58         // USER CODE BEGIN (GPT1_General,5)
+   59         
+   60         // USER CODE END
+   61         
+   62         
+   63         //****************************************************************************
+   64         // @Imported Global Variables
+   65         //****************************************************************************
+   66         
+   67         // USER CODE BEGIN (GPT1_General,6)
+   68         
+   69         // USER CODE END
+   70         
+   71         
+   72         //****************************************************************************
+   73         // @Global Variables
+   74         //****************************************************************************
+   75         
+   76         // USER CODE BEGIN (GPT1_General,7)
+   77         
+   78         // USER CODE END
+   79         
+   80         
+   81         //****************************************************************************
+   82         // @External Prototypes
+   83         //****************************************************************************
+   84         
+   85         // USER CODE BEGIN (GPT1_General,8)
+   86         
+   87         // USER CODE END
+   88         
+   89         
+   90         //****************************************************************************
+   91         // @Prototypes Of Local Functions
+   92         //****************************************************************************
+   93         
+   94         // USER CODE BEGIN (GPT1_General,9)
+   95         
+   96         // USER CODE END
+   97         
+   98         
+   99         //****************************************************************************
+  100         // @Function      void GPT1_vInit(void) 
+  101         //
+  102         //----------------------------------------------------------------------------
+  103         // @Description   This is the initialization function of the GPT1 function 
+  104         //                library. It is assumed that the SFRs used by this library 
+  105         //                are in reset state. 
+  106         //
+  107         //----------------------------------------------------------------------------
+  108         // @Returnvalue   None
+  109         //
+  110         //----------------------------------------------------------------------------
+  111         // @Parameters    None
+  112         //
+  113         //----------------------------------------------------------------------------
+  114         // @Date          2020/5/15
+C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 3   
+
+  115         //
+  116         //****************************************************************************
+  117         
+  118         // USER CODE BEGIN (Init,1)
+  119         
+  120         // USER CODE END
+  121         
+  122         void GPT1_vInit(void)
+  123         {
+  124  1      
+  125  1        volatile unsigned int uwTemp;
+  126  1      
+  127  1        // USER CODE BEGIN (Init,2)
+  128  1      
+  129  1        // USER CODE END
+  130  1        ///  -----------------------------------------------------------------------
+  131  1        ///  Configuration of Timer Block Prescaler 1:
+  132  1        ///  -----------------------------------------------------------------------
+  133  1        GPT12E_KSCCFG  =  0x0003;      // Module Enable
+  134  1      
+  135  1        uwTemp         =  GPT12E_KSCCFG;  // dummy read to avoid pipeline effects
+  136  1      
+  137  1        ///  -----------------------------------------------------------------------
+  138  1        ///  Configuration of Timer Block Prescaler 1:
+  139  1        ///  -----------------------------------------------------------------------
+  140  1        ///  - prescaler for timer block 1 is 32
+  141  1      
+  142  1      
+  143  1        ///  -----------------------------------------------------------------------
+  144  1        ///  Configuration of the GPT1 Core Timer 3:
+  145  1        ///  -----------------------------------------------------------------------
+  146  1        ///  - timer 3 works in timer mode
+  147  1        ///  - external up/down control is disabled
+  148  1        ///  - prescaler factor is 4096
+  149  1        ///  - up/down control bit is reset
+  150  1        ///  - alternate output function T3OUT () is disabled
+  151  1        ///  - timer 3 output toggle latch (T3OTL) is set to 0
+  152  1        ///  - timer 3 run bit is reset
+  153  1      
+  154  1        GPT12E_T3CON   =  0x1007;      // load timer 3 control register
+  155  1        GPT12E_T3      =  0xFFF6;      // load timer 3 register
+  156  1      
+  157  1        ///  -----------------------------------------------------------------------
+  158  1        ///  Configuration of the GPT1 Auxiliary Timer 2:
+  159  1        ///  -----------------------------------------------------------------------
+  160  1        ///  - timer 2 works in timer mode
+  161  1        ///  - external up/down control is disabled
+  162  1        ///  - prescaler factor is 128
+  163  1        ///  - up/down control bit is reset
+  164  1        ///  - timer 2 run bit is reset
+  165  1      
+  166  1        GPT12E_T2CON   =  0x0002;      // load timer 2 control register
+  167  1        GPT12E_T2      =  0xFD8F;      // load timer 2 register
+  168  1      
+  169  1        ///  -----------------------------------------------------------------------
+  170  1        ///  Configuration of the GPT1 Auxiliary Timer 4:
+  171  1        ///  -----------------------------------------------------------------------
+  172  1        ///  - timer 4 works in timer mode
+  173  1        ///  - external up/down control is disabled
+  174  1        ///  - prescaler factor is 4096
+  175  1        ///  - up/down control bit is reset
+  176  1        ///  - timer 4 run bit is reset
+C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 4   
+
+  177  1      
+  178  1        GPT12E_T4CON   =  0x0007;      // load timer 4 control register
+  179  1        GPT12E_T4      =  0xFFF6;      // load timer 4 register
+  180  1      
+  181  1        ///  -----------------------------------------------------------------------
+  182  1        ///  Configuration of the used GPT1 Port Pins:
+  183  1        ///  -----------------------------------------------------------------------
+  184  1      
+  185  1      
+  186  1      
+  187  1        ///  -----------------------------------------------------------------------
+  188  1        ///  Configuration of the used GPT1 Interrupts:
+  189  1        ///  -----------------------------------------------------------------------
+  190  1      
+  191  1        // USER CODE BEGIN (GPT1_Function,3)
+  192  1      
+  193  1        // USER CODE END
+  194  1      
+  195  1      } //  End of function GPT1_viTmr4
+  196         
+  197         
+  198         
+  199         
+  200         // USER CODE BEGIN (GPT1_General,10)
+  201         
+  202         // USER CODE END
+  203         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =          62     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =    --------     --------
+  FAR-DATA SIZE    =    --------     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =    --------     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

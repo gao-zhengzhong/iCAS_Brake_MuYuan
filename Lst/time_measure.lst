@@ -1,0 +1,216 @@
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        11/13/2020 15:09:32 PAGE 1   
+
+
+C166 COMPILER V7.57.0, COMPILATION OF MODULE TIME_MEASURE
+OBJECT MODULE PLACED IN .\Obj\time_measure.obj
+COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\time measure\time_measure.c MODV2 LARGE BROWSE INCDIR(.\src;.\
+                    -src\bsw;.\src\driver;.\src\interaction;.\src\app\adc;.\src\app\alogrithm;.\src\app\can;.\src\app\ccp;.\src\app\diagnosti
+                    -c;.\src\app\mode control;.\src\app\task;.\src\app\Fun;.\src\app\rtos;.\src\bsw\can;.\src\bsw\desc;.\src\bsw\nm;.\src\app
+                    -\time measure;.\src\app\rte) MODV2 DEBUG PRINT(.\Lst\time_measure.lst) OBJECT(.\Obj\time_measure.obj) 
+
+ stmt lvl     source
+
+    1         /***********************************************************************
+    2         *   Copyright (C) JWD Automotive Co., Ltd.                                             * 
+    3         *               All Rights Reserved.                                                           *
+    4         *   Department : iCAS SW                                                                               *
+    5         *   AUTHOR         :                                                                                               *
+    6         ************************************************************************
+    7         * Object        : 
+    8         * Module        : time_measure.c
+    9         * Instance      : 
+   10         * Description   : A time measurement function that measures execution time 
+   11         *                                 and scheduling cycles
+   12         *-----------------------------------------------------------------------
+   13         * Version: v0.1
+   14         * Date   : 2020.3.19 
+   15         * Author : Zhu jinfeng
+   16         ***********************************************************************/
+   17         /*-History--------------------------------------------------------------
+   18         * Version    Date           Name            Changes and comments
+   19         ------------------------------------------------------------------------
+   20         * 0.1       2020.3.19     Zhu jinfeng                   Initial version
+   21         *=====================================================================*/
+   22         #include "XC23xxBREGS.h"
+   23         #include "Para_Fun_Type.h"
+   24         #include "GPT2.h"
+   25         #include "time_measure.h"
+   26         
+   27         static BOOLEAN bTimMeasureEnable = FALSE;
+   28         static T_TimeMeasure tTimeMeasure[TIME_MESSAGE_NUMBER] = {0};
+   29         static BOOLEAN btaskPeriodMeasureCondition[TIME_MESSAGE_NUMBER] = {0};
+   30         static BOOLEAN btaskExecuteMeasureCondition[TIME_MESSAGE_NUMBER] = {0};
+   31         
+   32         
+   33         /***********************************************************************
+   34         *  Name        : TimeMeasure_Init
+   35         *  Description : After power on, Initializes the variables used for 
+   36         *                timing measurements and start GPT2 Timer5.
+   37         *  Parameter   : None
+   38         *  Returns     : None
+   39         ***********************************************************************/
+   40         void TimeMeasure_Init(void)
+   41         {     
+   42  1          INT8U i = 0; 
+   43  1          for(i = 0; i < TIME_MESSAGE_NUMBER; i++)
+   44  1          {
+   45  2                      tTimeMeasure[i].u16taskStartTime = 0;
+   46  2                      tTimeMeasure[i].u16taskEndTime = 0;
+   47  2      
+   48  2                      tTimeMeasure[i].u16taskExecuteTime = 0;
+   49  2                      tTimeMeasure[i].u16taskExecuteTimeMin = 0xFFFFu;
+   50  2                      tTimeMeasure[i].u16taskExecuteTimeMax = 0;
+   51  2      
+   52  2                      tTimeMeasure[i].u16taskPeriodTime = 0;
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        11/13/2020 15:09:32 PAGE 2   
+
+   53  2                      tTimeMeasure[i].u16taskPeriodTimeMin = 0xFFFFu;
+   54  2                      tTimeMeasure[i].u16taskPeriodTimeMax = 0;
+   55  2      
+   56  2                      btaskPeriodMeasureCondition[i] = FALSE;
+   57  2                      btaskExecuteMeasureCondition[i] = FALSE;
+   58  2          } 
+   59  1      }
+   60         
+   61         
+   62         /***********************************************************************
+   63         *  Name        : TimeMeasure_StartTimer
+   64         *  Description : Start the GPT timer 5 counter.
+   65         *  Parameter   : None
+   66         *  Returns     : None
+   67         ***********************************************************************/
+   68         void TimeMeasure_StartTimer(void)
+   69         {
+   70  1              GPT2_vStartTmr_GPT2_TIMER_5(); /* GPT2 Timer5 start counting */
+   71  1              bTimMeasureEnable = TRUE;
+   72  1      }
+   73         
+   74         /***********************************************************************
+   75         *  Name        : TimeMeasure_StopTimer
+   76         *  Description : Stop the GPT timer 5 counter.
+   77         *  Parameter   : None
+   78         *  Returns     : None
+   79         ***********************************************************************/
+   80         void TimeMeasure_StopTimer(void)
+   81         {
+   82  1              GPT2_vStopTmr_GPT2_TIMER_5(); /* GPT2 Timer5 stop counting */
+   83  1              bTimMeasureEnable = FALSE;
+   84  1      }
+   85         
+   86         
+   87         /***********************************************************************
+   88         *  Name        : TimeMeasure_Start
+   89         *  Description : Record the counter value before the task starts. And the 
+   90         *                               call cycle can be calculated based on two differences.                           
+   91         *  Parameter   : None
+   92         *  Returns     : None
+   93         ***********************************************************************/
+   94         void TimeMeasure_Start(INT8U taskId)
+   95         {
+   96  1              static INT16U u16taskStartTimeLast[TIME_MESSAGE_NUMBER] = {0u, 0u, 0u, 0u};
+   97  1              
+   98  1          if (TRUE == bTimMeasureEnable)
+   99  1          {
+  100  2                      tTimeMeasure[taskId].u16taskStartTime = GPT2_uwReadTmr_GPT2_TIMER_5();
+  101  2                      
+  102  2                      btaskExecuteMeasureCondition[taskId] = TRUE;
+  103  2                      
+  104  2                      if(TRUE == btaskPeriodMeasureCondition[taskId])
+  105  2                      {
+  106  3                              if(tTimeMeasure[taskId].u16taskStartTime > u16taskStartTimeLast[taskId])
+  107  3                              {
+  108  4                                      tTimeMeasure[taskId].u16taskPeriodTime = tTimeMeasure[taskId].u16taskStartTime - u16taskStartTimeLast[
+             -taskId];
+  109  4                              }
+  110  3                              else
+  111  3                              {
+  112  4                                      tTimeMeasure[taskId].u16taskPeriodTime = 0xFFFFu - u16taskStartTimeLast[taskId] + tTimeMeasure[taskId]
+             -.u16taskStartTime;
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        11/13/2020 15:09:32 PAGE 3   
+
+  113  4                              }
+  114  3                              
+  115  3                              if(tTimeMeasure[taskId].u16taskPeriodTime < tTimeMeasure[taskId].u16taskPeriodTimeMin)
+  116  3                              {
+  117  4                                      tTimeMeasure[taskId].u16taskPeriodTimeMin = tTimeMeasure[taskId].u16taskPeriodTime;
+  118  4                              }
+  119  3                              if(tTimeMeasure[taskId].u16taskPeriodTime > tTimeMeasure[taskId].u16taskPeriodTimeMax)
+  120  3                              {
+  121  4                                      tTimeMeasure[taskId].u16taskPeriodTimeMax = tTimeMeasure[taskId].u16taskPeriodTime;
+  122  4                              }
+  123  3                      }
+  124  2                      else
+  125  2                      {
+  126  3                              btaskPeriodMeasureCondition[taskId] = TRUE;
+  127  3                      }
+  128  2      
+  129  2                      u16taskStartTimeLast[taskId] = tTimeMeasure[taskId].u16taskStartTime;
+  130  2          }
+  131  1      }
+  132         
+  133         
+  134         /***********************************************************************
+  135         *  Name        : TimeMeasure_End
+  136         *  Description : The counter value is recorded after the task. And the 
+  137         *                                task execution time can be calculated based on two differences.
+  138         *  Parameter   : None
+  139         *  Returns     : None
+  140         ***********************************************************************/
+  141         void TimeMeasure_End(INT8U taskId)
+  142         {
+  143  1          if (TRUE == bTimMeasureEnable)
+  144  1          {
+  145  2                      tTimeMeasure[taskId].u16taskEndTime = GPT2_uwReadTmr_GPT2_TIMER_5();
+  146  2            
+  147  2                      if(TRUE == btaskExecuteMeasureCondition[taskId])
+  148  2                      {
+  149  3                              if(tTimeMeasure[taskId].u16taskEndTime > tTimeMeasure[taskId].u16taskStartTime)
+  150  3                              {
+  151  4                                      tTimeMeasure[taskId].u16taskExecuteTime = tTimeMeasure[taskId].u16taskEndTime - tTimeMeasure[taskId].u
+             -16taskStartTime;
+  152  4                              }
+  153  3                              else
+  154  3                              {
+  155  4                                      tTimeMeasure[taskId].u16taskExecuteTime = 0xFFFFu - tTimeMeasure[taskId].u16taskStartTime + tTimeMeasu
+             -re[taskId].u16taskEndTime;
+  156  4                              }
+  157  3                              
+  158  3                              if(tTimeMeasure[taskId].u16taskExecuteTime < tTimeMeasure[taskId].u16taskExecuteTimeMin)
+  159  3                              {
+  160  4                                      tTimeMeasure[taskId].u16taskExecuteTimeMin = tTimeMeasure[taskId].u16taskExecuteTime;
+  161  4                              }
+  162  3                              if(tTimeMeasure[taskId].u16taskExecuteTime > tTimeMeasure[taskId].u16taskExecuteTimeMax)
+  163  3                              {
+  164  4                                      tTimeMeasure[taskId].u16taskExecuteTimeMax = tTimeMeasure[taskId].u16taskExecuteTime;
+  165  4                              }
+  166  3                      }
+  167  2                      else
+  168  2                      {
+  169  3                              btaskExecuteMeasureCondition[taskId] = FALSE;
+  170  3                      }
+  171  2          }
+  172  1      }
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        11/13/2020 15:09:32 PAGE 4   
+
+  173         
+
+
+MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
+  CODE SIZE        =         414     --------
+  NEAR-CONST SIZE  =    --------     --------
+  FAR-CONST SIZE   =    --------     --------
+  HUGE-CONST SIZE  =    --------     --------
+  XHUGE-CONST SIZE =    --------     --------
+  NEAR-DATA SIZE   =           9     --------
+  FAR-DATA SIZE    =          72     --------
+  XHUGE-DATA SIZE  =    --------     --------
+  IDATA-DATA SIZE  =    --------     --------
+  SDATA-DATA SIZE  =    --------     --------
+  BDATA-DATA SIZE  =    --------     --------
+  HUGE-DATA SIZE   =    --------     --------
+  BIT SIZE         =    --------     --------
+  INIT'L SIZE      =         106     --------
+END OF MODULE INFORMATION.
+
+
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
