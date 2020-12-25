@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 1   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE CAN
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
    50         //****************************************************************************
    51         // @Defines
    52         //****************************************************************************
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 2   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 2   
 
    53         
    54         // USER CODE BEGIN (CAN_General,4)
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   112         //
   113         //----------------------------------------------------------------------------
   114         // @Description   This is the initialization function of the CAN function 
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 3   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 3   
 
   115         //                library. It is assumed that the SFRs used by this library 
   116         //                are in reset state. 
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   174  1      
   175  1          CAN_FDRL     =  0x43FE;      // load Fractional Divider Register
   176  1      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 4   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 4   
 
   177  1          uwTemp       =  CAN_FDRL;    // dummy read to avoid pipeline effects
   178  1      
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   236  1      
   237  1        ///  -----------------------------------------------------------------------
   238  1        ///  Configuration of CAN Node 1:
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 5   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 5   
 
   239  1        ///  -----------------------------------------------------------------------
   240  1      
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   298  1      
   299  1        ///  Allocate MOs for list 1:
   300  1      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 6   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 6   
 
   301  1          SetListCommand(0x0100,0x0002);  // MO0 for list 1 (Node 0)
   302  1      
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   360  1      
   361  1          SetListCommand(0x011E,0x0002);  // MO30 for list 1 (Node 0)
   362  1      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 7   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 7   
 
   363  1          SetListCommand(0x011F,0x0002);  // MO31 for list 1 (Node 0)
   364  1      
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   422  1      
   423  1          SetListCommand(0x023C,0x0002);  // MO60 for list 2 (Node 1)
   424  1      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 8   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 8   
 
   425  1          SetListCommand(0x023D,0x0002);  // MO61 for list 2 (Node 1)
   426  1      
@@ -510,7 +510,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   478  3      
   479  3      
   480  3                              ///  Configuration of Message Object 0 acceptance mask:
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 9   
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 9   
 
   481  3                              ///  - only accept receive frames with matching IDE bit
   482  3                              ///  - acceptance mask 11-bit: 0x7FF
@@ -574,7 +574,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   529  3                      }
   530  2              }       
   531  1              
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 10  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 10  
 
   532  1              
   533  1      
@@ -638,7 +638,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
              -<< 8) & 0x0F00); // load MO16 function control register high
   575  4                                      (*((uword volatile far *) (0x201000 | (objectIndex * 0x20)))) = 0x0000;        // load MO16 function c
              -ontrol register low
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 11  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 11  
 
   576  4                              }
   577  3                              else
@@ -702,7 +702,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
              -inter register high
   623  3                              (*((uword volatile far *) (0x201008 | (objectIndex * 0x20)))) = 0x0001 | (objectIndex << 8);        // 
              -load MO0 interrupt pointer register low
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 12  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 12  
 
   624  3      
   625  3                              (*((uword volatile far *) (0x201006 | (objectIndex * 0x20)))) = 0x0000;       // load MO0 FIFO/gateway 
@@ -766,7 +766,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   667  3                              {
   668  4                                      (*((uword volatile far *) (0x20100A | (objectIndex * 0x20)))) = 0x0000;        // load MO16 interrupt 
              -pointer register high
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 13  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 13  
 
   669  4                                      (*((uword volatile far *) (0x201008 | (objectIndex * 0x20)))) = 0x0010 | (objectIndex << 8);        //
              - load MO16 interrupt pointer register low
@@ -830,7 +830,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   719  1        CAN_2IC        =  0x004E;     
   720  1      
   721  1        ///  SRN3 service request node configuration:
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 14  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 14  
 
   722  1        ///  - SRN3 interrupt priority level (ILVL) = 3
   723  1        ///  - SRN3 interrupt group level (GLVL) = 1
@@ -894,7 +894,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   781         
   782         //****************************************************************************
   783         // @Function      void CAN_vLoadData(ubyte ubObjNr, ubyte *ubpubData) 
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 15  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 15  
 
   784         //
   785         //----------------------------------------------------------------------------
@@ -958,7 +958,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   843         //----------------------------------------------------------------------------
   844         // @Date          2020/5/11
   845         //
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 16  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 16  
 
   846         //****************************************************************************
   847         
@@ -1022,7 +1022,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   905  2                  CAN_HWNodes[Controller].uwNCR = (CAN_HWNodes[Controller].uwNCR & ~CAN_NCR_INIT);
   906  2      
   907  2                // USER CODE BEGIN (SetControllerMode,2)
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 17  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 17  
 
   908  2      
   909  2                // USER CODE END
@@ -1086,7 +1086,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
   967         //
   968         //----------------------------------------------------------------------------
   969         // @Returnvalue   None
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 18  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 18  
 
   970         //
   971         //----------------------------------------------------------------------------
@@ -1150,7 +1150,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1029  2      
  1030  2            // USER CODE END
  1031  2      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 19  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 19  
 
  1032  2          break ;
  1033  2      
@@ -1214,7 +1214,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1091  2      
  1092  2          break ;
  1093  2      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 20  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 20  
 
  1094  2          case CAN_CONTROLLER1:
  1095  2      
@@ -1278,7 +1278,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1153  1        {
  1154  2          case CAN_CONTROLLER0:
  1155  2      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 21  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 21  
 
  1156  2            // - load NODE 0 control register
  1157  2      
@@ -1342,7 +1342,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1215         
  1216         void CAN_viSRN0(void) interrupt CAN_SRN0INT
  1217         {
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 22  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 22  
 
  1218  1      
  1219  1        uword uwSRN0ObjHandler;
@@ -1406,7 +1406,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1276  6                                        DataPointer_0[0] = CAN_HWOBJ[ubMessagePendingIndex0].ubData[0];
  1277  6                                        DataPointer_0[1] = CAN_HWOBJ[ubMessagePendingIndex0].ubData[1];
  1278  6                                        DataPointer_0[2] = CAN_HWOBJ[ubMessagePendingIndex0].ubData[2];
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 23  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 23  
 
  1279  6                                        DataPointer_0[3] = CAN_HWOBJ[ubMessagePendingIndex0].ubData[3];
  1280  6                                        DataPointer_0[4] = CAN_HWOBJ[ubMessagePendingIndex0].ubData[4];
@@ -1470,7 +1470,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1336  1      } //  End of function CAN_viSRN0
  1337         
  1338         
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 24  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 24  
 
  1339         //****************************************************************************
  1340         // @Macro         CAN_viSRN1() 
@@ -1534,7 +1534,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1398  6      
  1399  6                                      // USER CODE BEGIN (SRN1_OBJ32,3)
  1400  6      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 25  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 25  
 
  1401  6                                      // USER CODE END
  1402  6      
@@ -1598,7 +1598,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1457  4                                CanIf_TxConfirmation(48);
  1458  4      
  1459  4      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 26  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 26  
 
  1460  4                                      // USER CODE BEGIN (SRN1_OBJ48,6)
  1461  4      
@@ -1662,7 +1662,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1519  3                CanIf_ControllerBusOff(0);
  1520  3      
  1521  3              // USER CODE BEGIN (SRN2_NODE0,1)
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 27  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 27  
 
  1522  3      
  1523  3              // USER CODE END
@@ -1726,7 +1726,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1581  1      
  1582  1        // USER CODE BEGIN (SRN2,15)
  1583  1      
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 28  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 28  
 
  1584  1        // USER CODE END
  1585  1      
@@ -1790,7 +1790,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1643  3              // USER CODE BEGIN (SRN3_NODE1,2)
  1644  3      
  1645  3              // USER CODE END
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 29  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 29  
 
  1646  3            }
  1647  2      
@@ -1854,7 +1854,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CAN.c MODV2 LARGE B
  1705         
 
 
-C166 COMPILER V7.57.0, CAN                                                                 11/13/2020 15:09:20 PAGE 30  
+C166 COMPILER V7.57.0, CAN                                                                 12/25/2020 20:35:55 PAGE 30  
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   CODE SIZE        =        7230     --------

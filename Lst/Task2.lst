@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TASK2                                                               11/13/2020 15:09:29 PAGE 1   
+C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK2
@@ -14,150 +14,145 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task2.c MODV2 LAR
     2          
     3         #include "MAIN.h"
     4         #include "rte.h"
-    5         #include  "aeb.h"
+    5         
     6         
-    7         
-    8         void task2(void);
-    9         void task2Normal_v_s(void);
-   10         void task2PowerUpTest_v_s(void);
-   11         void task2PowerDownTest_v_s(void);
-   12         void task2PowerDown_v_s(void);
-   13         void task2Fault_v_s(void);
+    7         void task2(void);
+    8         void task2Normal_v_s(void);
+    9         void task2PowerUpTest_v_s(void);
+   10         void task2PowerDownTest_v_s(void);
+   11         void task2PowerDown_v_s(void);
+   12         void task2Fault_v_s(void);
+   13         
    14         
    15         
-   16         
-   17         
-   18         
-   19         /*!************************************************************************************
-   20         *       @fn             void task2(void)
-   21         *       @brief            任务2函数
-   22         *       @author     Matt Zhang
-   23         *       @param[in]      void
-   24         *       @return     void
-   25         *       @note       在CCU60.c中CCU60_viNodeI3()函数中调用
-   26         *       @Data       2019-3-12
-   27         ****************************************************************************************/
-   28         void task2(void)
-   29         {
-   30  1      
-   31  1              switch(SystemMode_u8_Sig)
-   32  1              {
-   33  2                      case PowerUpTestMode:
-   34  2                              task2PowerUpTest_v_s();
-   35  2                      break;
-   36  2      
-   37  2                      case NormalMode:
-   38  2                              task2Normal_v_s();
-   39  2                      break;
-   40  2      
-   41  2                      case FaultMode:
-   42  2                              task2Fault_v_s();
-   43  2                      break;
-   44  2      
-   45  2                      case PowerDownTestMode:
-   46  2                              task2PowerDownTest_v_s();
-   47  2                      break;
-   48  2      
-   49  2                      case PowerDownMode:
-   50  2                              task2PowerDown_v_s();
+   16         /*!************************************************************************************
+   17         *       @fn             void task2(void)
+   18         *       @brief            任务2函数
+   19         *       @author     Matt Zhang
+   20         *       @param[in]      void
+   21         *       @return     void
+   22         *       @note       在CCU60.c中CCU60_viNodeI3()函数中调用
+   23         *       @Data       2019-3-12
+   24         ****************************************************************************************/
+   25         void task2(void)
+   26         {
+   27  1      
+   28  1              switch(SystemMode_u8_Sig)
+   29  1              {
+   30  2                      case PowerUpTestMode:
+   31  2                              task2PowerUpTest_v_s();
+   32  2                      break;
+   33  2      
+   34  2                      case NormalMode:
+   35  2                              task2Normal_v_s();
+   36  2                      break;
+   37  2      
+   38  2                      case FaultMode:
+   39  2                              task2Fault_v_s();
+   40  2                      break;
+   41  2      
+   42  2                      case PowerDownTestMode:
+   43  2                              task2PowerDownTest_v_s();
+   44  2                      break;
+   45  2      
+   46  2                      case PowerDownMode:
+   47  2                              task2PowerDown_v_s();
+   48  2                      break;
+   49  2      
+   50  2                      default:
    51  2                      break;
-   52  2      
-C166 COMPILER V7.57.0, TASK2                                                               11/13/2020 15:09:29 PAGE 2   
+   52  2              }
+C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 2   
 
-   53  2                      default:
-   54  2                      break;
-   55  2              }
-   56  1      }
-   57         
-   58         
-   59         /*!************************************************************************************
-   60         *       @fn             void task2PowerUpTest_v_s(void)
-   61         *       @brief           任务2上电测试函数
-   62         *       @author     Matt Zhang
-   63         *       @param[in]      void
-   64         *       @return     void
-   65         *       @note       在Task2.c的task2()函数中调用
-   66         *       @Data       2019-3-12
-   67         ****************************************************************************************/
-   68         void task2PowerUpTest_v_s(void)
-   69         {
-   70  1      
-   71  1      }
-   72         
-   73         
-   74         /*!************************************************************************************
-   75         *       @fn             void task2Normal_v_s(void)
-   76         *       @brief           任务2正常模式函数
-   77         *       @author     Matt Zhang
-   78         *       @param[in]      void
-   79         *       @return     void
-   80         *       @note       在Task2.c的task2()函数中调用；另外AEB算法放在此函数中
-   81         *       @Data       2019-3-12
-   82         ****************************************************************************************/
-   83         INT32U testvalue11=0;
-   84         INT32U testvalue12=0;
-   85         INT32U testvalue13=0;
-   86         void task2Normal_v_s(void)
-   87         {
-   88  1              /*--------------------制动灯控制------------------*/
-   89  1      
-   90  1              if(0)
-   91  1              {
-   92  2                      IO_vSetPin(IO_P6_2); /* open brake lamp */
-   93  2              }
-   94  1              else
-   95  1              {
-   96  2                      IO_vResetPin(IO_P6_2); /* close brake lamp */
-   97  2              }
-   98  1      }
-   99         
-  100         
-  101         /*!************************************************************************************
-  102         *       @fn             void task2PowerDownTest_v_s(void)
-  103         *       @brief           任务2下电测试模式函数
-  104         *       @author     Matt Zhang
-  105         *       @param[in]      void
-  106         *       @return     void
-  107         *       @note       在Task2.c的task2()函数中调用
-  108         *       @Data       2019-3-12
-  109         ****************************************************************************************/
-  110         void task2PowerDownTest_v_s(void)
-  111         {
-  112  1      
-  113  1      }
-  114         
-C166 COMPILER V7.57.0, TASK2                                                               11/13/2020 15:09:29 PAGE 3   
+   53  1      }
+   54         
+   55         
+   56         /*!************************************************************************************
+   57         *       @fn             void task2PowerUpTest_v_s(void)
+   58         *       @brief           任务2上电测试函数
+   59         *       @author     Matt Zhang
+   60         *       @param[in]      void
+   61         *       @return     void
+   62         *       @note       在Task2.c的task2()函数中调用
+   63         *       @Data       2019-3-12
+   64         ****************************************************************************************/
+   65         void task2PowerUpTest_v_s(void)
+   66         {
+   67  1      
+   68  1      }
+   69         
+   70         
+   71         /*!************************************************************************************
+   72         *       @fn             void task2Normal_v_s(void)
+   73         *       @brief           任务2正常模式函数
+   74         *       @author     Matt Zhang
+   75         *       @param[in]      void
+   76         *       @return     void
+   77         *       @note       在Task2.c的task2()函数中调用；另外AEB算法放在此函数中
+   78         *       @Data       2019-3-12
+   79         ****************************************************************************************/
+   80         void task2Normal_v_s(void)
+   81         {
+   82  1      
+   83  1              //Rte_selfCalibrationInitValue();
+   84  1      
+   85  1              if(0)
+   86  1              {
+   87  2                      IO_vSetPin(IO_P6_2); /* open brake lamp */
+   88  2              }
+   89  1              else
+   90  1              {
+   91  2                      IO_vResetPin(IO_P6_2); /* close brake lamp */
+   92  2              }
+   93  1      }
+   94         
+   95         
+   96         /*!************************************************************************************
+   97         *       @fn             void task2PowerDownTest_v_s(void)
+   98         *       @brief           任务2下电测试模式函数
+   99         *       @author     Matt Zhang
+  100         *       @param[in]      void
+  101         *       @return     void
+  102         *       @note       在Task2.c的task2()函数中调用
+  103         *       @Data       2019-3-12
+  104         ****************************************************************************************/
+  105         void task2PowerDownTest_v_s(void)
+  106         {
+  107  1      
+  108  1      }
+  109         
+  110         
+  111         /*!************************************************************************************
+  112         *       @fn             void task2PowerDown_v_s(void)
+  113         *       @brief           任务2下电模式函数
+  114         *       @author     Matt Zhang
+C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 3   
 
-  115         
-  116         /*!************************************************************************************
-  117         *       @fn             void task2PowerDown_v_s(void)
-  118         *       @brief           任务2下电模式函数
-  119         *       @author     Matt Zhang
-  120         *       @param[in]      void
-  121         *       @return     void
-  122         *       @note       在Task2.c的task2()函数中调用
-  123         *       @Data       2019-3-12
-  124         ****************************************************************************************/
-  125         void task2PowerDown_v_s(void)
-  126         {
-  127  1      
-  128  1      }
-  129         
-  130         
-  131         /*!************************************************************************************
-  132         *       @fn             void task2Fault_v_s(void)
-  133         *       @brief           任务2故障模式函数
-  134         *       @author     Matt Zhang
-  135         *       @param[in]      void
-  136         *       @return     void
-  137         *       @note       在Task2.c的task2()函数中调用
-  138         *       @Data       2019-3-12
-  139         ****************************************************************************************/
-  140         void task2Fault_v_s(void)
-  141         {
-  142  1      
-  143  1      }
-  144         
+  115         *       @param[in]      void
+  116         *       @return     void
+  117         *       @note       在Task2.c的task2()函数中调用
+  118         *       @Data       2019-3-12
+  119         ****************************************************************************************/
+  120         void task2PowerDown_v_s(void)
+  121         {
+  122  1      
+  123  1      }
+  124         
+  125         
+  126         /*!************************************************************************************
+  127         *       @fn             void task2Fault_v_s(void)
+  128         *       @brief           任务2故障模式函数
+  129         *       @author     Matt Zhang
+  130         *       @param[in]      void
+  131         *       @return     void
+  132         *       @note       在Task2.c的task2()函数中调用
+  133         *       @Data       2019-3-12
+  134         ****************************************************************************************/
+  135         void task2Fault_v_s(void)
+  136         {
+  137  1      
+  138  1      }
+  139         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
@@ -166,7 +161,7 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =          12     --------
+  NEAR-DATA SIZE   =    --------     --------
   FAR-DATA SIZE    =    --------     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
@@ -174,7 +169,7 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          24     --------
+  INIT'L SIZE      =    --------     --------
 END OF MODULE INFORMATION.
 
 

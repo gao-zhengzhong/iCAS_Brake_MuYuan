@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 1   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE SCS
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
    50         
    51         // USER CODE END
    52         
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 2   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 2   
 
    53         
    54         // Function-like macros********************************************************
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   112         #define SCS_TIME_PSMSTAT                         40
   113         #define SCS_TIME_PLL_POWER_UP                    50
   114         
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 3   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 3   
 
   115         // Driver timer cycles derived from system clock cycles, round up
   116         #define SCS_TIMER_CYCLES_GSC                     ((50000U + 7U)/8U)
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   174         #define SCS_MASK_KSCCFG_BPSUM \
   175         (1U   <<11U)  // BPSUM Bit Protection for SUMCFG, set to 1 for change (w)
   176         #define SCS_MASK_KSCCFG_COMCFG \
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 4   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 4   
 
   177         (2U   <<12U)  // COMCFG Clock Off Mode Configuration
   178                       // 0: power-down request not activated, 2: activated
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   236         #define SCS_MASK_PVCCON_L1INTEN \
   237         (1U   <<5U)   // L1INTEN Level 1 Interrupt Request Enable
   238         #define SCS_MASK_PVCCON_L1RSTEN \
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 5   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 5   
 
   239         (1U   <<6U)   // L1RSTEN Level 1 Reset Request Enable
   240         #define SCS_MASK_PVCCON_L1ASEN \
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   298         #define SCS_MASK_STMEM0_SSFMOD \
   299         (0xFU <<7U)   // SSFMOD Flash modules activation
   300                       // 0: Startup with flash, F: Startup without flash
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 6   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 6   
 
   301         
   302         // Constants for SWDCON0 register
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   360         #define SCS_MASK_TCTR2_T13TEC \
   361         (7U    <<2U)  // T13TEC T13 Trigger Event Control
   362         #define SCS_MASK_TCTR2_T13RSEL \
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 7   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 7   
 
   363         (3U    <<10U) // T13RSEL T13 External Run Selection
   364         
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   422         
   423         // Check K2 dividers
   424         #if (SCS_K2 < 1) || (SCS_K2 > 512)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 8   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 8   
 
               #  error "SCS_K2 out of range"
               #endif
@@ -510,7 +510,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   484         
   485         #if(SCS_RESTORE_TIMER_USED)
   486           // Saved CCU60 SFRs
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 9   
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 9   
 
   487           static unsigned int Ccu60KscfgSave;
   488           static unsigned int Ccu60Tctr0Save;
@@ -574,7 +574,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   546         // USER CODE END
   547         
   548         INLINE Scs_ErrorType Scs_lWaitForVcoLock(unsigned int Timeout)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 10  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 10  
 
   549         {
   550  1        // Restart VCO lock detection
@@ -638,7 +638,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   608  3          }
   609  2        }
   610  1      
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 11  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 11  
 
   611  1        // No error
   612  1        return SCS_ERROR_NO_ERROR;
@@ -702,7 +702,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   670         //
   671         //-----------------------------------------------------------------------------
   672         // @Date          2020/5/8
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 12  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 12  
 
   673         //
   674         //-----------------------------------------------------------------------------
@@ -766,7 +766,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   732  2        }
   733  1      
   734  1        // Set K1DIV (K1 divider value), clear K1ACK (K1 acknowledge)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 13  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 13  
 
   735  1        SCU_PLLCON2 = K1Div << SCS_POS_PLLCON2_K1DIV;
   736  1      
@@ -830,7 +830,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   794  1        // Wait until N ready = 0 with short timeout
   795  1        if(SFR_COND_3(SCU_PLLSTAT & SCS_MASK_PLLSTAT_NRDY))
   796  1        {
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 14  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 14  
 
   797  2          // error: timeout NDIV
   798  2          return SCS_ERROR_TO_NDIV;
@@ -894,7 +894,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   856  2        }
   857  1      
   858  1        // Set P acknowledge
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 15  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 15  
 
   859  1        SCU_PLLCON1_PACK = 1U;
   860  1      
@@ -958,7 +958,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   918  1        // Set K2 divider, check for error
   919  1        Error = Scs_ApplyNewK2Div(K2Div);
   920  1        if(Error)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 16  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 16  
 
   921  1        {
   922  2          return Error;
@@ -1022,7 +1022,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
   980  2          {
   981  3          // no frequency error, oscillator is stable
   982  3          return SCS_ERROR_NO_ERROR;
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 17  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 17  
 
   983  3          }
   984  2          
@@ -1086,7 +1086,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1042  1        // Clear VCOLCK trap request flag
  1043  1        SCU_TRAPCLR = SCS_MASK_TRAP_VCOLCKT;
  1044  1      
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 18  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 18  
 
  1045  1        // Enable VCOLCK trap request
  1046  1        SCU_TRAPDIS &= (~SCS_MASK_TRAP_VCOLCKT);
@@ -1150,7 +1150,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1104  3            do { }
  1105  3            while(SCS_T13_RUN);
  1106  3      
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 19  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 19  
 
  1107  3            /* apply new K2 divider */
  1108  3            Error = Scs_ApplyNewK2Div(K2RampPtr->K2 - 1U);
@@ -1214,7 +1214,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1166  2        }
  1167  1      
  1168  1        // set K2DIV (K2 divider value), clear K2ACK (K2 acknowledge)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 20  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 20  
 
  1169  1        SCU_PLLCON3 = K2Div << SCS_POS_PLLCON3_K2DIV;
  1170  1          
@@ -1278,7 +1278,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1228  2        }
  1229  1      
  1230  1        // Enable VCO bypass, check for error; new fSYS = internal 5 MHz
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 21  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 21  
 
  1231  1        Error = Scs_lEnableVcoBypass(1U);
  1232  1        if(Error)
@@ -1342,7 +1342,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1290  1        SCU_STATCLR1 = SCS_MASK_STATCLR1_CLRFINDIS;
  1291  1      
  1292  1        // Wait for VCO lock at fSYS ~ 10 MHz, check for error
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 22  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 22  
 
  1293  1        Error = Scs_lWaitForVcoLock(GET_CYCLES(SCS_TIME_VCO_LOCK,
  1294  1        SCS_F_INT_10MHZ_MAX));
@@ -1406,7 +1406,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1352  1          Ccu60PiselhSave = CCU60_PISELH;
  1353  1          Ccu60T13prSave = CCU60_T13PR;
  1354  1        #endif // (SCS_RESTORE_TIMER_USED)
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 23  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 23  
 
  1355  1      
  1356  1        // Enable CCU60 module
@@ -1470,7 +1470,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\SCS.c MODV2 LARGE B
  1414  1        // Stop T13, clear T13
  1415  1        CCU60_TCTR4 = SCS_MASK_TCTR4_T13RR | SCS_MASK_TCTR4_T13RES;
  1416  1      
-C166 COMPILER V7.57.0, SCS                                                                 11/13/2020 15:09:22 PAGE 24  
+C166 COMPILER V7.57.0, SCS                                                                 12/25/2020 20:35:59 PAGE 24  
 
  1417  1        // Restore CCU60_TCTR0
  1418  1        CCU60_TCTR0 = Ccu60Tctr0Save;

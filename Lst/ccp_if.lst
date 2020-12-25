@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, CCP_IF                                                              11/13/2020 15:09:27 PAGE 1   
+C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE CCP_IF
@@ -37,7 +37,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\ccp_if.c MODV2
    25         {
    26  1              // callup CAN-send调用CAN发送程序in“boot_can.c”
    27  1              
-   28  1              CanSendMsg_v_g(25, msg);
+   28  1              CanSendMsg_v_g(49, msg);
    29  1              return 1;
    30  1      }
    31         // -----------------------------------------------------------------------------
@@ -47,113 +47,112 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\ccp_if.c MODV2
    35         // -----------------------------------------------------------------------------
    36         MTABYTEPTR ccpGetPointer(BYTE addr_ext, DWORD addr) // get Pointer into
    37         {                                                                                                       // normal C
-   38  1              addr = BSWAP_32(addr);
-   39  1              return (MTABYTEPTR)addr;
-   40  1      }
+   38  1              return (MTABYTEPTR)addr;
+   39  1      }
 *** WARNING C47 IN LINE 36 OF src\interaction\ccp_if.c: 'addr_ext': unreferenced parameter
-   41         // -----------------------------------------------------------------------------
-   42         
-   43         // -----------------------------------------------------------------------------
-   44         // CALCULATE new measuerments
-   45         // -----------------------------------------------------------------------------
-   46         void ccpUserBackground(void)
-   47         {
-   48  1      }
-   49         // -----------------------------------------------------------------------------
-   50         
-   51         // -----------------------------------------------------------------------------
-C166 COMPILER V7.57.0, CCP_IF                                                              11/13/2020 15:09:27 PAGE 2   
+   40         // -----------------------------------------------------------------------------
+   41         
+   42         // -----------------------------------------------------------------------------
+   43         // CALCULATE new measuerments
+   44         // -----------------------------------------------------------------------------
+   45         void ccpUserBackground(void)
+   46         {
+   47  1      }
+   48         // -----------------------------------------------------------------------------
+   49         
+   50         // -----------------------------------------------------------------------------
+   51         // Define
+C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 2   
 
-   52         // Define
-   53         // -----------------------------------------------------------------------------
-   54         BYTE ccpDisableNormalOperation(MTABYTEPTR a, WORD s)
-   55         {
-   56  1              disable_interrupt(); // disables all interrupts, e.g. TIMER_0
-   57  1              return 1;
-   58  1      }
-*** WARNING C47 IN LINE 54 OF src\interaction\ccp_if.c: 'a': unreferenced parameter
-*** WARNING C47 IN LINE 54 OF src\interaction\ccp_if.c: 's': unreferenced parameter
-   59         // -----------------------------------------------------------------------------
-   60         
-   61         // -----------------------------------------------------------------------------
-   62         // Disable/Enable Interrupt Functions
-   63         // -----------------------------------------------------------------------------
-   64         BYTE disable_interrupt_count = 0; // init counter
-   65         
-   66         void disable_interrupt()
-   67         {
-   68  1              CCP_ENABLE_INTERRUPT;
-   69  1              disable_interrupt_count++; // incr. counter
-   70  1      }
-   71         
-   72         void enable_interrupt()
-   73         {
-   74  1              if (--disable_interrupt_count == 0)
-   75  1              { // if interrupts only one time disabled
-   76  2                      CCP_ENABLE_INTERRUPT;
-   77  2                      //_asm();// enable them
-   78  2              }
-   79  1      }
-   80         
-   81         // -----------------------------------------------------------------------------
-   82         void ccploop_v_g(INT8U* buffer)
-   83         {
-   84  1      
-   85  1              //OS_CPU_SR   cpu_sr;
-   86  1          INT8U length;
-   87  1              ccpBackground();                      // calculate checksum。计算校验和
-   88  1      
-   89  1              ccpCommand(buffer);         // call ccpCommand。调用命令处理程序
-   90  1              
-   91  1              CCP_DISABLE_INTERRUPT;
-   92  1      
-   93  1              ccpSendCallBack();
-   94  1      
-   95  1              CCP_ENABLE_INTERRUPT;
-   96  1      
-   97  1              ccpDaq(1);                            // transmit new values
-   98  1      }
-*** WARNING C47 IN LINE 86 OF src\interaction\ccp_if.c: 'length': unreferenced local variable
+   52         // -----------------------------------------------------------------------------
+   53         BYTE ccpDisableNormalOperation(MTABYTEPTR a, WORD s)
+   54         {
+   55  1              disable_interrupt(); // disables all interrupts, e.g. TIMER_0
+   56  1              return 1;
+   57  1      }
+*** WARNING C47 IN LINE 53 OF src\interaction\ccp_if.c: 'a': unreferenced parameter
+*** WARNING C47 IN LINE 53 OF src\interaction\ccp_if.c: 's': unreferenced parameter
+   58         // -----------------------------------------------------------------------------
+   59         
+   60         // -----------------------------------------------------------------------------
+   61         // Disable/Enable Interrupt Functions
+   62         // -----------------------------------------------------------------------------
+   63         BYTE disable_interrupt_count = 0; // init counter
+   64         
+   65         void disable_interrupt()
+   66         {
+   67  1              CCP_ENABLE_INTERRUPT;
+   68  1              disable_interrupt_count++; // incr. counter
+   69  1      }
+   70         
+   71         void enable_interrupt()
+   72         {
+   73  1              if (--disable_interrupt_count == 0)
+   74  1              { // if interrupts only one time disabled
+   75  2                      CCP_ENABLE_INTERRUPT;
+   76  2                      //_asm();// enable them
+   77  2              }
+   78  1      }
+   79         
+   80         // -----------------------------------------------------------------------------
+   81         void ccploop_v_g(INT8U* buffer)
+   82         {
+   83  1      
+   84  1              //OS_CPU_SR   cpu_sr;
+   85  1          INT8U length;
+   86  1              ccpBackground();                      // calculate checksum。计算校验和
+   87  1      
+   88  1              ccpCommand(buffer);         // call ccpCommand。调用命令处理程序
+   89  1              
+   90  1              CCP_DISABLE_INTERRUPT;
+   91  1      
+   92  1              ccpSendCallBack();
+   93  1      
+   94  1              CCP_ENABLE_INTERRUPT;
+   95  1      
+   96  1              ccpDaq(1);                            // transmit new values
+   97  1      }
+*** WARNING C47 IN LINE 85 OF src\interaction\ccp_if.c: 'length': unreferenced local variable
+   98         
    99         
-  100         
-  101         /*!******************************************************************************************************
-  102         *       @fn     void   ccpGetSeed( CCP_BYTE resourceMask )
-  103         *       @brief  CCP获取Seed函数
-  104         *       @author Matt Zhang
-  105         *       @param[in]      resourceMask
-  106         *       @return Seed
-  107         *       @note
-  108         *               - 2012-7-28, Matt Zhang, created acct RD-SW-120001-24 SeedKey交互文档
-  109         *********************************************************************************************************
-  110         */
-C166 COMPILER V7.57.0, CCP_IF                                                              11/13/2020 15:09:27 PAGE 3   
+  100         /*!******************************************************************************************************
+  101         *       @fn     void   ccpGetSeed( CCP_BYTE resourceMask )
+  102         *       @brief  CCP获取Seed函数
+  103         *       @author Matt Zhang
+  104         *       @param[in]      resourceMask
+  105         *       @return Seed
+  106         *       @note
+  107         *               - 2012-7-28, Matt Zhang, created acct RD-SW-120001-24 SeedKey交互文档
+  108         *********************************************************************************************************
+  109         */
+  110         CCP_DWORD ccpGetSeed(CCP_BYTE resourceMask)
+C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 3   
 
-  111         CCP_DWORD ccpGetSeed(CCP_BYTE resourceMask)
-  112         {
-  113  1      
-  114  1              return 0;
-  115  1      }
-*** WARNING C47 IN LINE 111 OF src\interaction\ccp_if.c: 'resourceMask': unreferenced parameter
-  116         /*!******************************************************************************************************
-  117         *       @fn     void    ccpUnlock( CCP_BYTE *key )
-  118         *       @brief  CCP获取Key函数
-  119         *       @author Matt Zhang
-  120         *       @param[in]      key
-  121         *       @return
-  122         *       @note
-  123         *               - 2012-7-28, Matt Zhang, created acct RD-SW-120001-24 SeedKey交互文档
-  124         *********************************************************************************************************
-  125         */
-  126         CCP_BYTE ccpUnlock(CCP_BYTE *key)
-  127         {
-  128  1      
-  129  1              return 0;
-  130  1      }
-*** WARNING C47 IN LINE 126 OF src\interaction\ccp_if.c: 'key': unreferenced parameter
+  111         {
+  112  1      
+  113  1              return 0;
+  114  1      }
+*** WARNING C47 IN LINE 110 OF src\interaction\ccp_if.c: 'resourceMask': unreferenced parameter
+  115         /*!******************************************************************************************************
+  116         *       @fn     void    ccpUnlock( CCP_BYTE *key )
+  117         *       @brief  CCP获取Key函数
+  118         *       @author Matt Zhang
+  119         *       @param[in]      key
+  120         *       @return
+  121         *       @note
+  122         *               - 2012-7-28, Matt Zhang, created acct RD-SW-120001-24 SeedKey交互文档
+  123         *********************************************************************************************************
+  124         */
+  125         CCP_BYTE ccpUnlock(CCP_BYTE *key)
+  126         {
+  127  1      
+  128  1              return 0;
+  129  1      }
+*** WARNING C47 IN LINE 125 OF src\interaction\ccp_if.c: 'key': unreferenced parameter
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         212     --------
+  CODE SIZE        =         120     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------

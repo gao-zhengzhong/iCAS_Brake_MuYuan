@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 1   
+C166 COMPILER V7.57.0, GPT1                                                                12/25/2020 20:35:56 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE GPT1
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\GPT1.c MODV2 LARGE 
    50         
    51         // USER CODE END
    52         
-C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 2   
+C166 COMPILER V7.57.0, GPT1                                                                12/25/2020 20:35:56 PAGE 2   
 
    53         
    54         //****************************************************************************
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\GPT1.c MODV2 LARGE 
   112         //
   113         //----------------------------------------------------------------------------
   114         // @Date          2020/5/15
-C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 3   
+C166 COMPILER V7.57.0, GPT1                                                                12/25/2020 20:35:56 PAGE 3   
 
   115         //
   116         //****************************************************************************
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\GPT1.c MODV2 LARGE 
   174  1        ///  - prescaler factor is 4096
   175  1        ///  - up/down control bit is reset
   176  1        ///  - timer 4 run bit is reset
-C166 COMPILER V7.57.0, GPT1                                                                11/13/2020 15:09:21 PAGE 4   
+C166 COMPILER V7.57.0, GPT1                                                                12/25/2020 20:35:56 PAGE 4   
 
   177  1      
   178  1        GPT12E_T4CON   =  0x0007;      // load timer 4 control register

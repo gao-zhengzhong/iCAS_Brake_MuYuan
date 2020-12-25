@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 1   
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE DESC
@@ -42,7 +42,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\bsw\desc\desc.c MODV2 LARG
    30         
    31         /* State machine of CANdesc described by CANdelaStudio */
    32         DESC_STAT DescStateInfo g_descCurState;
-   33         DTC_ADDRESS_TYPE g_descAddressType = PHY_ADDRESS;
+   33         DTC_ADDRESS_TYPE g_descAddressType = PHY_ADDRESS;      //PHY_ADDRESS == 0;
    34         
    35         /**** Declaration of functions ****/
    36         DESC_STAT void DescServiceClassifier_10h(DescMsgContext* pMsgContext);
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\bsw\desc\desc.c MODV2 LARG
    50         DESC_STAT void DescServiceClassifier_36h(DescMsgContext* pMsgContext);
    51         DESC_STAT void DescServiceClassifier_37h(DescMsgContext* pMsgContext);
    52         DESC_STAT void DescServiceClassifier_3Dh(DescMsgContext* pMsgContext);
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 2   
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 2   
 
    53         DESC_STAT void DescServiceClassifier_3Eh(DescMsgContext* pMsgContext);
    54         DESC_STAT void DescServiceClassifier_85h(DescMsgContext* pMsgContext);
@@ -114,1461 +114,1521 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\bsw\desc\desc.c MODV2 LARG
   100  1              DescMgr_CanDiagDtcControlSettingOn(); 
   101  1      
   102  1              pMsgContext->resDataLen = 0x02;
-  103  1              DescSetPosResponse(pMsgContext);
-  104  1      }
-  105         
-  106         /*  ********************************************************************************
-  107          * Function name:DescOemStartSessionProgramming
-  108          * Description:Processes the session change request, parametrizing the common processing
-  109          * function.
-  110          * Returns:  nothing
-  111          * Parameter(s):
-  112          *   - pMsgContext:
-  113          *       - Contains all request properties.
-  114          *       - Access type: read/write
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 3   
+  103  1              pMsgContext->resData[3] = 0x00;
+  104  1              pMsgContext->resData[4] = 0x32;
+  105  1              pMsgContext->resData[5] = 0x01;
+  106  1              pMsgContext->resData[6] = 0xF4;
+  107  1              DescSetPosResponse(pMsgContext);
+  108  1      }
+  109         
+  110         /*  ********************************************************************************
+  111          * Function name:DescOemStartSessionProgramming
+  112          * Description:Processes the session change request, parametrizing the common processing
+  113          * function.
+  114          * Returns:  nothing
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 3   
 
-  115          * Particularitie(s) and limitation(s): none
-  116          ********************************************************************************  */
-  117         DESC_STAT void DescOemStartSessionProgramming(DescMsgContext* pMsgContext)
-  118         {               
-  119  1              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  120  1              {
-  121  2                      g_descCurState.stateSession = kDescStateSessionProgramming;
-  122  2      
-  123  2                      DescMgr_CanDiagDtcControlSettingOff(); 
-  124  2      
-  125  2                      /* Write programming request to ROM */
-  126  2                      //*(INT32U*)(DESC_BOOT_RAM_ADDRESS) = DESC_BOOT_PROGRAM_REQUST;
-  127  2                      *(INT32U *)0xA000 = 0x2A2A2A2A;
-  128  2              
-  129  2                      pMsgContext->resDataLen = 0x02;
-  130  2                      DescSetPosResponse(pMsgContext);
-  131  2      
-  132  2                      /* Reset ECU and waiting enter boot */ 
-  133  2                      g_ecuResetFlag = TRUE;
-  134  2                      
-  135  2              }       
-  136  1              else
-  137  1              {
-  138  2                      DescSetNegResponse(pMsgContext, kDescNrcConditionsNotCorrect);          
-  139  2              }
-  140  1      }
-  141         
-  142         /*  ********************************************************************************
-  143          * Function name:DescOemStartSessionExtended
-  144          * Description:Processes the session change request, parametrizing the common processing
-  145          * function.
-  146          * Returns:  nothing
-  147          * Parameter(s):
-  148          *   - pMsgContext:
-  149          *       - Contains all request properties.
-  150          *       - Access type: read/write
-  151          * Particularitie(s) and limitation(s): none
-  152          ********************************************************************************  */
-  153         DESC_STAT void DescOemStartSessionExtended(DescMsgContext* pMsgContext)
-  154         {
-  155  1              g_descCurState.stateSession = kDescStateSessionExtended;
-  156  1      
-  157  1              pMsgContext->resDataLen = 0x02;
-  158  1              DescSetPosResponse(pMsgContext);        
-  159  1      }
-  160         
-  161         /*  ********************************************************************************
-  162          * Function name:DescOnTransitionSession
-  163          * Description:Notification function for state change of the given state group, defined by
-  164          * CANdelaStudio.
-  165          * Returns:  nothing
-  166          * Parameter(s):
-  167          *   - newState:
-  168          *       - The state which will be set.
-  169          *       - Access type: read
-  170          *   - formerState:
-  171          *       - The current state of this state group.
-  172          *       - Access type: read
-  173          * Particularitie(s) and limitation(s):
-  174          *   - The function "DescProcessingDone" may not be called.
-  175          *   - The function "DescSetNegResponse" may not be called.
-  176          ********************************************************************************  */
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 4   
+  115          * Parameter(s):
+  116          *   - pMsgContext:
+  117          *       - Contains all request properties.
+  118          *       - Access type: read/write
+  119          * Particularitie(s) and limitation(s): none
+  120          ********************************************************************************  */
+  121         DESC_STAT void DescOemStartSessionProgramming(DescMsgContext* pMsgContext)
+  122         {               
+  123  1              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  124  1              {
+  125  2                      g_descCurState.stateSession = kDescStateSessionProgramming;
+  126  2      
+  127  2                      DescMgr_CanDiagDtcControlSettingOff(); 
+  128  2      
+  129  2                      /* Write programming request to ROM */
+  130  2                      //*(INT32U*)(DESC_BOOT_RAM_ADDRESS) = DESC_BOOT_PROGRAM_REQUST;
+  131  2                      *(INT32U *)0xA000 = 0x2A2A2A2A;
+  132  2              
+  133  2                      pMsgContext->resDataLen = 0x02;
+  134  2                      DescSetPosResponse(pMsgContext);
+  135  2      
+  136  2                      /* Reset ECU and waiting enter boot */ 
+  137  2                      g_ecuResetFlag = TRUE;
+  138  2                      
+  139  2              }       
+  140  1              else
+  141  1              {
+  142  2                      DescSetNegResponse(pMsgContext, kDescNrcConditionsNotCorrect);          
+  143  2              }
+  144  1      }
+  145         
+  146         /*  ********************************************************************************
+  147          * Function name:DescOemStartSessionExtended
+  148          * Description:Processes the session change request, parametrizing the common processing
+  149          * function.
+  150          * Returns:  nothing
+  151          * Parameter(s):
+  152          *   - pMsgContext:
+  153          *       - Contains all request properties.
+  154          *       - Access type: read/write
+  155          * Particularitie(s) and limitation(s): none
+  156          ********************************************************************************  */
+  157         DESC_STAT void DescOemStartSessionExtended(DescMsgContext* pMsgContext)
+  158         {
+  159  1              g_descCurState.stateSession = kDescStateSessionExtended;
+  160  1      
+  161  1              pMsgContext->resDataLen = 0x02;
+  162  1              pMsgContext->resData[3] = 0x00;
+  163  1              pMsgContext->resData[4] = 0x32;
+  164  1              pMsgContext->resData[5] = 0x01;
+  165  1              pMsgContext->resData[6] = 0xF4;
+  166  1              DescSetPosResponse(pMsgContext);        
+  167  1      }
+  168         
+  169         /*  ********************************************************************************
+  170          * Function name:DescOnTransitionSession
+  171          * Description:Notification function for state change of the given state group, defined by
+  172          * CANdelaStudio.
+  173          * Returns:  nothing
+  174          * Parameter(s):
+  175          *   - newState:
+  176          *       - The state which will be set.
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 4   
 
-  177         void DESC_API_CALLBACK_TYPE DescOnTransitionSession(DescStateGroup newState, DescMsgContext* pMsgContext)
-  178         {
-  179  1          /* <<TBD>> Remove this comment once you have completely implemented this function!!! */
-  180  1          /* This is only a notification function. Using the "formerState" and the "newState" 
-  181  1          * parameter you can distinguish the different transitions for this state group.
-  182  1          */
-  183  1              if (0u == VCU_VehicleSpeed)
-  184  1              {
-  185  2                  switch (newState)
-  186  2                  {
-  187  3                              case kDescStateSessionDefault:
-  188  3                                      DescOemStartSessionDefault(pMsgContext);
-  189  3                                      break;
-  190  3                                      
-  191  3                              case kDescStateSessionProgramming:
-  192  3                                      DescOemStartSessionProgramming(pMsgContext);    
-  193  3                                      break;
-  194  3                                      
-  195  3                              case kDescStateSessionExtended:
-  196  3                                      DescOemStartSessionExtended(pMsgContext);
+  177          *       - Access type: read
+  178          *   - formerState:
+  179          *       - The current state of this state group.
+  180          *       - Access type: read
+  181          * Particularitie(s) and limitation(s):
+  182          *   - The function "DescProcessingDone" may not be called.
+  183          *   - The function "DescSetNegResponse" may not be called.
+  184          ********************************************************************************  */
+  185         void DESC_API_CALLBACK_TYPE DescOnTransitionSession(DescStateGroup newState, DescMsgContext* pMsgContext)
+  186         {
+  187  1          /* <<TBD>> Remove this comment once you have completely implemented this function!!! */
+  188  1          /* This is only a notification function. Using the "formerState" and the "newState" 
+  189  1          * parameter you can distinguish the different transitions for this state group.
+  190  1          */
+  191  1              if (0u == VCU_VehicleSpeed)
+  192  1              {
+  193  2                  switch (newState)
+  194  2                  {
+  195  3                              case kDescStateSessionDefault:
+  196  3                                      DescOemStartSessionDefault(pMsgContext);
   197  3                                      break;
   198  3                                      
-  199  3                              default:
-  200  3                                      g_descCurState.stateSession = kDescStateSessionDefault;
+  199  3                              case kDescStateSessionProgramming:
+  200  3                                      DescOemStartSessionProgramming(pMsgContext);    
   201  3                                      break;
-  202  3                  }           
-  203  2              }
-  204  1              else
-  205  1              {
-  206  2                      DescSetNegResponse(pMsgContext, kDescNrcConditionsNotCorrect);
-  207  2              }
-  208  1      
-  209  1          /*use app_diagnostic_current_session can get current session status*/
-  210  1      }
-  211         
-  212         /*  ********************************************************************************
-  213          * Function name:DescServiceClassifier
-  214          * Description: not available 
-  215          * Returns:  nothing
-  216          * Parameter(s):
-  217          *   - pMsgContext->reqData:
-  218          *       - Points to the first service request data byte.
-  219          *       - Access type: read
-  220          *   - pMsgContext->resData:
-  221          *       - Points to the first writeable byte for the service response data.
-  222          *       - Access type: read/write
-  223          *   - pMsgContext->reqDataLen:
-  224          *       - Contains the count of the service request data bytes (Sid is excluded).
-  225          *       - Access type: read
-  226          *   - pMsgContext->resDataLen:
-  227          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  228          *       - Access type: read/write
-  229          *   - pMsgContext->msgAddInfo.reqType:
-  230          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  231          *       - Access type: read
-  232          *   - pMsgContext->msgAddInfo.resOnReq:
-  233          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  234          *       - Access type: read/write
-  235          *   - pMsgContext->msgAddInfo.suppPosRes:
-  236          *       - UDS only!If set no positive response will be sent on this request.
-  237          *       - Access type: read
-  238          * Particularitie(s) and limitation(s):
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 5   
+  202  3                                      
+  203  3                              case kDescStateSessionExtended:
+  204  3                                      DescOemStartSessionExtended(pMsgContext);
+  205  3                                      break;
+  206  3                                      
+  207  3                              default:
+  208  3                                      g_descCurState.stateSession = kDescStateSessionDefault;
+  209  3                                      break;
+  210  3                  }           
+  211  2              }
+  212  1              else
+  213  1              {
+  214  2                      DescSetNegResponse(pMsgContext, kDescNrcConditionsNotCorrect);
+  215  2              }
+  216  1      
+  217  1          /*use app_diagnostic_current_session can get current session status*/
+  218  1      }
+  219         
+  220         /*  ********************************************************************************
+  221          * Function name:DescServiceClassifier
+  222          * Description: not available 
+  223          * Returns:  nothing
+  224          * Parameter(s):
+  225          *   - pMsgContext->reqData:
+  226          *       - Points to the first service request data byte.
+  227          *       - Access type: read
+  228          *   - pMsgContext->resData:
+  229          *       - Points to the first writeable byte for the service response data.
+  230          *       - Access type: read/write
+  231          *   - pMsgContext->reqDataLen:
+  232          *       - Contains the count of the service request data bytes (Sid is excluded).
+  233          *       - Access type: read
+  234          *   - pMsgContext->resDataLen:
+  235          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  236          *       - Access type: read/write
+  237          *   - pMsgContext->msgAddInfo.reqType:
+  238          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 5   
 
-  239          *   - The function "DescProcessingDone" must be called from now on (within this
-  240          * main-handler or later).
-  241          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  242          * but before calling "DescProcessingDone".
-  243          ********************************************************************************  */
-  244         void DESC_API_CALLBACK_TYPE DescServiceClassifier(DescMsgContext* pMsgContext)
-  245         {
-  246  1              /* $10:Diagnostic Session Control. Had been handle by "CANdesc" component. */
-  247  1              switch (pMsgContext->reqData[0])
-  248  1              {
-  249  2                      case 0x10: // $10 Service Classifier
-  250  2                              DescServiceClassifier_10h(pMsgContext);
-  251  2                              break;
-  252  2      
-  253  2                      case 0x11: // $11 Service Classifier
-  254  2                              DescServiceClassifier_11h(pMsgContext);
-  255  2                              break;
-  256  2      
-  257  2                      case 0x14: // $14 Service Classifier
-  258  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
+  239          *       - Access type: read
+  240          *   - pMsgContext->msgAddInfo.resOnReq:
+  241          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  242          *       - Access type: read/write
+  243          *   - pMsgContext->msgAddInfo.suppPosRes:
+  244          *       - UDS only!If set no positive response will be sent on this request.
+  245          *       - Access type: read
+  246          * Particularitie(s) and limitation(s):
+  247          *   - The function "DescProcessingDone" must be called from now on (within this
+  248          * main-handler or later).
+  249          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  250          * but before calling "DescProcessingDone".
+  251          ********************************************************************************  */
+  252         void DESC_API_CALLBACK_TYPE DescServiceClassifier(DescMsgContext* pMsgContext)
+  253         {
+  254  1              /* $10:Diagnostic Session Control. Had been handle by "CANdesc" component. */
+  255  1              switch (pMsgContext->reqData[0])
+  256  1              {
+  257  2                      case 0x10: // $10 Service Classifier
+  258  2                              DescServiceClassifier_10h(pMsgContext);
+  259  2                              break;
+  260  2      
+  261  2                      case 0x11: // $11 Service Classifier
+  262  2                              DescServiceClassifier_11h(pMsgContext);
+  263  2                              break;
+  264  2      
+  265  2                      case 0x14: // $14 Service Classifier
+  266  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
              -rState.stateSession))
-  259  2                              {
-  260  3                                      DescServiceClassifier_14h(pMsgContext);
-  261  3                              }
-  262  2                              break;
-  263  2      
-  264  2                      case 0x19: // $19 Service Classifier
-  265  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
+  267  2                              {
+  268  3                                      DescServiceClassifier_14h(pMsgContext);
+  269  3                              }
+  270  2                              break;
+  271  2      
+  272  2                      case 0x19: // $19 Service Classifier
+  273  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
              -rState.stateSession))
-  266  2                              {
-  267  3                                      DescServiceClassifier_19h(pMsgContext);
-  268  3                              }
-  269  2                              break;
-  270  2      
-  271  2                      case 0x22: // $22 Service Classifier
-  272  2                              DescServiceClassifier_22h(pMsgContext);
-  273  2                              break;
-  274  2      
-  275  2                      case 0x23: // $23 Service Classifier
-  276  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
+  274  2                              {
+  275  3                                      DescServiceClassifier_19h(pMsgContext);
+  276  3                              }
+  277  2                              break;
+  278  2      
+  279  2                      case 0x22: // $22 Service Classifier
+  280  2                              DescServiceClassifier_22h(pMsgContext);
+  281  2                              break;
+  282  2      
+  283  2                      case 0x23: // $23 Service Classifier
+  284  2                              if ((kDescStateSessionDefault == g_descCurState.stateSession) || (kDescStateSessionExtended == g_descCu
              -rState.stateSession))
-  277  2                              {
-  278  3                                      DescServiceClassifier_23h(pMsgContext);
-  279  3                              }
-  280  2                              break;
-  281  2      
-  282  2                      case 0x27: // $27 Service Classifier
-  283  2                              if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_de
+  285  2                              {
+  286  3                                      DescServiceClassifier_23h(pMsgContext);
+  287  3                              }
+  288  2                              break;
+  289  2      
+  290  2                      case 0x27: // $27 Service Classifier
+  291  2                              if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_de
              -scCurState.stateSession))
-  284  2                              {
-  285  3                                      DescServiceClassifier_27h(pMsgContext);
-  286  3                              }
-  287  2                              break;
-  288  2      
-  289  2                      case 0x28: // $28 Service Classifier
-  290  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  291  2                              {
-  292  3                                      DescServiceClassifier_28h(pMsgContext);
-  293  3                              }       
-  294  2                              break;
-  295  2      
-  296  2                      case 0x2A: // $2A Service Classifier
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 6   
+  292  2                              {
+  293  3                                      DescServiceClassifier_27h(pMsgContext);
+  294  3                              }
+  295  2                              break;
+  296  2      
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 6   
 
-  297  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  298  2                              {
-  299  3                                      DescServiceClassifier_2Ah(pMsgContext);
-  300  3                              }
-  301  2                              break;
-  302  2      
-  303  2                      case 0x2C: // $2C Service Classifier
-  304  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  305  2                              {
-  306  3                                      DescServiceClassifier_2Ch(pMsgContext);
-  307  3                              }
-  308  2                              break;
-  309  2      
-  310  2                      case 0x2E: // $2E Service Classifier
-  311  2                              //if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_
+  297  2                      case 0x28: // $28 Service Classifier
+  298  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  299  2                              {
+  300  3                                      DescServiceClassifier_28h(pMsgContext);
+  301  3                              }       
+  302  2                              break;
+  303  2      
+  304  2                      case 0x2A: // $2A Service Classifier
+  305  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  306  2                              {
+  307  3                                      DescServiceClassifier_2Ah(pMsgContext);
+  308  3                              }
+  309  2                              break;
+  310  2      
+  311  2                      case 0x2C: // $2C Service Classifier
+  312  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  313  2                              {
+  314  3                                      DescServiceClassifier_2Ch(pMsgContext);
+  315  3                              }
+  316  2                              break;
+  317  2      
+  318  2                      case 0x2E: // $2E Service Classifier
+  319  2                              //if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_
              -descCurState.stateSession))
-  312  2                              {
-  313  3                                      DescServiceClassifier_2Eh(pMsgContext);
-  314  3                              }               
-  315  2                              break;
-  316  2      
-  317  2                      case 0x2F: // $2F Service Classifier
-  318  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  319  2                              {
-  320  3                                      DescServiceClassifier_2Fh(pMsgContext);
-  321  3                              }
-  322  2                              break;
-  323  2      
-  324  2                      case 0x31: // $31 Service Classifier
-  325  2                              if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_de
+  320  2                              {
+  321  3                                      DescServiceClassifier_2Eh(pMsgContext);
+  322  3                              }               
+  323  2                              break;
+  324  2      
+  325  2                      case 0x2F: // $2F Service Classifier
+  326  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  327  2                              {
+  328  3                                      DescServiceClassifier_2Fh(pMsgContext);
+  329  3                              }
+  330  2                              break;
+  331  2      
+  332  2                      case 0x31: // $31 Service Classifier
+  333  2                              if ((kDescStateSessionExtended == g_descCurState.stateSession) || (kDescStateSessionProgramming == g_de
              -scCurState.stateSession))
-  326  2                              {
-  327  3                                      DescServiceClassifier_31h(pMsgContext);
-  328  3                              }
-  329  2                              break;
-  330  2      
-  331  2                      case 0x34: // $34 Service Classifier
-  332  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
-  333  2                              {
-  334  3                                      DescServiceClassifier_34h(pMsgContext);
-  335  3                              }               
-  336  2                              break;
-  337  2      
-  338  2                      case 0x36: // $36 Service Classifier
-  339  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
-  340  2                              {
-  341  3                                      DescServiceClassifier_36h(pMsgContext);
-  342  3                              }               
-  343  2                              break;
-  344  2      
-  345  2                      case 0x37: // $37 Service Classifier
-  346  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
-  347  2                              {
-  348  3                                      DescServiceClassifier_37h(pMsgContext);
-  349  3                              }               
-  350  2                              break;
-  351  2      
-  352  2                      case 0x3D: // $3D Service Classifier
-  353  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  354  2                              {
-  355  3                                      DescServiceClassifier_3Dh(pMsgContext);
-  356  3                              }               
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 7   
+  334  2                              {
+  335  3                                      DescServiceClassifier_31h(pMsgContext);
+  336  3                              }
+  337  2                              break;
+  338  2      
+  339  2                      case 0x34: // $34 Service Classifier
+  340  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
+  341  2                              {
+  342  3                                      DescServiceClassifier_34h(pMsgContext);
+  343  3                              }               
+  344  2                              break;
+  345  2      
+  346  2                      case 0x36: // $36 Service Classifier
+  347  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
+  348  2                              {
+  349  3                                      DescServiceClassifier_36h(pMsgContext);
+  350  3                              }               
+  351  2                              break;
+  352  2      
+  353  2                      case 0x37: // $37 Service Classifier
+  354  2                              if (kDescStateSessionProgramming == g_descCurState.stateSession)
+  355  2                              {
+  356  3                                      DescServiceClassifier_37h(pMsgContext);
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 7   
 
-  357  2                              break;
-  358  2      
-  359  2                      case 0x3E: // $3E Service Classifier
-  360  2                              DescServiceClassifier_3Eh(pMsgContext);
-  361  2                              break;
-  362  2      
-  363  2                      case 0x85: // $85 Service Classifier
-  364  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
-  365  2                              {
-  366  3                                      DescServiceClassifier_85h(pMsgContext);
-  367  3                              }
-  368  2                              break;
-  369  2      
-  370  2                      default:
-  371  2                              DescSetNegResponse(pMsgContext, kDescNrcServiceNotSupported);
-  372  2                              break;
-  373  2              }
-  374  1      }
-  375         
-  376         /*  ********************************************************************************
-  377          * Function name:DescServiceClassifier_10h (Service request header:$10)
-  378          * Description: not available 
-  379          * Returns:  nothing
-  380          * Parameter(s):
-  381          *   - pMsgContext->reqData:
-  382          *       - Points to the first service request data byte.
-  383          *       - Access type: read
-  384          *   - pMsgContext->resData:
-  385          *       - Points to the first writeable byte for the service response data.
-  386          *       - Access type: read/write
-  387          *   - pMsgContext->reqDataLen:
-  388          *       - Contains the count of the service request data bytes (Sid is excluded).
-  389          *       - Access type: read
-  390          *   - pMsgContext->resDataLen:
-  391          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  392          *       - Access type: read/write
-  393          *   - pMsgContext->msgAddInfo.reqType:
-  394          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  395          *       - Access type: read
-  396          *   - pMsgContext->msgAddInfo.resOnReq:
-  397          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  398          *       - Access type: read/write
-  399          *   - pMsgContext->msgAddInfo.suppPosRes:
-  400          *       - UDS only!If set no positive response will be sent on this request.
-  401          *       - Access type: read
-  402          * Particularitie(s) and limitation(s):
-  403          *   - The function "DescProcessingDone" must be called from now on (within this
-  404          * main-handler or later).
-  405          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  406          * but before calling "DescProcessingDone".
-  407          ********************************************************************************  */
-  408         DESC_STAT void DescServiceClassifier_10h(DescMsgContext* pMsgContext)
-  409         {
-  410  1              DESC_STAT INT32U readProgrammingRequest = 0u;
-  411  1              
-  412  1              /* $10:Diagnostic Session Control */
-  413  1              if (0x02 == pMsgContext->reqDataLen)
-  414  1              {
-  415  2                      switch (pMsgContext->reqData[1])
-  416  2                      {
-  417  3                              case 0x01: // $10 01 Service CallBack
-  418  3                                      DescOnTransitionSession(kDescStateSessionDefault, pMsgContext); 
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 8   
+  357  3                              }               
+  358  2                              break;
+  359  2      
+  360  2                      case 0x3D: // $3D Service Classifier
+  361  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  362  2                              {
+  363  3                                      DescServiceClassifier_3Dh(pMsgContext);
+  364  3                              }               
+  365  2                              break;
+  366  2      
+  367  2                      case 0x3E: // $3E Service Classifier
+  368  2                              DescServiceClassifier_3Eh(pMsgContext);
+  369  2                              break;
+  370  2      
+  371  2                      case 0x85: // $85 Service Classifier
+  372  2                              if (kDescStateSessionExtended == g_descCurState.stateSession)
+  373  2                              {
+  374  3                                      DescServiceClassifier_85h(pMsgContext);
+  375  3                              }
+  376  2                              break;
+  377  2      
+  378  2                      default:
+  379  2                              DescSetNegResponse(pMsgContext, kDescNrcServiceNotSupported);
+  380  2                              break;
+  381  2              }
+  382  1      }
+  383         
+  384         /*  ********************************************************************************
+  385          * Function name:DescServiceClassifier_10h (Service request header:$10)
+  386          * Description: not available 
+  387          * Returns:  nothing
+  388          * Parameter(s):
+  389          *   - pMsgContext->reqData:
+  390          *       - Points to the first service request data byte.
+  391          *       - Access type: read
+  392          *   - pMsgContext->resData:
+  393          *       - Points to the first writeable byte for the service response data.
+  394          *       - Access type: read/write
+  395          *   - pMsgContext->reqDataLen:
+  396          *       - Contains the count of the service request data bytes (Sid is excluded).
+  397          *       - Access type: read
+  398          *   - pMsgContext->resDataLen:
+  399          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  400          *       - Access type: read/write
+  401          *   - pMsgContext->msgAddInfo.reqType:
+  402          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  403          *       - Access type: read
+  404          *   - pMsgContext->msgAddInfo.resOnReq:
+  405          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  406          *       - Access type: read/write
+  407          *   - pMsgContext->msgAddInfo.suppPosRes:
+  408          *       - UDS only!If set no positive response will be sent on this request.
+  409          *       - Access type: read
+  410          * Particularitie(s) and limitation(s):
+  411          *   - The function "DescProcessingDone" must be called from now on (within this
+  412          * main-handler or later).
+  413          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  414          * but before calling "DescProcessingDone".
+  415          ********************************************************************************  */
+  416         DESC_STAT void DescServiceClassifier_10h(DescMsgContext* pMsgContext)
+  417         {
+  418  1              DESC_STAT INT32U readProgrammingRequest = 0u;
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 8   
 
-  419  3                                      break;
-  420  3      
-  421  3                              case 0x02: // $10 02 Service CallBack
-  422  3                                      DescOnTransitionSession(kDescStateSessionProgramming, pMsgContext);
-  423  3                                      break;
-  424  3      
-  425  3                              case 0x03: // $10 03 Service CallBack
-  426  3                                      DescOnTransitionSession(kDescStateSessionExtended, pMsgContext);
+  419  1              
+  420  1              /* $10:Diagnostic Session Control */
+  421  1              if (0x02 == pMsgContext->reqDataLen)
+  422  1              {
+  423  2                      switch (pMsgContext->reqData[1])
+  424  2                      {
+  425  3                              case 0x01: // $10 01 Service CallBack
+  426  3                                      DescOnTransitionSession(kDescStateSessionDefault, pMsgContext); 
   427  3                                      break;
-  428  3      #if ( DEBUG_BOOT_PROGRAM == 1)
-  429  3                              case 0x04:
-  430  3                                      //readProgrammingRequest = *(INT32U*)(DESC_BOOT_RAM_ADDRESS);
-  431  3                                      readProgrammingRequest = *(INT32U*)(0xE03E00);
-  432  3                                      break;
-  433  3      #endif
-  434  3                              default:
-  435  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
-  436  3                                      break;
-  437  3                      }               
-  438  2              }
-  439  1              else
-  440  1              {
-  441  2                      DescSetNegResponse(pMsgContext, kDescNrcInvalidFormat);
-  442  2              }
-  443  1      }
-  444         
-  445         /*  ********************************************************************************
-  446          * Function name:DescServiceClassifier_11h (Service request header:$11)
-  447          * Description: not available 
-  448          * Returns:  nothing
-  449          * Parameter(s):
-  450          *   - pMsgContext->reqData:
-  451          *       - Points to the first service request data byte.
-  452          *       - Access type: read
-  453          *   - pMsgContext->resData:
-  454          *       - Points to the first writeable byte for the service response data.
-  455          *       - Access type: read/write
-  456          *   - pMsgContext->reqDataLen:
-  457          *       - Contains the count of the service request data bytes (Sid is excluded).
-  458          *       - Access type: read
-  459          *   - pMsgContext->resDataLen:
-  460          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  461          *       - Access type: read/write
-  462          *   - pMsgContext->msgAddInfo.reqType:
-  463          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  464          *       - Access type: read
-  465          *   - pMsgContext->msgAddInfo.resOnReq:
-  466          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  467          *       - Access type: read/write
-  468          *   - pMsgContext->msgAddInfo.suppPosRes:
-  469          *       - UDS only!If set no positive response will be sent on this request.
-  470          *       - Access type: read
-  471          * Particularitie(s) and limitation(s):
-  472          *   - The function "DescProcessingDone" must be called from now on (within this
-  473          * main-handler or later).
-  474          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  475          * but before calling "DescProcessingDone".
-  476          ********************************************************************************  */
-  477         DESC_STAT void DescServiceClassifier_11h(DescMsgContext* pMsgContext)
-  478         {
-  479  1              /* $11:ECU Reset */
-  480  1              switch (pMsgContext->reqData[1])
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 9   
+  428  3      
+  429  3                              case 0x02: // $10 02 Service CallBack
+  430  3                                      DescOnTransitionSession(kDescStateSessionProgramming, pMsgContext);
+  431  3                                      break;
+  432  3      
+  433  3                              case 0x03: // $10 03 Service CallBack
+  434  3                                      DescOnTransitionSession(kDescStateSessionExtended, pMsgContext);
+  435  3                                      break;
+  436  3      #if ( DEBUG_BOOT_PROGRAM == 1)
+  437  3                              case 0x04:
+  438  3                                      //readProgrammingRequest = *(INT32U*)(DESC_BOOT_RAM_ADDRESS);
+  439  3                                      readProgrammingRequest = *(INT32U*)(0xE03E00);
+  440  3                                      break;
+  441  3      #endif
+  442  3                              default:
+  443  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  444  3                                      break;
+  445  3                      }               
+  446  2              }
+  447  1              else
+  448  1              {
+  449  2                      DescSetNegResponse(pMsgContext, kDescNrcInvalidFormat);
+  450  2              }
+  451  1      }
+  452         
+  453         /*  ********************************************************************************
+  454          * Function name:DescServiceClassifier_11h (Service request header:$11)
+  455          * Description: not available 
+  456          * Returns:  nothing
+  457          * Parameter(s):
+  458          *   - pMsgContext->reqData:
+  459          *       - Points to the first service request data byte.
+  460          *       - Access type: read
+  461          *   - pMsgContext->resData:
+  462          *       - Points to the first writeable byte for the service response data.
+  463          *       - Access type: read/write
+  464          *   - pMsgContext->reqDataLen:
+  465          *       - Contains the count of the service request data bytes (Sid is excluded).
+  466          *       - Access type: read
+  467          *   - pMsgContext->resDataLen:
+  468          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  469          *       - Access type: read/write
+  470          *   - pMsgContext->msgAddInfo.reqType:
+  471          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  472          *       - Access type: read
+  473          *   - pMsgContext->msgAddInfo.resOnReq:
+  474          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  475          *       - Access type: read/write
+  476          *   - pMsgContext->msgAddInfo.suppPosRes:
+  477          *       - UDS only!If set no positive response will be sent on this request.
+  478          *       - Access type: read
+  479          * Particularitie(s) and limitation(s):
+  480          *   - The function "DescProcessingDone" must be called from now on (within this
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 9   
 
-  481  1              {
-  482  2                      case 0x01: // $11 01 Service CallBack
-  483  2                              CanDiagAppCallBack(DESC_11_01_HARDWARE_RESET, pMsgContext);
-  484  2                              break;
-  485  2      
-  486  2                      case 0x02: // $11 02 Service CallBack
-  487  2                              CanDiagAppCallBack(DESC_11_02_KEYOFFON_RESET, pMsgContext);
-  488  2                              break;
-  489  2      
-  490  2                      case 0x03: // $11 03 Service CallBack
-  491  2                              CanDiagAppCallBack(DESC_11_03_SOFTWARE_RESET, pMsgContext);
+  481          * main-handler or later).
+  482          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  483          * but before calling "DescProcessingDone".
+  484          ********************************************************************************  */
+  485         DESC_STAT void DescServiceClassifier_11h(DescMsgContext* pMsgContext)
+  486         {
+  487  1              /* $11:ECU Reset */
+  488  1              switch (pMsgContext->reqData[1])
+  489  1              {
+  490  2                      case 0x01: // $11 01 Service CallBack
+  491  2                              CanDiagAppCallBack(DESC_11_01_HARDWARE_RESET, pMsgContext);
   492  2                              break;
   493  2      
-  494  2                      default:
-  495  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  494  2                      case 0x02: // $11 02 Service CallBack
+  495  2                              CanDiagAppCallBack(DESC_11_02_KEYOFFON_RESET, pMsgContext);
   496  2                              break;
-  497  2              }                                       
-  498  1      }
-  499         
-  500         /*  ********************************************************************************
-  501          * Function name:DescServiceClassifier_14h (Service request header:$14)
-  502          * Description: not available 
-  503          * Returns:  nothing
-  504          * Parameter(s):
-  505          *   - pMsgContext->reqData:
-  506          *       - Points to the first service request data byte.
-  507          *       - Access type: read
-  508          *   - pMsgContext->resData:
-  509          *       - Points to the first writeable byte for the service response data.
-  510          *       - Access type: read/write
-  511          *   - pMsgContext->reqDataLen:
-  512          *       - Contains the count of the service request data bytes (Sid is excluded).
-  513          *       - Access type: read
-  514          *   - pMsgContext->resDataLen:
-  515          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  516          *       - Access type: read/write
-  517          *   - pMsgContext->msgAddInfo.reqType:
-  518          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  519          *       - Access type: read
-  520          *   - pMsgContext->msgAddInfo.resOnReq:
-  521          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  522          *       - Access type: read/write
-  523          *   - pMsgContext->msgAddInfo.suppPosRes:
-  524          *       - UDS only!If set no positive response will be sent on this request.
-  525          *       - Access type: read
-  526          * Particularitie(s) and limitation(s):
-  527          *   - The function "DescProcessingDone" must be called from now on (within this
-  528          * main-handler or later).
-  529          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  530          * but before calling "DescProcessingDone".
-  531          ********************************************************************************  */
-  532         DESC_STAT void DescServiceClassifier_14h(DescMsgContext* pMsgContext)
-  533         {
-  534  1              /* $14:Fault Memory */
-  535  1              CanDiagAppCallBack(DESC_14_CLR_DIAGNOSTIC_INFORMATION, pMsgContext); // $14 Service CallBack
-  536  1      }
-  537         
-  538         /*  ********************************************************************************
-  539          * Function name:DescServiceClassifier_19h (Service request header:$19)
-  540          * Description: not available 
-  541          * Returns:  nothing
-  542          * Parameter(s):
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 10  
+  497  2      
+  498  2                      case 0x03: // $11 03 Service CallBack
+  499  2                              CanDiagAppCallBack(DESC_11_03_SOFTWARE_RESET, pMsgContext);
+  500  2                              break;
+  501  2      
+  502  2                      default:
+  503  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  504  2                              break;
+  505  2              }                                       
+  506  1      }
+  507         
+  508         /*  ********************************************************************************
+  509          * Function name:DescServiceClassifier_14h (Service request header:$14)
+  510          * Description: not available 
+  511          * Returns:  nothing
+  512          * Parameter(s):
+  513          *   - pMsgContext->reqData:
+  514          *       - Points to the first service request data byte.
+  515          *       - Access type: read
+  516          *   - pMsgContext->resData:
+  517          *       - Points to the first writeable byte for the service response data.
+  518          *       - Access type: read/write
+  519          *   - pMsgContext->reqDataLen:
+  520          *       - Contains the count of the service request data bytes (Sid is excluded).
+  521          *       - Access type: read
+  522          *   - pMsgContext->resDataLen:
+  523          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  524          *       - Access type: read/write
+  525          *   - pMsgContext->msgAddInfo.reqType:
+  526          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  527          *       - Access type: read
+  528          *   - pMsgContext->msgAddInfo.resOnReq:
+  529          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  530          *       - Access type: read/write
+  531          *   - pMsgContext->msgAddInfo.suppPosRes:
+  532          *       - UDS only!If set no positive response will be sent on this request.
+  533          *       - Access type: read
+  534          * Particularitie(s) and limitation(s):
+  535          *   - The function "DescProcessingDone" must be called from now on (within this
+  536          * main-handler or later).
+  537          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  538          * but before calling "DescProcessingDone".
+  539          ********************************************************************************  */
+  540         DESC_STAT void DescServiceClassifier_14h(DescMsgContext* pMsgContext)
+  541         {
+  542  1              /* $14:Fault Memory */
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 10  
 
-  543          *   - pMsgContext->reqData:
-  544          *       - Points to the first service request data byte.
-  545          *       - Access type: read
-  546          *   - pMsgContext->resData:
-  547          *       - Points to the first writeable byte for the service response data.
-  548          *       - Access type: read/write
-  549          *   - pMsgContext->reqDataLen:
-  550          *       - Contains the count of the service request data bytes (Sid is excluded).
-  551          *       - Access type: read
-  552          *   - pMsgContext->resDataLen:
-  553          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  554          *       - Access type: read/write
-  555          *   - pMsgContext->msgAddInfo.reqType:
-  556          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  557          *       - Access type: read
-  558          *   - pMsgContext->msgAddInfo.resOnReq:
-  559          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  560          *       - Access type: read/write
-  561          *   - pMsgContext->msgAddInfo.suppPosRes:
-  562          *       - UDS only!If set no positive response will be sent on this request.
-  563          *       - Access type: read
-  564          * Particularitie(s) and limitation(s):
-  565          *   - The function "DescProcessingDone" must be called from now on (within this
-  566          * main-handler or later).
-  567          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  568          * but before calling "DescProcessingDone".
-  569          ********************************************************************************  */
-  570         DESC_STAT void DescServiceClassifier_19h(DescMsgContext* pMsgContext)
-  571         {
-  572  1              /* $19:Fault Memory*/
-  573  1              switch (pMsgContext->reqData[1])
-  574  1              {
-  575  2                      case 0x01: // $19 01 Service CallBack
-  576  2                              CanDiagAppCallBack(DESC_19_01_READ_NUMBER_OF_FAULTMEMORY, pMsgContext);
-  577  2                              break;
-  578  2      
-  579  2                      case 0x02: // $19 02 Service CallBack
-  580  2                              CanDiagAppCallBack(DESC_19_02_READ_MASK_FAULT_MEMORY, pMsgContext);
-  581  2                              break;
-  582  2      
-  583  2                      case 0x04: // $19 04 Service CallBack
-  584  2                              CanDiagAppCallBack(DESC_19_04_READ_SNAPSHOT_DATA_BY_DTC_NUMBER, pMsgContext);
+  543  1              CanDiagAppCallBack(DESC_14_CLR_DIAGNOSTIC_INFORMATION, pMsgContext); // $14 Service CallBack
+  544  1      }
+  545         
+  546         /*  ********************************************************************************
+  547          * Function name:DescServiceClassifier_19h (Service request header:$19)
+  548          * Description: not available 
+  549          * Returns:  nothing
+  550          * Parameter(s):
+  551          *   - pMsgContext->reqData:
+  552          *       - Points to the first service request data byte.
+  553          *       - Access type: read
+  554          *   - pMsgContext->resData:
+  555          *       - Points to the first writeable byte for the service response data.
+  556          *       - Access type: read/write
+  557          *   - pMsgContext->reqDataLen:
+  558          *       - Contains the count of the service request data bytes (Sid is excluded).
+  559          *       - Access type: read
+  560          *   - pMsgContext->resDataLen:
+  561          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  562          *       - Access type: read/write
+  563          *   - pMsgContext->msgAddInfo.reqType:
+  564          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  565          *       - Access type: read
+  566          *   - pMsgContext->msgAddInfo.resOnReq:
+  567          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  568          *       - Access type: read/write
+  569          *   - pMsgContext->msgAddInfo.suppPosRes:
+  570          *       - UDS only!If set no positive response will be sent on this request.
+  571          *       - Access type: read
+  572          * Particularitie(s) and limitation(s):
+  573          *   - The function "DescProcessingDone" must be called from now on (within this
+  574          * main-handler or later).
+  575          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  576          * but before calling "DescProcessingDone".
+  577          ********************************************************************************  */
+  578         DESC_STAT void DescServiceClassifier_19h(DescMsgContext* pMsgContext)
+  579         {
+  580  1              /* $19:Fault Memory*/
+  581  1              switch (pMsgContext->reqData[1])
+  582  1              {
+  583  2                      case 0x01: // $19 01 Service CallBack
+  584  2                              CanDiagAppCallBack(DESC_19_01_READ_NUMBER_OF_FAULTMEMORY, pMsgContext);
   585  2                              break;
   586  2      
-  587  2                      case 0x06: // $19 06 Service CallBack
-  588  2                              CanDiagAppCallBack(DESC_19_06_READ_EXTEND_DATA_BY_DTC_NUMBER, pMsgContext);
+  587  2                      case 0x02: // $19 02 Service CallBack
+  588  2                              CanDiagAppCallBack(DESC_19_02_READ_MASK_FAULT_MEMORY, pMsgContext);
   589  2                              break;
   590  2      
-  591  2                      case 0x0A: // $19 0A Service CallBack
-  592  2                              CanDiagAppCallBack(DESC_19_0A_RPT_SUPPORTED_DTC, pMsgContext);
-  593  2                              break;                  
+  591  2                      case 0x04: // $19 04 Service CallBack
+  592  2                              CanDiagAppCallBack(DESC_19_04_READ_SNAPSHOT_DATA_BY_DTC_NUMBER, pMsgContext);
+  593  2                              break;
   594  2      
-  595  2                      default:
-  596  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  595  2                      case 0x06: // $19 06 Service CallBack
+  596  2                              CanDiagAppCallBack(DESC_19_06_READ_EXTEND_DATA_BY_DTC_NUMBER, pMsgContext);
   597  2                              break;
-  598  2              }               
-  599  1      }
-  600         
-  601         /*  ********************************************************************************
-  602          * Function name:DescServiceClassifier_22h (Service request header:$22)
-  603          * Description: not available 
-  604          * Returns:  nothing
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 11  
+  598  2      
+  599  2                      case 0x0A: // $19 0A Service CallBack
+  600  2                              CanDiagAppCallBack(DESC_19_0A_RPT_SUPPORTED_DTC, pMsgContext);
+  601  2                              break;                  
+  602  2      
+  603  2                      default:
+  604  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 11  
 
-  605          * Parameter(s):
-  606          *   - pMsgContext->reqData:
-  607          *       - Points to the first service request data byte.
-  608          *       - Access type: read
-  609          *   - pMsgContext->resData:
-  610          *       - Points to the first writeable byte for the service response data.
-  611          *       - Access type: read/write
-  612          *   - pMsgContext->reqDataLen:
-  613          *       - Contains the count of the service request data bytes (Sid is excluded).
-  614          *       - Access type: read
-  615          *   - pMsgContext->resDataLen:
-  616          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  617          *       - Access type: read/write
-  618          *   - pMsgContext->msgAddInfo.reqType:
-  619          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  620          *       - Access type: read
-  621          *   - pMsgContext->msgAddInfo.resOnReq:
-  622          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  623          *       - Access type: read/write
-  624          *   - pMsgContext->msgAddInfo.suppPosRes:
-  625          *       - UDS only!If set no positive response will be sent on this request.
-  626          *       - Access type: read
-  627          * Particularitie(s) and limitation(s):
-  628          *   - The function "DescProcessingDone" must be called from now on (within this
-  629          * main-handler or later).
-  630          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  631          * but before calling "DescProcessingDone".
-  632          ********************************************************************************  */
-  633         DESC_STAT void DescServiceClassifier_22h(DescMsgContext* pMsgContext)
-  634         {
-  635  1              INT16U reqData = 0u;
-  636  1      
-  637  1              reqData = (INT16U)((pMsgContext->reqData[1] << 8u) | pMsgContext->reqData[2]);
-  638  1      
-  639  1              /* $22:Read By Data Identifier */
-  640  1              switch (reqData)
-  641  1              {
-  642  2                      case 0xF187: // $22 F187 Service CallBack
-  643  2                              CanDiagAppCallBack(DESC_22_F187_READ_YEMA_SPARE_PART_NUMBER_DATA_IDENTIFIER, pMsgContext);
-  644  2                              break;
-  645  2      
-  646  2                      case 0xF18A: // $22 F18A Service CallBack
-  647  2                              CanDiagAppCallBack(DESC_22_F18A_READ_TIER1_IDENTIFIER_DATA_IDENTIFIER, pMsgContext);
-  648  2                              break;
-  649  2      
-  650  2                      case 0xF18C: // $22 F18C Service CallBack
-  651  2                              CanDiagAppCallBack(DESC_22_F18C_READ_TIER1_ECU_SERIAL_NUMBER_IDENTIFIER, pMsgContext);
+  605  2                              break;
+  606  2              }               
+  607  1      }
+  608         
+  609         /*  ********************************************************************************
+  610          * Function name:DescServiceClassifier_22h (Service request header:$22)
+  611          * Description: not available 
+  612          * Returns:  nothing
+  613          * Parameter(s):
+  614          *   - pMsgContext->reqData:
+  615          *       - Points to the first service request data byte.
+  616          *       - Access type: read
+  617          *   - pMsgContext->resData:
+  618          *       - Points to the first writeable byte for the service response data.
+  619          *       - Access type: read/write
+  620          *   - pMsgContext->reqDataLen:
+  621          *       - Contains the count of the service request data bytes (Sid is excluded).
+  622          *       - Access type: read
+  623          *   - pMsgContext->resDataLen:
+  624          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  625          *       - Access type: read/write
+  626          *   - pMsgContext->msgAddInfo.reqType:
+  627          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  628          *       - Access type: read
+  629          *   - pMsgContext->msgAddInfo.resOnReq:
+  630          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  631          *       - Access type: read/write
+  632          *   - pMsgContext->msgAddInfo.suppPosRes:
+  633          *       - UDS only!If set no positive response will be sent on this request.
+  634          *       - Access type: read
+  635          * Particularitie(s) and limitation(s):
+  636          *   - The function "DescProcessingDone" must be called from now on (within this
+  637          * main-handler or later).
+  638          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  639          * but before calling "DescProcessingDone".
+  640          ********************************************************************************  */
+  641         DESC_STAT void DescServiceClassifier_22h(DescMsgContext* pMsgContext)
+  642         {
+  643  1              INT16U reqData = 0u;
+  644  1      
+  645  1              reqData = (INT16U)((pMsgContext->reqData[1] << 8u) | pMsgContext->reqData[2]);
+  646  1      
+  647  1              /* $22:Read By Data Identifier */
+  648  1              switch (reqData)
+  649  1              {
+  650  2                      case 0xF187: // $22 F187 Service CallBack
+  651  2                              CanDiagAppCallBack(DESC_22_F187_READ_YEMA_SPARE_PART_NUMBER_DATA_IDENTIFIER, pMsgContext);
   652  2                              break;
   653  2      
-  654  2                      case 0xF190: // $22 F190 Service CallBack
-  655  2                              CanDiagAppCallBack(DESC_22_F190_READ_YEMA_VIN_DATA_IDENTIFIER, pMsgContext);
+  654  2                      case 0xF18A: // $22 F18A Service CallBack
+  655  2                              CanDiagAppCallBack(DESC_22_F18A_READ_TIER1_IDENTIFIER_DATA_IDENTIFIER, pMsgContext);
   656  2                              break;
   657  2      
-  658  2                      case 0xF193: // $22 F193 Service CallBack
-  659  2                              CanDiagAppCallBack(DESC_22_F193_READ_TIER1_ECU_HARDWARE_VERSION_NUMBER_IDENTIFIER, pMsgContext);
+  658  2                      case 0xF18C: // $22 F18C Service CallBack
+  659  2                              CanDiagAppCallBack(DESC_22_F18C_READ_TIER1_ECU_SERIAL_NUMBER_IDENTIFIER, pMsgContext);
   660  2                              break;
   661  2      
-  662  2                      case 0xF195: // $22 F195 Service CallBack
-  663  2                              CanDiagAppCallBack(DESC_22_F195_READ_TIER1_ECU_SOFTWARE_VERSION_NUMBER_IDENTIFIER, pMsgContext);
+  662  2                      case 0xF190: // $22 F190 Service CallBack
+  663  2                              CanDiagAppCallBack(DESC_22_F190_READ_YEMA_VIN_DATA_IDENTIFIER, pMsgContext);
   664  2                              break;
   665  2      
-  666  2                      case 0xF197: // $22 F197 Service CallBack
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 12  
+  666  2                      case 0xF193: // $22 F193 Service CallBack
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 12  
 
-  667  2                              CanDiagAppCallBack(DESC_22_F197_READ_TIER1_SYSTERM_NAME_DATA_IDENTIFIER, pMsgContext);
+  667  2                              CanDiagAppCallBack(DESC_22_F193_READ_TIER1_ECU_HARDWARE_VERSION_NUMBER_IDENTIFIER, pMsgContext);
   668  2                              break;
-  669  2                      
-  670  2                      case 0x6666: // $22 6666 Service CallBack
-  671  2                              CanDiagAppCallBack(DESC_22_6666_SIMULATT_ADC_DATA, pMsgContext);
+  669  2      
+  670  2                      case 0xF195: // $22 F195 Service CallBack
+  671  2                              CanDiagAppCallBack(DESC_22_F195_READ_TIER1_ECU_SOFTWARE_VERSION_NUMBER_IDENTIFIER, pMsgContext);
   672  2                              break;
-  673  2                      
-  674  2                      case 0x6667: // $22 6667 Service CallBack
-  675  2                              CanDiagAppCallBack(DESC_22_6667_READ_EEPROM_DATA, pMsgContext);
+  673  2      
+  674  2                      case 0xF197: // $22 F197 Service CallBack
+  675  2                              CanDiagAppCallBack(DESC_22_F197_READ_TIER1_SYSTERM_NAME_DATA_IDENTIFIER, pMsgContext);
   676  2                              break;
   677  2                      
-  678  2                      case 0x2201: // $22 2201 Service CallBack
-  679  2                              CanDiagAppCallBack(DESC_22_2201_READ_PEDAL_CYLINDER_RATING_DATA, pMsgContext);
+  678  2                      case 0x6666: // $22 6666 Service CallBack
+  679  2                              CanDiagAppCallBack(DESC_22_6666_SIMULATT_ADC_DATA, pMsgContext);
   680  2                              break;
-  681  2      
-  682  2                      default:
-  683  2                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);
+  681  2                      
+  682  2                      case 0x6667: // $22 6667 Service CallBack
+  683  2                              CanDiagAppCallBack(DESC_22_6667_READ_EEPROM_DATA, pMsgContext);
   684  2                              break;
-  685  2              }               
-  686  1      }
-  687         
-  688         /*  ********************************************************************************
-  689          * Function name:DescServiceClassifier_23h (Service request header:$23)
-  690          * Description: not available 
-  691          * Returns:  nothing
-  692          * Parameter(s):
-  693          *   - pMsgContext->reqData:
-  694          *       - Points to the first service request data byte.
-  695          *       - Access type: read
-  696          *   - pMsgContext->resData:
-  697          *       - Points to the first writeable byte for the service response data.
-  698          *       - Access type: read/write
-  699          *   - pMsgContext->reqDataLen:
-  700          *       - Contains the count of the service request data bytes (Sid is excluded).
-  701          *       - Access type: read
-  702          *   - pMsgContext->resDataLen:
-  703          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  704          *       - Access type: read/write
-  705          *   - pMsgContext->msgAddInfo.reqType:
-  706          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  707          *       - Access type: read
-  708          *   - pMsgContext->msgAddInfo.resOnReq:
-  709          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  710          *       - Access type: read/write
-  711          *   - pMsgContext->msgAddInfo.suppPosRes:
-  712          *       - UDS only!If set no positive response will be sent on this request.
-  713          *       - Access type: read
-  714          * Particularitie(s) and limitation(s):
-  715          *   - The function "DescProcessingDone" must be called from now on (within this
-  716          * main-handler or later).
-  717          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  718          * but before calling "DescProcessingDone".
-  719          ********************************************************************************  */
-  720         DESC_STAT void DescServiceClassifier_23h(DescMsgContext* pMsgContext)
-  721         {
-  722  1              /* $23:Read Memory By Address */
-  723  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
-  724  1              {
-  725  2                      if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAccess
-             -Level_2 == g_descCurState.stateSecurityAccess))
-  726  2                      {
-  727  3                              CanDiagAppCallBack(DESC_23_24_READ_MEMORY_BY_ADDRESS, pMsgContext);
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 13  
+  685  2                      
+  686  2                      case 0x2201: // $22 2201 Service CallBack
+  687  2                              CanDiagAppCallBack(DESC_22_2201_READ_PEDAL_CYLINDER_RATING_DATA, pMsgContext);
+  688  2                              break;
+  689  2      
+  690  2                      case 0x2202: // $22 2202 Service CallBack
+  691  2                              CanDiagAppCallBack(DESC_22_2202_READ_LONG_TIME_BRAKE_TIMES, pMsgContext);
+  692  2                              break;
+  693  2      
+  694  2                      case 0xDEF0:
+  695  2                              CanDiagAppCallBack(DESC_22_DEF0_READ_SETTING_PARAMETER_DATA1, pMsgContext);
+  696  2                              break;
+  697  2                      case 0xDEF1:
+  698  2                              CanDiagAppCallBack(DESC_22_DEF1_READ_SETTING_PARAMETER_DATA2, pMsgContext);
+  699  2                              break;
+  700  2                      case 0xDEF2:
+  701  2                              CanDiagAppCallBack(DESC_22_DEF2_READ_SETTING_PARAMETER_DATA3, pMsgContext);
+  702  2                              break;
+  703  2                      case 0xDEF3:
+  704  2                              CanDiagAppCallBack(DESC_22_DEF3_READ_SETTING_PARAMETER_DATA4, pMsgContext);
+  705  2                              break;
+  706  2                      case 0xDEF4:
+  707  2                              CanDiagAppCallBack(DESC_22_DEF4_READ_SETTING_PARAMETER_DATA5, pMsgContext);
+  708  2                              break;
+  709  2                      case 0xDEF5:
+  710  2                              CanDiagAppCallBack(DESC_22_DEF5_READ_SETTING_PARAMETER_DATA6, pMsgContext);
+  711  2                              break;
+  712  2                      case 0xDEF6:
+  713  2                              CanDiagAppCallBack(DESC_22_DEF6_READ_SETTING_PARAMETER_DATA7, pMsgContext);
+  714  2                              break;
+  715  2                      case 0xDEF7:
+  716  2                              CanDiagAppCallBack(DESC_22_DEF7_READ_SETTING_PARAMETER_DATA8, pMsgContext);
+  717  2                              break;
+  718  2                      case 0xDEF8:
+  719  2                              CanDiagAppCallBack(DESC_22_DEF8_READ_SETTING_PARAMETER_DATA9, pMsgContext);
+  720  2                              break;
+  721  2                      case 0xDEF9:
+  722  2                              CanDiagAppCallBack(DESC_22_DEF9_READ_SETTING_PARAMETER_DATA10, pMsgContext);
+  723  2                              break;
+  724  2                      case 0xDEFA:
+  725  2                              CanDiagAppCallBack(DESC_22_DEFA_READ_SETTING_PARAMETER_DATA11, pMsgContext);
+  726  2                              break;
+  727  2      
+  728  2                      default:
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 13  
 
-  728  3                      }
-  729  2                      else
-  730  2                      {
-  731  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
-  732  3                      }               
-  733  2              }
-  734  1              else
-  735  1              {
-  736  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
-  737  2              }
-  738  1      }
-  739         
-  740         /*  ********************************************************************************
-  741          * Function name:DescServiceClassifier_27h (Service request header:$27)
-  742          * Description: not available 
-  743          * Returns:  nothing
-  744          * Parameter(s):
-  745          *   - pMsgContext->reqData:
-  746          *       - Points to the first service request data byte.
+  729  2                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);
+  730  2                              break;
+  731  2              }               
+  732  1      }
+  733         
+  734         /*  ********************************************************************************
+  735          * Function name:DescServiceClassifier_23h (Service request header:$23)
+  736          * Description: not available 
+  737          * Returns:  nothing
+  738          * Parameter(s):
+  739          *   - pMsgContext->reqData:
+  740          *       - Points to the first service request data byte.
+  741          *       - Access type: read
+  742          *   - pMsgContext->resData:
+  743          *       - Points to the first writeable byte for the service response data.
+  744          *       - Access type: read/write
+  745          *   - pMsgContext->reqDataLen:
+  746          *       - Contains the count of the service request data bytes (Sid is excluded).
   747          *       - Access type: read
-  748          *   - pMsgContext->resData:
-  749          *       - Points to the first writeable byte for the service response data.
+  748          *   - pMsgContext->resDataLen:
+  749          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
   750          *       - Access type: read/write
-  751          *   - pMsgContext->reqDataLen:
-  752          *       - Contains the count of the service request data bytes (Sid is excluded).
+  751          *   - pMsgContext->msgAddInfo.reqType:
+  752          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
   753          *       - Access type: read
-  754          *   - pMsgContext->resDataLen:
-  755          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  754          *   - pMsgContext->msgAddInfo.resOnReq:
+  755          *       - Indicates if there will be response. Allowed only to write only 0 !!!
   756          *       - Access type: read/write
-  757          *   - pMsgContext->msgAddInfo.reqType:
-  758          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  757          *   - pMsgContext->msgAddInfo.suppPosRes:
+  758          *       - UDS only!If set no positive response will be sent on this request.
   759          *       - Access type: read
-  760          *   - pMsgContext->msgAddInfo.resOnReq:
-  761          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  762          *       - Access type: read/write
-  763          *   - pMsgContext->msgAddInfo.suppPosRes:
-  764          *       - UDS only!If set no positive response will be sent on this request.
-  765          *       - Access type: read
-  766          * Particularitie(s) and limitation(s):
-  767          *   - The function "DescProcessingDone" must be called from now on (within this
-  768          * main-handler or later).
-  769          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  770          * but before calling "DescProcessingDone".
-  771          ********************************************************************************  */
-  772         DESC_STAT void DescServiceClassifier_27h(DescMsgContext* pMsgContext)
-  773         {
-  774  1              /* $27:Security Access */
-  775  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
-  776  1              {
-  777  2                      switch (pMsgContext->reqData[1])
-  778  2                      {
-  779  3                              case 0x01: // $27 01 Service CallBack
-  780  3                                      CanDiagAppCallBack(DESC_27_01_REQUEST_SEED_TO_REACH_SECURITY_LEVEL, pMsgContext);
-  781  3                                      break;
-  782  3      
-  783  3                              case 0x02: // $27 02 Service CallBack
-  784  3                                      CanDiagAppCallBack(DESC_27_02_SEND_TO_REACH_SECURITY_LEVEL, pMsgContext);
-  785  3                                      break;
-  786  3      
-  787  3                              case 0x09: // $27 09 Service CallBack
-  788  3                                      CanDiagAppCallBack(DESC_27_09_REQUEST_SEED_TO_REACH_SECURITY_LEVEL, pMsgContext);
-  789  3                                      break;
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 14  
-
-  790  3      
-  791  3                              case 0x0A: // $27 0A Service CallBack
-  792  3                                      CanDiagAppCallBack(DESC_27_0A_SEND_KEY_TO_REACH_SECURITY_LEVEL, pMsgContext);
-  793  3                                      break;                  
-  794  3      
-  795  3                              default:
-  796  3                                      DescSetStateSecurityAccess(kDescStateSecurityAccessLocked);
-  797  3      
-  798  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
-  799  3                                      break;
-  800  3                      }               
-  801  2              }
-  802  1              else
-  803  1              {
-  804  2                      DescSetStateSecurityAccess(kDescStateSecurityAccessLocked);
-  805  2      
-  806  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
-  807  2              }
-  808  1      }
-  809         
-  810         /*  ********************************************************************************
-  811          * Function name:DescServiceClassifier_28h (Service request header:$28)
-  812          * Description: not available 
-  813          * Returns:  nothing
-  814          * Parameter(s):
-  815          *   - pMsgContext->reqData:
-  816          *       - Points to the first service request data byte.
-  817          *       - Access type: read
-  818          *   - pMsgContext->resData:
-  819          *       - Points to the first writeable byte for the service response data.
-  820          *       - Access type: read/write
-  821          *   - pMsgContext->reqDataLen:
-  822          *       - Contains the count of the service request data bytes (Sid is excluded).
-  823          *       - Access type: read
-  824          *   - pMsgContext->resDataLen:
-  825          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  826          *       - Access type: read/write
-  827          *   - pMsgContext->msgAddInfo.reqType:
-  828          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  829          *       - Access type: read
-  830          *   - pMsgContext->msgAddInfo.resOnReq:
-  831          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  832          *       - Access type: read/write
-  833          *   - pMsgContext->msgAddInfo.suppPosRes:
-  834          *       - UDS only!If set no positive response will be sent on this request.
-  835          *       - Access type: read
-  836          * Particularitie(s) and limitation(s):
-  837          *   - The function "DescProcessingDone" must be called from now on (within this
-  838          * main-handler or later).
-  839          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  840          * but before calling "DescProcessingDone".
-  841          ********************************************************************************  */
-  842         DESC_STAT void DescServiceClassifier_28h(DescMsgContext* pMsgContext)
-  843         {
-  844  1              /* $28:Communication Control */
-  845  1              switch (pMsgContext->reqData[1])
-  846  1              {
-  847  2                      case 0x00: // $28 00 Service CallBack
-  848  2                              CanDiagAppCallBack(DESC_28_00_COMMUNICATION_CONTROL_ENABLE_RX_AND_TX, pMsgContext);
-  849  2                              break;
-  850  2      
-  851  2                      case 0x01: // $28 01 Service CallBack
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 15  
-
-  852  2                              CanDiagAppCallBack(DESC_28_01_COMMUNICATION_CONTROL_ENABLE_RX_AND_DISABLE_TX, pMsgContext);
-  853  2                              break;
-  854  2      
-  855  2                      case 0x02: // $28 02 Service CallBack
-  856  2                              CanDiagAppCallBack(DESC_28_02_COMMUNICATION_CONTROL_DISABLE_RX_AND_ENABLE_TX, pMsgContext);
-  857  2                              break;
-  858  2      
-  859  2                      case 0x03: // $28 03 Service CallBack
-  860  2                              CanDiagAppCallBack(DESC_28_03_COMMUNICATION_CONTROL_DISABLE_RX_AND_TX, pMsgContext);
-  861  2                              break;                  
-  862  2      
-  863  2                      default:
-  864  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
-  865  2                              break;
-  866  2              }               
-  867  1      }
-  868         
-  869         /*  ********************************************************************************
-  870          * Function name:DescServiceClassifier_2Ah (Service request header:$2A)
-  871          * Description: not available 
-  872          * Returns:  nothing
-  873          * Parameter(s):
-  874          *   - pMsgContext->reqData:
-  875          *       - Points to the first service request data byte.
-  876          *       - Access type: read
-  877          *   - pMsgContext->resData:
-  878          *       - Points to the first writeable byte for the service response data.
-  879          *       - Access type: read/write
-  880          *   - pMsgContext->reqDataLen:
-  881          *       - Contains the count of the service request data bytes (Sid is excluded).
-  882          *       - Access type: read
-  883          *   - pMsgContext->resDataLen:
-  884          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  885          *       - Access type: read/write
-  886          *   - pMsgContext->msgAddInfo.reqType:
-  887          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  888          *       - Access type: read
-  889          *   - pMsgContext->msgAddInfo.resOnReq:
-  890          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  891          *       - Access type: read/write
-  892          *   - pMsgContext->msgAddInfo.suppPosRes:
-  893          *       - UDS only!If set no positive response will be sent on this request.
-  894          *       - Access type: read
-  895          * Particularitie(s) and limitation(s):
-  896          *   - The function "DescProcessingDone" must be called from now on (within this
-  897          * main-handler or later).
-  898          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  899          * but before calling "DescProcessingDone".
-  900          ********************************************************************************  */
-  901         DESC_STAT void DescServiceClassifier_2Ah(DescMsgContext* pMsgContext)
-  902         {
-  903  1              /* $2A:Read Data By Periodic Indentifier */
-  904  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
-  905  1              {
-  906  2                      switch (pMsgContext->reqData[1])
-  907  2                      {
-  908  3                              case 0x01: // $2A 01 Service CallBack
-  909  3                                      CanDiagAppCallBack(DESC_2A_01_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_SLOW_RATE, pMsgContext);
-  910  3                                      break;
-  911  3      
-  912  3                              case 0x02: // $2A 02 Service CallBack
-  913  3                                      CanDiagAppCallBack(DESC_2A_02_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_MEDIUM_RATE, pMsgContext);
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 16  
-
-  914  3                                      break;
-  915  3      
-  916  3                              case 0x03: // $2A 03 Service CallBack
-  917  3                                      CanDiagAppCallBack(DESC_2A_03_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_FAST_RATE, pMsgContext);
-  918  3                                      break;
-  919  3      
-  920  3                              case 0x04: // $2A 04 Service CallBack
-  921  3                                      CanDiagAppCallBack(DESC_2A_04_READ_DATA_BY_PERIODIC_INDENTIFIER_STOP_SENDING, pMsgContext);
-  922  3                                      break;                  
-  923  3      
-  924  3                              default:
-  925  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);               
-  926  3                                      break;
-  927  3                      }               
-  928  2              }
-  929  1              else
-  930  1              {
-  931  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);
-  932  2              }
-  933  1      }
-  934         
-  935         /*  ********************************************************************************
-  936          * Function name:DescServiceClassifier_2Ch (Service request header:$2C)
-  937          * Description: not available 
-  938          * Returns:  nothing
-  939          * Parameter(s):
-  940          *   - pMsgContext->reqData:
-  941          *       - Points to the first service request data byte.
-  942          *       - Access type: read
-  943          *   - pMsgContext->resData:
-  944          *       - Points to the first writeable byte for the service response data.
-  945          *       - Access type: read/write
-  946          *   - pMsgContext->reqDataLen:
-  947          *       - Contains the count of the service request data bytes (Sid is excluded).
-  948          *       - Access type: read
-  949          *   - pMsgContext->resDataLen:
-  950          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
-  951          *       - Access type: read/write
-  952          *   - pMsgContext->msgAddInfo.reqType:
-  953          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
-  954          *       - Access type: read
-  955          *   - pMsgContext->msgAddInfo.resOnReq:
-  956          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-  957          *       - Access type: read/write
-  958          *   - pMsgContext->msgAddInfo.suppPosRes:
-  959          *       - UDS only!If set no positive response will be sent on this request.
-  960          *       - Access type: read
-  961          * Particularitie(s) and limitation(s):
-  962          *   - The function "DescProcessingDone" must be called from now on (within this
-  963          * main-handler or later).
-  964          *   - The function "DescSetNegResponse" can be called within this main-handler or later
-  965          * but before calling "DescProcessingDone".
-  966          ********************************************************************************  */
-  967         DESC_STAT void DescServiceClassifier_2Ch(DescMsgContext* pMsgContext)
-  968         {
-  969  1              /* $2C:Dynamically Define Data Indentifier */
-  970  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
-  971  1              {
-  972  2                      switch (pMsgContext->reqData[1])
-  973  2                      {
-  974  3                              case 0x01: // $2C 01 Service CallBack
-  975  3                                      CanDiagAppCallBack(DESC_2C_01_DEFINE_BY_IDENTIFIER, pMsgContext);
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 17  
-
-  976  3                                      break;
-  977  3      
-  978  3                              case 0x03: // $2C 03 Service CallBack
-  979  3                                      CanDiagAppCallBack(DESC_2C_03_CLEAR_DYNAMICALLY_DEFINE_DATA_IDENTIFIER, pMsgContext);
-  980  3                                      break;  
-  981  3      
-  982  3                              default:
-  983  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
-  984  3                                      break;
-  985  3                      }               
-  986  2              }
-  987  1              else
-  988  1              {
-  989  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
-  990  2              }
-  991  1      }
-  992         
-  993         /*  ********************************************************************************
-  994          * Function name:DescServiceClassifier_2Eh (Service request header:$2E)
-  995          * Description: not available 
-  996          * Returns:  nothing
-  997          * Parameter(s):
-  998          *   - pMsgContext->reqData:
-  999          *       - Points to the first service request data byte.
- 1000          *       - Access type: read
- 1001          *   - pMsgContext->resData:
- 1002          *       - Points to the first writeable byte for the service response data.
- 1003          *       - Access type: read/write
- 1004          *   - pMsgContext->reqDataLen:
- 1005          *       - Contains the count of the service request data bytes (Sid is excluded).
- 1006          *       - Access type: read
- 1007          *   - pMsgContext->resDataLen:
- 1008          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
- 1009          *       - Access type: read/write
- 1010          *   - pMsgContext->msgAddInfo.reqType:
- 1011          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
- 1012          *       - Access type: read
- 1013          *   - pMsgContext->msgAddInfo.resOnReq:
- 1014          *       - Indicates if there will be response. Allowed only to write only 0 !!!
- 1015          *       - Access type: read/write
- 1016          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1017          *       - UDS only!If set no positive response will be sent on this request.
- 1018          *       - Access type: read
- 1019          * Particularitie(s) and limitation(s):
- 1020          *   - The function "DescProcessingDone" must be called from now on (within this
- 1021          * main-handler or later).
- 1022          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1023          * but before calling "DescProcessingDone".
- 1024          ********************************************************************************  */
- 1025         DESC_STAT void DescServiceClassifier_2Eh(DescMsgContext* pMsgContext)
- 1026         {
- 1027  1              INT16U reqData = 0u;
- 1028  1      
- 1029  1              reqData = (INT16U)((pMsgContext->reqData[1] << 8u) | pMsgContext->reqData[2]);
- 1030  1      
- 1031  1              /* $2E:Write By Data Identifier */
- 1032  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1033  1              {
- 1034  2                      //if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAcce
-             -ssLevel_2 == g_descCurState.stateSecurityAccess))
- 1035  2                      {
- 1036  3                              switch (reqData)
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 18  
-
- 1037  3                              {
- 1038  4                                      case 0xF190: // $2E F190 Service CallBack
- 1039  4                                              CanDiagAppCallBack(DESC_2E_F190_WRITE_YEMA_VIN, pMsgContext);
- 1040  4                                              break;
- 1041  4                                      
- 1042  4                                      case 0x6668: // $2E 6668 Service CallBack
- 1043  4                                              CanDiagAppCallBack(DESC_2E_6668_WRITE_EEPROM_DATA, pMsgContext);
- 1044  4                                              break;
- 1045  4                                      
- 1046  4                                      case 0x2E01: // $2E 2E01 Service CallBack
- 1047  4                                              CanDiagAppCallBack(DESC_2E_2E01_WRITE_PEDAL_CYLINDER_INIT_DATA, pMsgContext);
- 1048  4                                              break;
- 1049  4                                      
- 1050  4                                      case 0x2E02: // $2E 2E02 Service CallBack
- 1051  4                                              CanDiagAppCallBack(DESC_2E_2E02_WRITE_PV_TEST_FLAG, pMsgContext);
- 1052  4                                              break;
- 1053  4      
- 1054  4                                      default:
- 1055  4                                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);             
- 1056  4                                              break;
- 1057  4                              }                               
- 1058  3                      }
- 1059  2                      //else
- 1060  2                      {
- 1061  3                              //DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                        
- 1062  3                      }
- 1063  2              }
- 1064  1              else
- 1065  1              {
- 1066  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1067  2              }
- 1068  1      }
- 1069         
- 1070         /*  ********************************************************************************
- 1071          * Function name:DescServiceClassifier_2Fh (Service request header:$2F)
- 1072          * Description: not available 
- 1073          * Returns:  nothing
- 1074          * Parameter(s):
- 1075          *   - pMsgContext->reqData:
- 1076          *       - Points to the first service request data byte.
- 1077          *       - Access type: read
- 1078          *   - pMsgContext->resData:
- 1079          *       - Points to the first writeable byte for the service response data.
- 1080          *       - Access type: read/write
- 1081          *   - pMsgContext->reqDataLen:
- 1082          *       - Contains the count of the service request data bytes (Sid is excluded).
- 1083          *       - Access type: read
- 1084          *   - pMsgContext->resDataLen:
- 1085          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
- 1086          *       - Access type: read/write
- 1087          *   - pMsgContext->msgAddInfo.reqType:
- 1088          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
- 1089          *       - Access type: read
- 1090          *   - pMsgContext->msgAddInfo.resOnReq:
- 1091          *       - Indicates if there will be response. Allowed only to write only 0 !!!
- 1092          *       - Access type: read/write
- 1093          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1094          *       - UDS only!If set no positive response will be sent on this request.
- 1095          *       - Access type: read
- 1096          * Particularitie(s) and limitation(s):
- 1097          *   - The function "DescProcessingDone" must be called from now on (within this
- 1098          * main-handler or later).
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 19  
-
- 1099          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1100          * but before calling "DescProcessingDone".
- 1101          ********************************************************************************  */
- 1102         DESC_STAT void DescServiceClassifier_2Fh(DescMsgContext* pMsgContext)
- 1103         {
- 1104  1              /* $2F:Input Output Control By Identifier */
- 1105  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1106  1              {
- 1107  2                      if (kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess)
- 1108  2                      {
- 1109  3                              // TODO:$2F Service
- 1110  3                      }
- 1111  2                      else
- 1112  2                      {
- 1113  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);          
- 1114  3                      }
- 1115  2              }
- 1116  1              else
- 1117  1              {
- 1118  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1119  2              }
- 1120  1      }
- 1121         
- 1122         /*  ********************************************************************************
- 1123          * Function name:DescServiceClassifier_31h (Service request header:$31)
- 1124          * Description: not available 
- 1125          * Returns:  nothing
- 1126          * Parameter(s):
- 1127          *   - pMsgContext->reqData:
- 1128          *       - Points to the first service request data byte.
- 1129          *       - Access type: read
- 1130          *   - pMsgContext->resData:
- 1131          *       - Points to the first writeable byte for the service response data.
- 1132          *       - Access type: read/write
- 1133          *   - pMsgContext->reqDataLen:
- 1134          *       - Contains the count of the service request data bytes (Sid is excluded).
- 1135          *       - Access type: read
- 1136          *   - pMsgContext->resDataLen:
- 1137          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
- 1138          *       - Access type: read/write
- 1139          *   - pMsgContext->msgAddInfo.reqType:
- 1140          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
- 1141          *       - Access type: read
- 1142          *   - pMsgContext->msgAddInfo.resOnReq:
- 1143          *       - Indicates if there will be response. Allowed only to write only 0 !!!
- 1144          *       - Access type: read/write
- 1145          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1146          *       - UDS only!If set no positive response will be sent on this request.
- 1147          *       - Access type: read
- 1148          * Particularitie(s) and limitation(s):
- 1149          *   - The function "DescProcessingDone" must be called from now on (within this
- 1150          * main-handler or later).
- 1151          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1152          * but before calling "DescProcessingDone".
- 1153          ********************************************************************************  */
- 1154         DESC_STAT void DescServiceClassifier_31h(DescMsgContext* pMsgContext)
- 1155         {
- 1156  1              INT32U reqData = 0u;
- 1157  1      
- 1158  1              reqData = (INT32U)((pMsgContext->reqData[1] << 16u) | (pMsgContext->reqData[2] << 8u) | pMsgContext->reqD
-             -ata[3]);
- 1159  1      
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 20  
-
- 1160  1              /* $31:Service Routine Control */
- 1161  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1162  1              {
- 1163  2                      if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAccess
+  760          * Particularitie(s) and limitation(s):
+  761          *   - The function "DescProcessingDone" must be called from now on (within this
+  762          * main-handler or later).
+  763          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  764          * but before calling "DescProcessingDone".
+  765          ********************************************************************************  */
+  766         DESC_STAT void DescServiceClassifier_23h(DescMsgContext* pMsgContext)
+  767         {
+  768  1              /* $23:Read Memory By Address */
+  769  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+  770  1              {
+  771  2                      if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAccess
              -Level_2 == g_descCurState.stateSecurityAccess))
- 1164  2                      {
- 1165  3                              switch (reqData)
- 1166  3                              {
- 1167  4                                      case 0x01F001:
- 1168  4                                              CanDiagAppCallBack(DESC_31_01_F001_CHECK_PROGRAMMING_INTEGRITY, pMsgContext);
- 1169  4                                              break;
- 1170  4      
- 1171  4                                      case 0x01FF02:
- 1172  4                                              CanDiagAppCallBack(DESC_31_01_FF02_CHECK_PROGRAMMING_PRE_CONDITION, pMsgContext);
- 1173  4                                              break;
- 1174  4      
- 1175  4                                      case 0x01FF00:
- 1176  4                                              CanDiagAppCallBack(DESC_31_01_FF00_ERASE_MEMORY, pMsgContext);
- 1177  4                                              break;
- 1178  4      
- 1179  4                                      case 0x01FF01:
- 1180  4                                              CanDiagAppCallBack(DESC_31_01_FF01_CHECK_PROGRAMMING_DEPENDENCY, pMsgContext);
- 1181  4                                              break;
- 1182  4      
- 1183  4                                      default:
- 1184  4                                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);
- 1185  4                                              break;
- 1186  4                              }
- 1187  3                      }
- 1188  2                      else
- 1189  2                      {
- 1190  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
- 1191  3                      }       
- 1192  2              }
- 1193  1              else
- 1194  1              {
- 1195  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
- 1196  2              }
- 1197  1      }
- 1198         
- 1199         /*  ********************************************************************************
- 1200          * Function name:DescServiceClassifier_34h (Service request header:$34)
- 1201          * Description: not available 
- 1202          * Returns:  nothing
- 1203          * Parameter(s):
- 1204          *   - pMsgContext->reqData:
- 1205          *       - Points to the first service request data byte.
- 1206          *       - Access type: read
- 1207          *   - pMsgContext->resData:
- 1208          *       - Points to the first writeable byte for the service response data.
- 1209          *       - Access type: read/write
- 1210          *   - pMsgContext->reqDataLen:
- 1211          *       - Contains the count of the service request data bytes (Sid is excluded).
- 1212          *       - Access type: read
- 1213          *   - pMsgContext->resDataLen:
- 1214          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
- 1215          *       - Access type: read/write
- 1216          *   - pMsgContext->msgAddInfo.reqType:
- 1217          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
- 1218          *       - Access type: read
- 1219          *   - pMsgContext->msgAddInfo.resOnReq:
- 1220          *       - Indicates if there will be response. Allowed only to write only 0 !!!
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 21  
+  772  2                      {
+  773  3                              CanDiagAppCallBack(DESC_23_24_READ_MEMORY_BY_ADDRESS, pMsgContext);
+  774  3                      }
+  775  2                      else
+  776  2                      {
+  777  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
+  778  3                      }               
+  779  2              }
+  780  1              else
+  781  1              {
+  782  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
+  783  2              }
+  784  1      }
+  785         
+  786         /*  ********************************************************************************
+  787          * Function name:DescServiceClassifier_27h (Service request header:$27)
+  788          * Description: not available 
+  789          * Returns:  nothing
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 14  
 
- 1221          *       - Access type: read/write
- 1222          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1223          *       - UDS only!If set no positive response will be sent on this request.
- 1224          *       - Access type: read
- 1225          * Particularitie(s) and limitation(s):
- 1226          *   - The function "DescProcessingDone" must be called from now on (within this
- 1227          * main-handler or later).
- 1228          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1229          * but before calling "DescProcessingDone".
- 1230          ********************************************************************************  */
- 1231         DESC_STAT void DescServiceClassifier_34h(DescMsgContext* pMsgContext)
- 1232         {
- 1233  1              /* $34:Request Download */ 
- 1234  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1235  1              {
- 1236  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
- 1237  2                      {
- 1238  3                              CanDiagAppCallBack(DESC_34_REQUEST_DOWNLOAD, pMsgContext); // $34 Service CallBack      
- 1239  3                      }
- 1240  2                      else
- 1241  2                      {
- 1242  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
- 1243  3                      }
- 1244  2              }
- 1245  1              else
- 1246  1              {
- 1247  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1248  2              }
- 1249  1      }
- 1250         
- 1251         /*  ********************************************************************************
- 1252          * Function name:DescServiceClassifier_36h (Service request header:$36)
- 1253          * Description: not available 
- 1254          * Returns:  nothing
- 1255          * Parameter(s):
- 1256          *   - pMsgContext->reqData:
- 1257          *       - Points to the first service request data byte.
- 1258          *       - Access type: read
- 1259          *   - pMsgContext->resData:
- 1260          *       - Points to the first writeable byte for the service response data.
- 1261          *       - Access type: read/write
- 1262          *   - pMsgContext->reqDataLen:
- 1263          *       - Contains the count of the service request data bytes (Sid is excluded).
+  790          * Parameter(s):
+  791          *   - pMsgContext->reqData:
+  792          *       - Points to the first service request data byte.
+  793          *       - Access type: read
+  794          *   - pMsgContext->resData:
+  795          *       - Points to the first writeable byte for the service response data.
+  796          *       - Access type: read/write
+  797          *   - pMsgContext->reqDataLen:
+  798          *       - Contains the count of the service request data bytes (Sid is excluded).
+  799          *       - Access type: read
+  800          *   - pMsgContext->resDataLen:
+  801          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  802          *       - Access type: read/write
+  803          *   - pMsgContext->msgAddInfo.reqType:
+  804          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  805          *       - Access type: read
+  806          *   - pMsgContext->msgAddInfo.resOnReq:
+  807          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  808          *       - Access type: read/write
+  809          *   - pMsgContext->msgAddInfo.suppPosRes:
+  810          *       - UDS only!If set no positive response will be sent on this request.
+  811          *       - Access type: read
+  812          * Particularitie(s) and limitation(s):
+  813          *   - The function "DescProcessingDone" must be called from now on (within this
+  814          * main-handler or later).
+  815          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  816          * but before calling "DescProcessingDone".
+  817          ********************************************************************************  */
+  818         DESC_STAT void DescServiceClassifier_27h(DescMsgContext* pMsgContext)
+  819         {
+  820  1              /* $27:Security Access */
+  821  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+  822  1              {
+  823  2                      switch (pMsgContext->reqData[1])
+  824  2                      {
+  825  3                              case 0x01: // $27 01 Service CallBack
+  826  3                                      CanDiagAppCallBack(DESC_27_01_REQUEST_SEED_TO_REACH_SECURITY_LEVEL, pMsgContext);
+  827  3                                      break;
+  828  3      
+  829  3                              case 0x02: // $27 02 Service CallBack
+  830  3                                      CanDiagAppCallBack(DESC_27_02_SEND_TO_REACH_SECURITY_LEVEL, pMsgContext);
+  831  3                                      break;
+  832  3      
+  833  3                              case 0x09: // $27 09 Service CallBack
+  834  3                                      CanDiagAppCallBack(DESC_27_09_REQUEST_SEED_TO_REACH_SECURITY_LEVEL, pMsgContext);
+  835  3                                      break;
+  836  3      
+  837  3                              case 0x0A: // $27 0A Service CallBack
+  838  3                                      CanDiagAppCallBack(DESC_27_0A_SEND_KEY_TO_REACH_SECURITY_LEVEL, pMsgContext);
+  839  3                                      break;                  
+  840  3      
+  841  3                              default:
+  842  3                                      DescSetStateSecurityAccess(kDescStateSecurityAccessLocked);
+  843  3      
+  844  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  845  3                                      break;
+  846  3                      }               
+  847  2              }
+  848  1              else
+  849  1              {
+  850  2                      DescSetStateSecurityAccess(kDescStateSecurityAccessLocked);
+  851  2      
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 15  
+
+  852  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
+  853  2              }
+  854  1      }
+  855         
+  856         /*  ********************************************************************************
+  857          * Function name:DescServiceClassifier_28h (Service request header:$28)
+  858          * Description: not available 
+  859          * Returns:  nothing
+  860          * Parameter(s):
+  861          *   - pMsgContext->reqData:
+  862          *       - Points to the first service request data byte.
+  863          *       - Access type: read
+  864          *   - pMsgContext->resData:
+  865          *       - Points to the first writeable byte for the service response data.
+  866          *       - Access type: read/write
+  867          *   - pMsgContext->reqDataLen:
+  868          *       - Contains the count of the service request data bytes (Sid is excluded).
+  869          *       - Access type: read
+  870          *   - pMsgContext->resDataLen:
+  871          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  872          *       - Access type: read/write
+  873          *   - pMsgContext->msgAddInfo.reqType:
+  874          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  875          *       - Access type: read
+  876          *   - pMsgContext->msgAddInfo.resOnReq:
+  877          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  878          *       - Access type: read/write
+  879          *   - pMsgContext->msgAddInfo.suppPosRes:
+  880          *       - UDS only!If set no positive response will be sent on this request.
+  881          *       - Access type: read
+  882          * Particularitie(s) and limitation(s):
+  883          *   - The function "DescProcessingDone" must be called from now on (within this
+  884          * main-handler or later).
+  885          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  886          * but before calling "DescProcessingDone".
+  887          ********************************************************************************  */
+  888         DESC_STAT void DescServiceClassifier_28h(DescMsgContext* pMsgContext)
+  889         {
+  890  1              /* $28:Communication Control */
+  891  1              switch (pMsgContext->reqData[1])
+  892  1              {
+  893  2                      case 0x00: // $28 00 Service CallBack
+  894  2                              CanDiagAppCallBack(DESC_28_00_COMMUNICATION_CONTROL_ENABLE_RX_AND_TX, pMsgContext);
+  895  2                              break;
+  896  2      
+  897  2                      case 0x01: // $28 01 Service CallBack
+  898  2                              CanDiagAppCallBack(DESC_28_01_COMMUNICATION_CONTROL_ENABLE_RX_AND_DISABLE_TX, pMsgContext);
+  899  2                              break;
+  900  2      
+  901  2                      case 0x02: // $28 02 Service CallBack
+  902  2                              CanDiagAppCallBack(DESC_28_02_COMMUNICATION_CONTROL_DISABLE_RX_AND_ENABLE_TX, pMsgContext);
+  903  2                              break;
+  904  2      
+  905  2                      case 0x03: // $28 03 Service CallBack
+  906  2                              CanDiagAppCallBack(DESC_28_03_COMMUNICATION_CONTROL_DISABLE_RX_AND_TX, pMsgContext);
+  907  2                              break;                  
+  908  2      
+  909  2                      default:
+  910  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+  911  2                              break;
+  912  2              }               
+  913  1      }
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 16  
+
+  914         
+  915         /*  ********************************************************************************
+  916          * Function name:DescServiceClassifier_2Ah (Service request header:$2A)
+  917          * Description: not available 
+  918          * Returns:  nothing
+  919          * Parameter(s):
+  920          *   - pMsgContext->reqData:
+  921          *       - Points to the first service request data byte.
+  922          *       - Access type: read
+  923          *   - pMsgContext->resData:
+  924          *       - Points to the first writeable byte for the service response data.
+  925          *       - Access type: read/write
+  926          *   - pMsgContext->reqDataLen:
+  927          *       - Contains the count of the service request data bytes (Sid is excluded).
+  928          *       - Access type: read
+  929          *   - pMsgContext->resDataLen:
+  930          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  931          *       - Access type: read/write
+  932          *   - pMsgContext->msgAddInfo.reqType:
+  933          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+  934          *       - Access type: read
+  935          *   - pMsgContext->msgAddInfo.resOnReq:
+  936          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+  937          *       - Access type: read/write
+  938          *   - pMsgContext->msgAddInfo.suppPosRes:
+  939          *       - UDS only!If set no positive response will be sent on this request.
+  940          *       - Access type: read
+  941          * Particularitie(s) and limitation(s):
+  942          *   - The function "DescProcessingDone" must be called from now on (within this
+  943          * main-handler or later).
+  944          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+  945          * but before calling "DescProcessingDone".
+  946          ********************************************************************************  */
+  947         DESC_STAT void DescServiceClassifier_2Ah(DescMsgContext* pMsgContext)
+  948         {
+  949  1              /* $2A:Read Data By Periodic Indentifier */
+  950  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+  951  1              {
+  952  2                      switch (pMsgContext->reqData[1])
+  953  2                      {
+  954  3                              case 0x01: // $2A 01 Service CallBack
+  955  3                                      CanDiagAppCallBack(DESC_2A_01_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_SLOW_RATE, pMsgContext);
+  956  3                                      break;
+  957  3      
+  958  3                              case 0x02: // $2A 02 Service CallBack
+  959  3                                      CanDiagAppCallBack(DESC_2A_02_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_MEDIUM_RATE, pMsgContext);
+  960  3                                      break;
+  961  3      
+  962  3                              case 0x03: // $2A 03 Service CallBack
+  963  3                                      CanDiagAppCallBack(DESC_2A_03_READ_DATA_BY_PERIODIC_INDENTIFIER_SEND_AT_FAST_RATE, pMsgContext);
+  964  3                                      break;
+  965  3      
+  966  3                              case 0x04: // $2A 04 Service CallBack
+  967  3                                      CanDiagAppCallBack(DESC_2A_04_READ_DATA_BY_PERIODIC_INDENTIFIER_STOP_SENDING, pMsgContext);
+  968  3                                      break;                  
+  969  3      
+  970  3                              default:
+  971  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);               
+  972  3                                      break;
+  973  3                      }               
+  974  2              }
+  975  1              else
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 17  
+
+  976  1              {
+  977  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);
+  978  2              }
+  979  1      }
+  980         
+  981         /*  ********************************************************************************
+  982          * Function name:DescServiceClassifier_2Ch (Service request header:$2C)
+  983          * Description: not available 
+  984          * Returns:  nothing
+  985          * Parameter(s):
+  986          *   - pMsgContext->reqData:
+  987          *       - Points to the first service request data byte.
+  988          *       - Access type: read
+  989          *   - pMsgContext->resData:
+  990          *       - Points to the first writeable byte for the service response data.
+  991          *       - Access type: read/write
+  992          *   - pMsgContext->reqDataLen:
+  993          *       - Contains the count of the service request data bytes (Sid is excluded).
+  994          *       - Access type: read
+  995          *   - pMsgContext->resDataLen:
+  996          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+  997          *       - Access type: read/write
+  998          *   - pMsgContext->msgAddInfo.reqType:
+  999          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1000          *       - Access type: read
+ 1001          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1002          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1003          *       - Access type: read/write
+ 1004          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1005          *       - UDS only!If set no positive response will be sent on this request.
+ 1006          *       - Access type: read
+ 1007          * Particularitie(s) and limitation(s):
+ 1008          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1009          * main-handler or later).
+ 1010          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1011          * but before calling "DescProcessingDone".
+ 1012          ********************************************************************************  */
+ 1013         DESC_STAT void DescServiceClassifier_2Ch(DescMsgContext* pMsgContext)
+ 1014         {
+ 1015  1              /* $2C:Dynamically Define Data Indentifier */
+ 1016  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1017  1              {
+ 1018  2                      switch (pMsgContext->reqData[1])
+ 1019  2                      {
+ 1020  3                              case 0x01: // $2C 01 Service CallBack
+ 1021  3                                      CanDiagAppCallBack(DESC_2C_01_DEFINE_BY_IDENTIFIER, pMsgContext);
+ 1022  3                                      break;
+ 1023  3      
+ 1024  3                              case 0x03: // $2C 03 Service CallBack
+ 1025  3                                      CanDiagAppCallBack(DESC_2C_03_CLEAR_DYNAMICALLY_DEFINE_DATA_IDENTIFIER, pMsgContext);
+ 1026  3                                      break;  
+ 1027  3      
+ 1028  3                              default:
+ 1029  3                                      DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+ 1030  3                                      break;
+ 1031  3                      }               
+ 1032  2              }
+ 1033  1              else
+ 1034  1              {
+ 1035  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1036  2              }
+ 1037  1      }
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 18  
+
+ 1038         
+ 1039         /*  ********************************************************************************
+ 1040          * Function name:DescServiceClassifier_2Eh (Service request header:$2E)
+ 1041          * Description: not available 
+ 1042          * Returns:  nothing
+ 1043          * Parameter(s):
+ 1044          *   - pMsgContext->reqData:
+ 1045          *       - Points to the first service request data byte.
+ 1046          *       - Access type: read
+ 1047          *   - pMsgContext->resData:
+ 1048          *       - Points to the first writeable byte for the service response data.
+ 1049          *       - Access type: read/write
+ 1050          *   - pMsgContext->reqDataLen:
+ 1051          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1052          *       - Access type: read
+ 1053          *   - pMsgContext->resDataLen:
+ 1054          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1055          *       - Access type: read/write
+ 1056          *   - pMsgContext->msgAddInfo.reqType:
+ 1057          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1058          *       - Access type: read
+ 1059          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1060          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1061          *       - Access type: read/write
+ 1062          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1063          *       - UDS only!If set no positive response will be sent on this request.
+ 1064          *       - Access type: read
+ 1065          * Particularitie(s) and limitation(s):
+ 1066          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1067          * main-handler or later).
+ 1068          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1069          * but before calling "DescProcessingDone".
+ 1070          ********************************************************************************  */
+ 1071         DESC_STAT void DescServiceClassifier_2Eh(DescMsgContext* pMsgContext)
+ 1072         {
+ 1073  1              INT16U reqData = 0u;
+ 1074  1      
+ 1075  1              reqData = (INT16U)((pMsgContext->reqData[1] << 8u) | pMsgContext->reqData[2]);
+ 1076  1      
+ 1077  1              /* $2E:Write By Data Identifier */
+ 1078  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1079  1              {
+ 1080  2                      //if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAcce
+             -ssLevel_2 == g_descCurState.stateSecurityAccess))
+ 1081  2                      {
+ 1082  3                              switch (reqData)
+ 1083  3                              {
+ 1084  4                                      case 0xF18C:
+ 1085  4                                              CanDiagAppCallBack(DESC_2E_F18C_WRITE_ECU_SERIAL_NUM, pMsgContext);
+ 1086  4                                              break;
+ 1087  4                                      
+ 1088  4                                      case 0xF190: // $2E F190 Service CallBack
+ 1089  4                                              CanDiagAppCallBack(DESC_2E_F190_WRITE_OEM_VIN, pMsgContext);
+ 1090  4                                              break;
+ 1091  4                                      
+ 1092  4                                      case 0x6668: // $2E 6668 Service CallBack
+ 1093  4                                              CanDiagAppCallBack(DESC_2E_6668_WRITE_EEPROM_DATA, pMsgContext);
+ 1094  4                                              break;
+ 1095  4                                      
+ 1096  4                                      case 0x2201: // $2E 2E01 Service CallBack
+ 1097  4                                              CanDiagAppCallBack(DESC_2E_2201_WRITE_PEDAL_CYLINDER_INIT_DATA, pMsgContext);
+ 1098  4                                              break;
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 19  
+
+ 1099  4      
+ 1100  4                                      case 0x2202: // $2E 2202 Service CallBack
+ 1101  4                                              CanDiagAppCallBack(DESC_2E_2202_WRITE_LONG_TIME_BRAKE_TIMES, pMsgContext);
+ 1102  4                                              break;
+ 1103  4                                      
+ 1104  4                                      case 0x2E02: // $2E 2E02 Service CallBack
+ 1105  4                                              CanDiagAppCallBack(DESC_2E_2E02_WRITE_PV_TEST_FLAG, pMsgContext);
+ 1106  4                                              break;
+ 1107  4                                      
+ 1108  4                                      case 0x2203: // $2E 2203 Service CallBack
+ 1109  4                                              CanDiagAppCallBack(DESC_2E_2203_WRITE_CLEAR_CALIBRATION_DATA, pMsgContext);
+ 1110  4                                              break;
+ 1111  4      
+ 1112  4                                      default:
+ 1113  4                                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);             
+ 1114  4                                              break;
+ 1115  4                              }                               
+ 1116  3                      }
+ 1117  2                      //else
+ 1118  2                      {
+ 1119  3                              //DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                        
+ 1120  3                      }
+ 1121  2              }
+ 1122  1              else
+ 1123  1              {
+ 1124  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1125  2              }
+ 1126  1      }
+ 1127         
+ 1128         /*  ********************************************************************************
+ 1129          * Function name:DescServiceClassifier_2Fh (Service request header:$2F)
+ 1130          * Description: not available 
+ 1131          * Returns:  nothing
+ 1132          * Parameter(s):
+ 1133          *   - pMsgContext->reqData:
+ 1134          *       - Points to the first service request data byte.
+ 1135          *       - Access type: read
+ 1136          *   - pMsgContext->resData:
+ 1137          *       - Points to the first writeable byte for the service response data.
+ 1138          *       - Access type: read/write
+ 1139          *   - pMsgContext->reqDataLen:
+ 1140          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1141          *       - Access type: read
+ 1142          *   - pMsgContext->resDataLen:
+ 1143          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1144          *       - Access type: read/write
+ 1145          *   - pMsgContext->msgAddInfo.reqType:
+ 1146          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1147          *       - Access type: read
+ 1148          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1149          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1150          *       - Access type: read/write
+ 1151          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1152          *       - UDS only!If set no positive response will be sent on this request.
+ 1153          *       - Access type: read
+ 1154          * Particularitie(s) and limitation(s):
+ 1155          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1156          * main-handler or later).
+ 1157          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1158          * but before calling "DescProcessingDone".
+ 1159          ********************************************************************************  */
+ 1160         DESC_STAT void DescServiceClassifier_2Fh(DescMsgContext* pMsgContext)
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 20  
+
+ 1161         {
+ 1162  1              /* $2F:Input Output Control By Identifier */
+ 1163  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1164  1              {
+ 1165  2                      if (kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess)
+ 1166  2                      {
+ 1167  3                              // TODO:$2F Service
+ 1168  3                      }
+ 1169  2                      else
+ 1170  2                      {
+ 1171  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);          
+ 1172  3                      }
+ 1173  2              }
+ 1174  1              else
+ 1175  1              {
+ 1176  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1177  2              }
+ 1178  1      }
+ 1179         
+ 1180         /*  ********************************************************************************
+ 1181          * Function name:DescServiceClassifier_31h (Service request header:$31)
+ 1182          * Description: not available 
+ 1183          * Returns:  nothing
+ 1184          * Parameter(s):
+ 1185          *   - pMsgContext->reqData:
+ 1186          *       - Points to the first service request data byte.
+ 1187          *       - Access type: read
+ 1188          *   - pMsgContext->resData:
+ 1189          *       - Points to the first writeable byte for the service response data.
+ 1190          *       - Access type: read/write
+ 1191          *   - pMsgContext->reqDataLen:
+ 1192          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1193          *       - Access type: read
+ 1194          *   - pMsgContext->resDataLen:
+ 1195          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1196          *       - Access type: read/write
+ 1197          *   - pMsgContext->msgAddInfo.reqType:
+ 1198          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1199          *       - Access type: read
+ 1200          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1201          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1202          *       - Access type: read/write
+ 1203          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1204          *       - UDS only!If set no positive response will be sent on this request.
+ 1205          *       - Access type: read
+ 1206          * Particularitie(s) and limitation(s):
+ 1207          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1208          * main-handler or later).
+ 1209          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1210          * but before calling "DescProcessingDone".
+ 1211          ********************************************************************************  */
+ 1212         DESC_STAT void DescServiceClassifier_31h(DescMsgContext* pMsgContext)
+ 1213         {
+ 1214  1              INT32U reqData = 0u;
+ 1215  1      
+ 1216  1              reqData = (INT32U)((pMsgContext->reqData[1] << 16u) | (pMsgContext->reqData[2] << 8u) | pMsgContext->reqD
+             -ata[3]);
+ 1217  1      
+ 1218  1              /* $31:Service Routine Control */
+ 1219  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1220  1              {
+ 1221  2                      if ((kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess) || (kDescStateSecurityAccess
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 21  
+
+             -Level_2 == g_descCurState.stateSecurityAccess))
+ 1222  2                      {
+ 1223  3                              switch (reqData)
+ 1224  3                              {
+ 1225  4                                      case 0x01F001:
+ 1226  4                                              CanDiagAppCallBack(DESC_31_01_F001_CHECK_PROGRAMMING_INTEGRITY, pMsgContext);
+ 1227  4                                              break;
+ 1228  4      
+ 1229  4                                      case 0x01FF02:
+ 1230  4                                              CanDiagAppCallBack(DESC_31_01_FF02_CHECK_PROGRAMMING_PRE_CONDITION, pMsgContext);
+ 1231  4                                              break;
+ 1232  4      
+ 1233  4                                      case 0x01FF00:
+ 1234  4                                              CanDiagAppCallBack(DESC_31_01_FF00_ERASE_MEMORY, pMsgContext);
+ 1235  4                                              break;
+ 1236  4      
+ 1237  4                                      case 0x01FF01:
+ 1238  4                                              CanDiagAppCallBack(DESC_31_01_FF01_CHECK_PROGRAMMING_DEPENDENCY, pMsgContext);
+ 1239  4                                              break;
+ 1240  4      
+ 1241  4                                      default:
+ 1242  4                                              DescSetNegResponse(pMsgContext, kDescNrcRequestOutOfRange);
+ 1243  4                                              break;
+ 1244  4                              }
+ 1245  3                      }
+ 1246  2                      else
+ 1247  2                      {
+ 1248  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
+ 1249  3                      }       
+ 1250  2              }
+ 1251  1              else
+ 1252  1              {
+ 1253  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject); 
+ 1254  2              }
+ 1255  1      }
+ 1256         
+ 1257         /*  ********************************************************************************
+ 1258          * Function name:DescServiceClassifier_34h (Service request header:$34)
+ 1259          * Description: not available 
+ 1260          * Returns:  nothing
+ 1261          * Parameter(s):
+ 1262          *   - pMsgContext->reqData:
+ 1263          *       - Points to the first service request data byte.
  1264          *       - Access type: read
- 1265          *   - pMsgContext->resDataLen:
- 1266          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1265          *   - pMsgContext->resData:
+ 1266          *       - Points to the first writeable byte for the service response data.
  1267          *       - Access type: read/write
- 1268          *   - pMsgContext->msgAddInfo.reqType:
- 1269          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1268          *   - pMsgContext->reqDataLen:
+ 1269          *       - Contains the count of the service request data bytes (Sid is excluded).
  1270          *       - Access type: read
- 1271          *   - pMsgContext->msgAddInfo.resOnReq:
- 1272          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1271          *   - pMsgContext->resDataLen:
+ 1272          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
  1273          *       - Access type: read/write
- 1274          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1275          *       - UDS only!If set no positive response will be sent on this request.
+ 1274          *   - pMsgContext->msgAddInfo.reqType:
+ 1275          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
  1276          *       - Access type: read
- 1277          * Particularitie(s) and limitation(s):
- 1278          *   - The function "DescProcessingDone" must be called from now on (within this
- 1279          * main-handler or later).
- 1280          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1281          * but before calling "DescProcessingDone".
- 1282          ********************************************************************************  */
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 22  
+ 1277          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1278          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1279          *       - Access type: read/write
+ 1280          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1281          *       - UDS only!If set no positive response will be sent on this request.
+ 1282          *       - Access type: read
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 22  
 
- 1283         DESC_STAT void DescServiceClassifier_36h(DescMsgContext* pMsgContext)
- 1284         {
- 1285  1              /* $36:Transfer Data */
- 1286  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1287  1              {
- 1288  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
- 1289  2                      {
- 1290  3                              CanDiagAppCallBack(DESC_36_TRANSFER_DATA, pMsgContext); // $36 Service CallBack
- 1291  3                      }
- 1292  2                      else
- 1293  2                      {
- 1294  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
- 1295  3                      }
- 1296  2              }
- 1297  1              else
- 1298  1              {
- 1299  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1300  2              }       
- 1301  1      }
- 1302         
- 1303         /*  ********************************************************************************
- 1304          * Function name:DescServiceClassifier_37h (Service request header:$37)
- 1305          * Description: not available 
- 1306          * Returns:  nothing
- 1307          * Parameter(s):
- 1308          *   - pMsgContext->reqData:
- 1309          *       - Points to the first service request data byte.
- 1310          *       - Access type: read
- 1311          *   - pMsgContext->resData:
- 1312          *       - Points to the first writeable byte for the service response data.
- 1313          *       - Access type: read/write
- 1314          *   - pMsgContext->reqDataLen:
- 1315          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1283          * Particularitie(s) and limitation(s):
+ 1284          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1285          * main-handler or later).
+ 1286          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1287          * but before calling "DescProcessingDone".
+ 1288          ********************************************************************************  */
+ 1289         DESC_STAT void DescServiceClassifier_34h(DescMsgContext* pMsgContext)
+ 1290         {
+ 1291  1              /* $34:Request Download */ 
+ 1292  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1293  1              {
+ 1294  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
+ 1295  2                      {
+ 1296  3                              CanDiagAppCallBack(DESC_34_REQUEST_DOWNLOAD, pMsgContext); // $34 Service CallBack      
+ 1297  3                      }
+ 1298  2                      else
+ 1299  2                      {
+ 1300  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
+ 1301  3                      }
+ 1302  2              }
+ 1303  1              else
+ 1304  1              {
+ 1305  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1306  2              }
+ 1307  1      }
+ 1308         
+ 1309         /*  ********************************************************************************
+ 1310          * Function name:DescServiceClassifier_36h (Service request header:$36)
+ 1311          * Description: not available 
+ 1312          * Returns:  nothing
+ 1313          * Parameter(s):
+ 1314          *   - pMsgContext->reqData:
+ 1315          *       - Points to the first service request data byte.
  1316          *       - Access type: read
- 1317          *   - pMsgContext->resDataLen:
- 1318          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1317          *   - pMsgContext->resData:
+ 1318          *       - Points to the first writeable byte for the service response data.
  1319          *       - Access type: read/write
- 1320          *   - pMsgContext->msgAddInfo.reqType:
- 1321          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1320          *   - pMsgContext->reqDataLen:
+ 1321          *       - Contains the count of the service request data bytes (Sid is excluded).
  1322          *       - Access type: read
- 1323          *   - pMsgContext->msgAddInfo.resOnReq:
- 1324          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1323          *   - pMsgContext->resDataLen:
+ 1324          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
  1325          *       - Access type: read/write
- 1326          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1327          *       - UDS only!If set no positive response will be sent on this request.
+ 1326          *   - pMsgContext->msgAddInfo.reqType:
+ 1327          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
  1328          *       - Access type: read
- 1329          * Particularitie(s) and limitation(s):
- 1330          *   - The function "DescProcessingDone" must be called from now on (within this
- 1331          * main-handler or later).
- 1332          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1333          * but before calling "DescProcessingDone".
- 1334          ********************************************************************************  */
- 1335         DESC_STAT void DescServiceClassifier_37h(DescMsgContext* pMsgContext)
- 1336         {
- 1337  1              /* $37:Transfer Data */
- 1338  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1339  1              {
- 1340  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
- 1341  2                      {
- 1342  3                              CanDiagAppCallBack(DESC_37_REQUEST_TRANSFER_EXIT, pMsgContext); // $37 Service CallBack                 
- 1343  3                      }
- 1344  2                      else
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 23  
+ 1329          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1330          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1331          *       - Access type: read/write
+ 1332          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1333          *       - UDS only!If set no positive response will be sent on this request.
+ 1334          *       - Access type: read
+ 1335          * Particularitie(s) and limitation(s):
+ 1336          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1337          * main-handler or later).
+ 1338          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1339          * but before calling "DescProcessingDone".
+ 1340          ********************************************************************************  */
+ 1341         DESC_STAT void DescServiceClassifier_36h(DescMsgContext* pMsgContext)
+ 1342         {
+ 1343  1              /* $36:Transfer Data */
+ 1344  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 23  
 
- 1345  2                      {
- 1346  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
- 1347  3                      }
- 1348  2              }
- 1349  1              else
- 1350  1              {
- 1351  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1352  2              }       
- 1353  1      }
- 1354         
- 1355         /*  ********************************************************************************
- 1356          * Function name:DescServiceClassifier_3Dh (Service request header:$3D)
- 1357          * Description: not available 
- 1358          * Returns:  nothing
- 1359          * Parameter(s):
- 1360          *   - pMsgContext->reqData:
- 1361          *       - Points to the first service request data byte.
- 1362          *       - Access type: read
- 1363          *   - pMsgContext->resData:
- 1364          *       - Points to the first writeable byte for the service response data.
- 1365          *       - Access type: read/write
- 1366          *   - pMsgContext->reqDataLen:
- 1367          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1345  1              {
+ 1346  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
+ 1347  2                      {
+ 1348  3                              CanDiagAppCallBack(DESC_36_TRANSFER_DATA, pMsgContext); // $36 Service CallBack
+ 1349  3                      }
+ 1350  2                      else
+ 1351  2                      {
+ 1352  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
+ 1353  3                      }
+ 1354  2              }
+ 1355  1              else
+ 1356  1              {
+ 1357  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1358  2              }       
+ 1359  1      }
+ 1360         
+ 1361         /*  ********************************************************************************
+ 1362          * Function name:DescServiceClassifier_37h (Service request header:$37)
+ 1363          * Description: not available 
+ 1364          * Returns:  nothing
+ 1365          * Parameter(s):
+ 1366          *   - pMsgContext->reqData:
+ 1367          *       - Points to the first service request data byte.
  1368          *       - Access type: read
- 1369          *   - pMsgContext->resDataLen:
- 1370          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1369          *   - pMsgContext->resData:
+ 1370          *       - Points to the first writeable byte for the service response data.
  1371          *       - Access type: read/write
- 1372          *   - pMsgContext->msgAddInfo.reqType:
- 1373          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1372          *   - pMsgContext->reqDataLen:
+ 1373          *       - Contains the count of the service request data bytes (Sid is excluded).
  1374          *       - Access type: read
- 1375          *   - pMsgContext->msgAddInfo.resOnReq:
- 1376          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1375          *   - pMsgContext->resDataLen:
+ 1376          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
  1377          *       - Access type: read/write
- 1378          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1379          *       - UDS only!If set no positive response will be sent on this request.
+ 1378          *   - pMsgContext->msgAddInfo.reqType:
+ 1379          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
  1380          *       - Access type: read
- 1381          * Particularitie(s) and limitation(s):
- 1382          *   - The function "DescProcessingDone" must be called from now on (within this
- 1383          * main-handler or later).
- 1384          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1385          * but before calling "DescProcessingDone".
- 1386          ********************************************************************************  */
- 1387         DESC_STAT void DescServiceClassifier_3Dh(DescMsgContext* pMsgContext)
- 1388         {
- 1389  1              /* $3D:Write Memory By Address */ 
- 1390  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
- 1391  1              {
- 1392  2                      if (kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess)
- 1393  2                      {
- 1394  3                              CanDiagAppCallBack(DESC_3D_WRITE_MEMORY_BY_ADDRESS, pMsgContext); // $3D Service CallBack       
- 1395  3                      }
- 1396  2                      else
- 1397  2                      {
- 1398  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                          
- 1399  3                      }               
- 1400  2              }
- 1401  1              else
- 1402  1              {
- 1403  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
- 1404  2              }
- 1405  1      }
- 1406         
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 24  
+ 1381          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1382          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1383          *       - Access type: read/write
+ 1384          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1385          *       - UDS only!If set no positive response will be sent on this request.
+ 1386          *       - Access type: read
+ 1387          * Particularitie(s) and limitation(s):
+ 1388          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1389          * main-handler or later).
+ 1390          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1391          * but before calling "DescProcessingDone".
+ 1392          ********************************************************************************  */
+ 1393         DESC_STAT void DescServiceClassifier_37h(DescMsgContext* pMsgContext)
+ 1394         {
+ 1395  1              /* $37:Transfer Data */
+ 1396  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1397  1              {
+ 1398  2                      if (kDescStateSecurityAccessLevel_2 == g_descCurState.stateSecurityAccess)
+ 1399  2                      {
+ 1400  3                              CanDiagAppCallBack(DESC_37_REQUEST_TRANSFER_EXIT, pMsgContext); // $37 Service CallBack                 
+ 1401  3                      }
+ 1402  2                      else
+ 1403  2                      {
+ 1404  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                  
+ 1405  3                      }
+ 1406  2              }
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 24  
 
- 1407         /*  ********************************************************************************
- 1408          * Function name:DescServiceClassifier_3Eh (Service request header:$3E)
- 1409          * Description: not available 
- 1410          * Returns:  nothing
- 1411          * Parameter(s):
- 1412          *   - pMsgContext->reqData:
- 1413          *       - Points to the first service request data byte.
- 1414          *       - Access type: read
- 1415          *   - pMsgContext->resData:
- 1416          *       - Points to the first writeable byte for the service response data.
- 1417          *       - Access type: read/write
- 1418          *   - pMsgContext->reqDataLen:
- 1419          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1407  1              else
+ 1408  1              {
+ 1409  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1410  2              }       
+ 1411  1      }
+ 1412         
+ 1413         /*  ********************************************************************************
+ 1414          * Function name:DescServiceClassifier_3Dh (Service request header:$3D)
+ 1415          * Description: not available 
+ 1416          * Returns:  nothing
+ 1417          * Parameter(s):
+ 1418          *   - pMsgContext->reqData:
+ 1419          *       - Points to the first service request data byte.
  1420          *       - Access type: read
- 1421          *   - pMsgContext->resDataLen:
- 1422          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1421          *   - pMsgContext->resData:
+ 1422          *       - Points to the first writeable byte for the service response data.
  1423          *       - Access type: read/write
- 1424          *   - pMsgContext->msgAddInfo.reqType:
- 1425          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1424          *   - pMsgContext->reqDataLen:
+ 1425          *       - Contains the count of the service request data bytes (Sid is excluded).
  1426          *       - Access type: read
- 1427          *   - pMsgContext->msgAddInfo.resOnReq:
- 1428          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1427          *   - pMsgContext->resDataLen:
+ 1428          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
  1429          *       - Access type: read/write
- 1430          *   - pMsgContext->msgAddInfo.suppPosRes:
- 1431          *       - UDS only!If set no positive response will be sent on this request.
+ 1430          *   - pMsgContext->msgAddInfo.reqType:
+ 1431          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
  1432          *       - Access type: read
- 1433          * Particularitie(s) and limitation(s):
- 1434          *   - The function "DescProcessingDone" must be called from now on (within this
- 1435          * main-handler or later).
- 1436          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1437          * but before calling "DescProcessingDone".
- 1438          ********************************************************************************  */
- 1439         DESC_STAT void DescServiceClassifier_3Eh(DescMsgContext* pMsgContext)
- 1440         {
- 1441  1              /* $3E:Tester Present */ 
- 1442  1              CanDiagAppCallBack(DESC_3E_TESTER_PRESENT, pMsgContext); // $3E Service CallBack
- 1443  1      }
- 1444         
- 1445         /*  ********************************************************************************
- 1446          * Function name:DescServiceClassifier_85h (Service request header:$85)
- 1447          * Description: not available 
- 1448          * Returns:  nothing
- 1449          * Parameter(s):
- 1450          *   - pMsgContext->reqData:
- 1451          *       - Points to the first service request data byte.
- 1452          *       - Access type: read
- 1453          *   - pMsgContext->resData:
- 1454          *       - Points to the first writeable byte for the service response data.
- 1455          *       - Access type: read/write
- 1456          *   - pMsgContext->reqDataLen:
- 1457          *       - Contains the count of the service request data bytes (Sid is excluded).
- 1458          *       - Access type: read
- 1459          *   - pMsgContext->resDataLen:
- 1460          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
- 1461          *       - Access type: read/write
- 1462          *   - pMsgContext->msgAddInfo.reqType:
- 1463          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
- 1464          *       - Access type: read
- 1465          *   - pMsgContext->msgAddInfo.resOnReq:
- 1466          *       - Indicates if there will be response. Allowed only to write only 0 !!!
- 1467          *       - Access type: read/write
- 1468          *   - pMsgContext->msgAddInfo.suppPosRes:
-C166 COMPILER V7.57.0, DESC                                                                11/13/2020 15:09:31 PAGE 25  
+ 1433          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1434          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1435          *       - Access type: read/write
+ 1436          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1437          *       - UDS only!If set no positive response will be sent on this request.
+ 1438          *       - Access type: read
+ 1439          * Particularitie(s) and limitation(s):
+ 1440          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1441          * main-handler or later).
+ 1442          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1443          * but before calling "DescProcessingDone".
+ 1444          ********************************************************************************  */
+ 1445         DESC_STAT void DescServiceClassifier_3Dh(DescMsgContext* pMsgContext)
+ 1446         {
+ 1447  1              /* $3D:Write Memory By Address */ 
+ 1448  1              if (PHY_ADDRESS == g_descAddressType) // Only physical address
+ 1449  1              {
+ 1450  2                      if (kDescStateSecurityAccessLevel_1 == g_descCurState.stateSecurityAccess)
+ 1451  2                      {
+ 1452  3                              CanDiagAppCallBack(DESC_3D_WRITE_MEMORY_BY_ADDRESS, pMsgContext); // $3D Service CallBack       
+ 1453  3                      }
+ 1454  2                      else
+ 1455  2                      {
+ 1456  3                              DescSetNegResponse(pMsgContext, kDescNrcAccessDenied);                          
+ 1457  3                      }               
+ 1458  2              }
+ 1459  1              else
+ 1460  1              {
+ 1461  2                      DescSetNegResponse(pMsgContext, kDescNrcGeneralReject);         
+ 1462  2              }
+ 1463  1      }
+ 1464         
+ 1465         /*  ********************************************************************************
+ 1466          * Function name:DescServiceClassifier_3Eh (Service request header:$3E)
+ 1467          * Description: not available 
+ 1468          * Returns:  nothing
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 25  
 
- 1469          *       - UDS only!If set no positive response will be sent on this request.
- 1470          *       - Access type: read
- 1471          * Particularitie(s) and limitation(s):
- 1472          *   - The function "DescProcessingDone" must be called from now on (within this
- 1473          * main-handler or later).
- 1474          *   - The function "DescSetNegResponse" can be called within this main-handler or later
- 1475          * but before calling "DescProcessingDone".
- 1476          ********************************************************************************  */
- 1477         DESC_STAT void DescServiceClassifier_85h(DescMsgContext* pMsgContext)
- 1478         {
- 1479  1              /* $85:Control DTC Setting */   
- 1480  1              switch (pMsgContext->reqData[1])
- 1481  1              {
- 1482  2                      case 0x01: // $85 01 Service CallBack
- 1483  2                              CanDiagAppCallBack(DESC_85_01_Control_DTC_Setting_on, pMsgContext);
- 1484  2                              break;
- 1485  2      
- 1486  2                      case 0x02: // $85 02 Service CallBack
- 1487  2                              CanDiagAppCallBack(DESC_85_02_Control_DTC_Setting_off, pMsgContext);
- 1488  2                              break;  
- 1489  2      
- 1490  2                      default:
- 1491  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
- 1492  2                              break;
- 1493  2              }
- 1494  1      }
- 1495         
- 1496         /* _END_OF_DESC_ */
- 1497         
+ 1469          * Parameter(s):
+ 1470          *   - pMsgContext->reqData:
+ 1471          *       - Points to the first service request data byte.
+ 1472          *       - Access type: read
+ 1473          *   - pMsgContext->resData:
+ 1474          *       - Points to the first writeable byte for the service response data.
+ 1475          *       - Access type: read/write
+ 1476          *   - pMsgContext->reqDataLen:
+ 1477          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1478          *       - Access type: read
+ 1479          *   - pMsgContext->resDataLen:
+ 1480          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1481          *       - Access type: read/write
+ 1482          *   - pMsgContext->msgAddInfo.reqType:
+ 1483          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1484          *       - Access type: read
+ 1485          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1486          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1487          *       - Access type: read/write
+ 1488          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1489          *       - UDS only!If set no positive response will be sent on this request.
+ 1490          *       - Access type: read
+ 1491          * Particularitie(s) and limitation(s):
+ 1492          *   - The function "DescProcessingDone" must be called from now on (within this
+ 1493          * main-handler or later).
+ 1494          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1495          * but before calling "DescProcessingDone".
+ 1496          ********************************************************************************  */
+ 1497         DESC_STAT void DescServiceClassifier_3Eh(DescMsgContext* pMsgContext)
+ 1498         {
+ 1499  1              /* $3E:Tester Present */ 
+ 1500  1              CanDiagAppCallBack(DESC_3E_TESTER_PRESENT, pMsgContext); // $3E Service CallBack
+ 1501  1      }
+ 1502         
+ 1503         /*  ********************************************************************************
+ 1504          * Function name:DescServiceClassifier_85h (Service request header:$85)
+ 1505          * Description: not available 
+ 1506          * Returns:  nothing
+ 1507          * Parameter(s):
+ 1508          *   - pMsgContext->reqData:
+ 1509          *       - Points to the first service request data byte.
+ 1510          *       - Access type: read
+ 1511          *   - pMsgContext->resData:
+ 1512          *       - Points to the first writeable byte for the service response data.
+ 1513          *       - Access type: read/write
+ 1514          *   - pMsgContext->reqDataLen:
+ 1515          *       - Contains the count of the service request data bytes (Sid is excluded).
+ 1516          *       - Access type: read
+ 1517          *   - pMsgContext->resDataLen:
+ 1518          *       - Must be initialized with the count of the service response data bytes (Sid is excluded).
+ 1519          *       - Access type: read/write
+ 1520          *   - pMsgContext->msgAddInfo.reqType:
+ 1521          *       - Shows the addressing type of the request (kDescPhysReq or kDescFuncReq).
+ 1522          *       - Access type: read
+ 1523          *   - pMsgContext->msgAddInfo.resOnReq:
+ 1524          *       - Indicates if there will be response. Allowed only to write only 0 !!!
+ 1525          *       - Access type: read/write
+ 1526          *   - pMsgContext->msgAddInfo.suppPosRes:
+ 1527          *       - UDS only!If set no positive response will be sent on this request.
+ 1528          *       - Access type: read
+ 1529          * Particularitie(s) and limitation(s):
+ 1530          *   - The function "DescProcessingDone" must be called from now on (within this
+C166 COMPILER V7.57.0, DESC                                                                12/25/2020 20:36:16 PAGE 26  
+
+ 1531          * main-handler or later).
+ 1532          *   - The function "DescSetNegResponse" can be called within this main-handler or later
+ 1533          * but before calling "DescProcessingDone".
+ 1534          ********************************************************************************  */
+ 1535         DESC_STAT void DescServiceClassifier_85h(DescMsgContext* pMsgContext)
+ 1536         {
+ 1537  1              /* $85:Control DTC Setting */   
+ 1538  1              switch (pMsgContext->reqData[1])
+ 1539  1              {
+ 1540  2                      case 0x01: // $85 01 Service CallBack
+ 1541  2                              CanDiagAppCallBack(DESC_85_01_Control_DTC_Setting_on, pMsgContext);
+ 1542  2                              break;
+ 1543  2      
+ 1544  2                      case 0x02: // $85 02 Service CallBack
+ 1545  2                              CanDiagAppCallBack(DESC_85_02_Control_DTC_Setting_off, pMsgContext);
+ 1546  2                              break;  
+ 1547  2      
+ 1548  2                      default:
+ 1549  2                              DescSetNegResponse(pMsgContext, kDescNrcSubfunctionNotSupported);
+ 1550  2                              break;
+ 1551  2              }
+ 1552  1      }
+ 1553         
+ 1554         /* _END_OF_DESC_ */
+ 1555         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        2808     --------
+  CODE SIZE        =        3250     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------

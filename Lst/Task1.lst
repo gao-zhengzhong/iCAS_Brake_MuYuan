@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 1   
+C166 COMPILER V7.57.0, TASK1                                                               12/25/2020 20:36:10 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK1
@@ -18,295 +18,253 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task1.c MODV2 LAR
     6         #include "rte.h"
     7         #include "FLTD.h"
     8         #include "adc_sample.h"
-    9         #include "aeb.h"
-   10         #include "pwm.h"
-   11         #include "eepRom.h"
-   12         #include "EEPROM_Cfg.h"
-   13         void task1(void);                        //任务分配：上电自检、正常工作模式、断电检测、断电模式、故障模式
-   14         void task1PowerUpTest_v_s(void);         //上电自检
-   15         void task1Normal_v_s(void);              //正常工作模式：AD采样、助力系统控制
-   16         void task1PowerDownTest_v_s(void);       //断电检测
-   17         void task1PowerDown_v_s(void);           //断电模式
-   18         void task1Fault_v_s(void);               //故障模式
-   19         
-   20         static void BJEU5_canSignalHandle(void);
-   21         void Read_EEPM_InitValue(void);               //读取EEPM标定值
-   22         /*!************************************************************************************
-   23         *       @fn             void task1(void)
-   24         *       @brief           任务1函数
-   25         *       @author     Matt Zhang
-   26         *       @param[in]      void
-   27         *       @return     void
-   28         *       @note       在CCU60.c中CCU60_viNodeI2()函数中调用，该函数为OS系统任务分配函数
-   29         *       @Data       2019-3-12
-   30         ****************************************************************************************/
-   31         void task1(void)
-   32         {
-   33  1              switch(SystemMode_u8_Sig)
-   34  1              {
-   35  2                      case PowerUpTestMode:
-   36  2                              task1PowerUpTest_v_s();
-   37  2                      break;
-   38  2      
-   39  2                      case NormalMode:
-   40  2                              task1Normal_v_s();
-   41  2                      break;
-   42  2      
-   43  2                      case FaultMode:
-   44  2                              task1Fault_v_s();
-   45  2                      break;
-   46  2      
-   47  2                      case PowerDownTestMode:
-   48  2                              task1PowerDownTest_v_s();
-   49  2                      break;
-   50  2      
-   51  2                      case PowerDownMode:
-   52  2                              task1PowerDown_v_s();
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 2   
+    9         #include "pwm.h"
+   10         #include "energy_recovery.h"
+   11         
+   12         void task1(void);                        //任务分配：上电自检、正常工作模式、断电检测、断电模式、故障模式
+   13         void task1PowerUpTest_v_s(void);         //上电自检
+   14         void task1Normal_v_s(void);              //正常工作模式：AD采样、助力系统控制
+   15         void task1PowerDownTest_v_s(void);       //断电检测
+   16         void task1PowerDown_v_s(void);           //断电模式
+   17         void task1Fault_v_s(void);               //故障模式
+   18         
+   19         static void canSignal_Handle(void);
+   20         
+   21         /*!************************************************************************************
+   22         *       @fn             void task1(void)
+   23         *       @brief           任务1函数
+   24         *       @author     Matt Zhang
+   25         *       @param[in]      void
+   26         *       @return     void
+   27         *       @note       在CCU60.c中CCU60_viNodeI2()函数中调用，该函数为OS系统任务分配函数
+   28         *       @Data       2019-3-12
+   29         ****************************************************************************************/
+   30         void task1(void)
+   31         {
+   32  1              switch(SystemMode_u8_Sig)
+   33  1              {
+   34  2                      case PowerUpTestMode:
+   35  2                              task1PowerUpTest_v_s();
+   36  2                      break;
+   37  2      
+   38  2                      case NormalMode:
+   39  2                              task1Normal_v_s();
+   40  2                      break;
+   41  2      
+   42  2                      case FaultMode:
+   43  2                              task1Fault_v_s();
+   44  2                      break;
+   45  2      
+   46  2                      case PowerDownTestMode:
+   47  2                              task1PowerDownTest_v_s();
+   48  2                      break;
+   49  2      
+   50  2                      case PowerDownMode:
+   51  2                              task1PowerDown_v_s();
+   52  2                      break;
+C166 COMPILER V7.57.0, TASK1                                                               12/25/2020 20:36:10 PAGE 2   
 
-   53  2                      break;
-   54  2      
-   55  2                      default:
-   56  2                      break;
-   57  2              }
-   58  1      }
+   53  2      
+   54  2                      default:
+   55  2                      break;
+   56  2              }
+   57  1      }
+   58         
    59         
-   60         
-   61         /*!************************************************************************************
-   62         *       @fn             void task1PowerUpTest_v_s(void)
-   63         *       @brief           任务1上电测试函数
-   64         *       @author     Matt Zhang
-   65         *       @param[in]      void
-   66         *       @return     void
-   67         *       @note       在Task1.c的task1()函数中调用
-   68         *       @Data       2019-3-12
-   69         ****************************************************************************************/
-   70         void task1PowerUpTest_v_s(void)
-   71         {
-   72  1      
-   73  1      }
-   74         
-   75         /*!************************************************************************************
-   76         *       @fn             void task1Normal_v_s(void)
-   77         *       @brief           任务1正常模式函数
-   78         *       @author     Matt Zhang
-   79         *       @param[in]      void
-   80         *       @return     void
-   81         *       @note       在Task1.c的task1()函数中调用；另外icas-brake算法放在此函数中
-   82         *       @Data       2019-3-12
-   83         ****************************************************************************************/
-   84         void task1Normal_v_s(void)                                 //AD采样加助力控制
-   85         {
-   86  1      
-   87  1              const T_ADC* ptr_Adc = Adc_SampleData();
-   88  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
-   89  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-   90  1              
-   91  1              if(TRUE == g_pvTestFlag)
-   92  1              {
-   93  2                      if(MCTimer <= 6000)
+   60         /*!************************************************************************************
+   61         *       @fn             void task1PowerUpTest_v_s(void)
+   62         *       @brief           任务1上电测试函数
+   63         *       @author     Matt Zhang
+   64         *       @param[in]      void
+   65         *       @return     void
+   66         *       @note       在Task1.c的task1()函数中调用
+   67         *       @Data       2019-3-12
+   68         ****************************************************************************************/
+   69         void task1PowerUpTest_v_s(void)
+   70         {
+   71  1      
+   72  1      }
+   73         
+   74         /*!************************************************************************************
+   75         *       @fn             void task1Normal_v_s(void)
+   76         *       @brief           任务1正常模式函数
+   77         *       @author     Matt Zhang
+   78         *       @param[in]      void
+   79         *       @return     void
+   80         *       @note       在Task1.c的task1()函数中调用；另外icas-brake算法放在此函数中
+   81         *       @Data       2019-3-12
+   82         ****************************************************************************************/
+   83         void task1Normal_v_s(void)                                 //AD采样加助力控制
+   84         {
+   85  1              
+   86  1              if(TRUE == g_pvTestFlag)
+   87  1              {
+   88  2                      if(MCTimer <= 6000)
+   89  2                      {
+   90  3                              MCTimer++;
+   91  3                              Pwm_Control(MCTimer / 4);
+   92  3                      }
+   93  2                      else if(MCTimer <= 12000)
    94  2                      {
    95  3                              MCTimer++;
-   96  3                              Pwm_Control(MCTimer / 4);
+   96  3                              Pwm_Control(3000 - MCTimer / 4);
    97  3                      }
-   98  2                      else if(MCTimer <= 12000)
+   98  2                      else if(MCTimer <= 13000)
    99  2                      {
   100  3                              MCTimer++;
-  101  3                              Pwm_Control(3000 - MCTimer / 4);
+  101  3                              Pwm_Control(0);
   102  3                      }
-  103  2                      else if(MCTimer <= 13000)
+  103  2                      else
   104  2                      {
-  105  3                              MCTimer++;
-  106  3                              Pwm_Control(0);
-  107  3                      }
-  108  2                      else
-  109  2                      {
-  110  3                              MCTimer = 0;
-  111  3                              g_pvTestFlag = FALSE;
-  112  3                              Pwm_Control(0);
-  113  3                      }
+  105  3                              MCTimer = 0;
+  106  3                              g_pvTestFlag = FALSE;
+  107  3                              Pwm_Control(0);
+  108  3                      }
+  109  2              }
+  110  1              else
+  111  1              {
+  112  2                      canSignal_Handle();
+  113  2                      Booster_Algorithm();
   114  2              }
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 3   
+C166 COMPILER V7.57.0, TASK1                                                               12/25/2020 20:36:10 PAGE 3   
 
-  115  1              else
-  116  1              {
-  117  2                      BJEU5_canSignalHandle();
-  118  2                      //Read_EEPM_InitValue();                
-  119  2                      /*---------------踏板干预的判断逻辑------------------------*/
-  120  2                      if((ptr_adc->brakePedalLocation1 > 200) && (BrakeSysMode != BoosterBrakeMode))
-  121  2                      {
-  122  3                              BrakeSysMode = BoosterBrakeMode;
-  123  3                              //WireCtrlEnableFlag = 0;       
-  124  3                              WireCtrlFlag = 0;
-  125  3                              WireCtrlObjPressure = 0;
-  126  3                      }       
-  127  2                      if(BrakeSysMode == BoosterBrakeMode)       //  助力模式
-  128  2                      {   
-  129  3                              Booster_Algorithm();
-  130  3                              Function_WireControlCylinderToPres();
-  131  3                              FinalDeskTeskTimer = 0;
-  132  3                      }
-  133  2                      else if(BrakeSysMode == WireCtrlBrakeMode) //  线控模式
-  134  2                      {
-  135  3                              WireControl_Algorithm();
-  136  3                              Function_WireControlCylinderToPres();
-  137  3                              FinalDeskTeskTimer = 0;                 
-  138  3                      }
-  139  2                      else if(BrakeSysMode==AebBrakeMode)        //  AEB模式判定
-  140  2                      {
-  141  3      
-  142  3                      }
-  143  2                      else if(BrakeSysMode==FinalTestDeskMode)   //  终检测试模式
-  144  2                      {
-  145  3                              Booster_CalculateTemperatureProtectCoeff();
-  146  3                              FinalTestDesk_Algorithm();
-  147  3                      }
-  148  2              }
-  149  1      }
-  150         
-  151         
-  152         /*!************************************************************************************
-  153         *       @fn             void task1PowerDownTest_v_s(void)
-  154         *       @brief           任务1下电测试模式函数
-  155         *       @author     Matt Zhang
-  156         *       @param[in]      void
-  157         *       @return     void
-  158         *       @note       在Task1.c的task1()函数中调用
-  159         *       @Data       2019-3-12
-  160         ****************************************************************************************/
-  161         void task1PowerDownTest_v_s(void)
-  162         {
-  163  1      
-  164  1      }
-  165         
-  166         
-  167         /*!************************************************************************************
-  168         *       @fn             void task1PowerDown_v_s(void)
-  169         *       @brief           任务1下电模式函数
-  170         *       @author     Matt Zhang
-  171         *       @param[in]      void
-  172         *       @return     void
-  173         *       @note       在Task1.c的task1()函数中调用
-  174         *       @Data       2019-3-12
-  175         ****************************************************************************************/
-  176         void task1PowerDown_v_s(void)
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 4   
+  115  1      }
+  116         
+  117         
+  118         /*!************************************************************************************
+  119         *       @fn             void task1PowerDownTest_v_s(void)
+  120         *       @brief           任务1下电测试模式函数
+  121         *       @author     Matt Zhang
+  122         *       @param[in]      void
+  123         *       @return     void
+  124         *       @note       在Task1.c的task1()函数中调用
+  125         *       @Data       2019-3-12
+  126         ****************************************************************************************/
+  127         void task1PowerDownTest_v_s(void)
+  128         {
+  129  1      
+  130  1      }
+  131         
+  132         
+  133         /*!************************************************************************************
+  134         *       @fn             void task1PowerDown_v_s(void)
+  135         *       @brief           任务1下电模式函数
+  136         *       @author     Matt Zhang
+  137         *       @param[in]      void
+  138         *       @return     void
+  139         *       @note       在Task1.c的task1()函数中调用
+  140         *       @Data       2019-3-12
+  141         ****************************************************************************************/
+  142         void task1PowerDown_v_s(void)
+  143         {
+  144  1      
+  145  1      }
+  146         
+  147         
+  148         /*!************************************************************************************
+  149         *       @fn             void task1Fault_v_s(void)
+  150         *       @brief           任务1故障模式函数
+  151         *       @author     Matt Zhang
+  152         *       @param[in]      void
+  153         *       @return     void
+  154         *       @note       在Task1.c的task1()函数中调用
+  155         *       @Data       2019-3-12
+  156         ****************************************************************************************/
+  157         void task1Fault_v_s(void)
+  158         {
+  159  1      
+  160  1      }
+  161         
+  162         
+  163         static void canSignal_Handle(void)
+  164         {
+  165  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+  166  1              const FLTD_faultFlagType* faultFlag_ptr = FLTD_FltFlgData();
+  167  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
+  168  1              
+  169  1              /* iCAS-Brake_0E0h */
+  170  1              //iCAS_CylinderPressure = CylinderToPressure;                    //iCAS_CylinderPressure mean 0.1Mpa
+  171  1              iCAS_CylinderPressure = ptr_adc->mainCylinderPressure / 100;     //iCAS_CylinderPressure mean 0.1Mpa
+*** WARNING C192 IN LINE 171 OF src\app\task\Task1.c: '=': value truncated
+  172  1              iCAS_CylinderLocation = ptr_adc->mainCylinderLocation1 / 10;
+  173  1              iCAS_PedalLocation = ptr_adc->brakePedalLocation1 / 10;
+  174  1              if((ptr_adc->brakePedalLocation1 > 200)
+  175  1                      || ((WireCtrlBrakeMode == BrakeSysMode) && (g_wireControlObjPressure > 0)))
+C166 COMPILER V7.57.0, TASK1                                                               12/25/2020 20:36:10 PAGE 4   
 
-  177         {
-  178  1      
-  179  1      }
-  180         
-  181         
-  182         /*!************************************************************************************
-  183         *       @fn             void task1Fault_v_s(void)
-  184         *       @brief           任务1故障模式函数
-  185         *       @author     Matt Zhang
-  186         *       @param[in]      void
-  187         *       @return     void
-  188         *       @note       在Task1.c的task1()函数中调用
-  189         *       @Data       2019-3-12
-  190         ****************************************************************************************/
-  191         void task1Fault_v_s(void)
-  192         {
-  193  1      
-  194  1      }
-  195         
-  196         static void BJEU5_canSignalHandle(void)
-  197         {
-  198  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  199  1              const FLTD_faultFlagType* faultFlag_ptr = FLTD_FltFlgData();
-  200  1              
-  201  1              /* iCAS-Brake_0E0h */
-  202  1              //iCAS_CylinderPressure = CylinderToPressure;                    //iCAS_CylinderPressure mean 0.1Mpa
-  203  1              iCAS_CylinderPressure = ptr_adc->mainCylinderPressure / 100;     //iCAS_CylinderPressure mean 0.1Mpa
-*** WARNING C192 IN LINE 203 OF src\app\task\Task1.c: '=': value truncated
-  204  1              iCAS_CylinderLocation = ptr_adc->mainCylinderLocation1 / 10;
-  205  1              iCAS_PedalLocation = ptr_adc->brakePedalLocation1 / 10;
-  206  1              if((ptr_adc->brakePedalLocation1 > 200)
-  207  1                      || ((WireCtrlBrakeMode == BrakeSysMode) && (WireCtrlObjPressure > 0)))
-  208  1          {
-  209  2                      iCAS_BrakeFlagBit = 1;  
-  210  2              }
-  211  1          else
-  212  1              {
-  213  2                      iCAS_BrakeFlagBit = 0;  
-  214  2              }
+  176  1          {
+  177  2                      iCAS_BrakeFlagBit = 1;  
+  178  2              }
+  179  1          else
+  180  1              {
+  181  2                      iCAS_BrakeFlagBit = 0;  
+  182  2              }
+  183  1              
+  184  1              if((1 == iCAS_CylinderSensorPwrFault)
+  185  1                      || (1 == iCAS_PedalSensorPwrFault)
+  186  1                      || (1 == iCAS_InputBrakeSigFault)
+  187  1                      || (1 == iCAS_CylinderSigErr)
+  188  1                      || (1 == iCAS_PedalSigErr)
+  189  1                      || (1 == iCAS_MotorFault)
+  190  1                      || (0 == g_MainRelaySts)
+  191  1                      || (0 == g_PredriverEnableSts))
+  192  1              {
+  193  2                      iCAS_BrakeFault_Level = 1;
+  194  2              }
+  195  1              else
+  196  1              {
+  197  2                      iCAS_BrakeFault_Level = 0;
+  198  2              }
+  199  1              
+  200  1              if(ptr_adc->brakeMotorCurrent > 150)
+  201  1              {
+  202  2                      iCAS_Motor_Status = 1;
+  203  2              }
+  204  1              else
+  205  1              {
+  206  2                      iCAS_Motor_Status = 0;
+  207  2              }       
+  208  1              iCAS_Brake_MotToqReq = ptr_Booster->mcuMotorObjTorque * 2 + 8000;
+  209  1              
+  210  1              /* iCAS-Brake_240h */
+  211  1              iCAS_CylinderSensorPwrFault = faultFlag_ptr->cylinderSensorVolHighFlg 
+  212  1                                                                              | faultFlag_ptr->cylinderSensorVolLowFlg;
+  213  1              iCAS_PedalSensorPwrFault = faultFlag_ptr->pedalSensorVoltageHighFlg 
+  214  1                                                                              | faultFlag_ptr->pedalSensorVoltageLowFlg;
   215  1              
-  216  1              if((1 == iCAS_CylinderSensorPwrFault)
-  217  1                      || (1 == iCAS_PedalSensorPwrFault)
-  218  1                      //|| (1 == iCAS_InputBrakeSigFault)
-  219  1                      || (1 == iCAS_CylinderSigErr)
-  220  1                      || (1 == iCAS_PedalSigErr)
-  221  1                      || (1 == iCAS_MotorFault)
-  222  1                      || (0 == g_MainRelaySts)
-  223  1                      || (0 == g_PredriverSts))
-  224  1              {
-  225  2                      iCAS_BrakeFault_Level = 1;
-  226  2              }
-  227  1              else
-  228  1              {
-  229  2                      iCAS_BrakeFault_Level = 0;
-  230  2              }
-  231  1              
-  232  1              if(ptr_adc->brakeMotorCurrent > 150)
-  233  1              {
-  234  2                      iCAS_Motor_Status = 1;
-  235  2              }
-  236  1              else
-  237  1              {
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 5   
+  216  1              if(((ptr_adc->brakePedalLocation1 > 200) && (FALSE == g_inBrakeSwValidSts)))
+  217  1              {
+  218  2                      iCAS_InputBrakeSigFault = 1;
+  219  2              }
+  220  1              else
+  221  1              {
+  222  2                      iCAS_InputBrakeSigFault = 0;
+  223  2              }
+  224  1              
+  225  1              iCAS_CylinderSigErr = faultFlag_ptr->cylinderSensorShortFlg 
+  226  1                                                              | faultFlag_ptr->cylinderSensor1OpenFlg
+  227  1                                                              | faultFlag_ptr->cylinderSensorCheckErrorFlg;
+  228  1              
+  229  1              iCAS_PedalSigErr = faultFlag_ptr->pedalSensorShortFlg
+  230  1                                                              | faultFlag_ptr->pedalSensor1OpenFlg
+  231  1                                                              | faultFlag_ptr->pedalSensorCheckErrorFlg;
+  232  1              iCAS_MotorFault = faultFlag_ptr->motorOpenFlg | faultFlag_ptr->motorShortFlg;
+  233  1                      
+  234  1              if(ptr_adc->mainCylinderLocation1 > 300)
+  235  1              {
+  236  2                      iCAS_BrakeStatus = 1;
+  237  2              }
+C166 COMPILER V7.57.0, TASK1                                                               12/25/2020 20:36:10 PAGE 5   
 
-  238  2                      iCAS_Motor_Status = 0;
-  239  2              }
-  240  1              
-  241  1              iCAS_Brake_MotToqReq = 0;
-  242  1              iCAS_Brake_MotToqReq_Flag = 0;
-  243  1      
-  244  1              /* iCAS-Brake_240h */
-  245  1              iCAS_CylinderSensorPwrFault = faultFlag_ptr->cylinderSensorVolHighFlg 
-  246  1                                                                              | faultFlag_ptr->cylinderSensorVolLowFlg;
-  247  1              iCAS_PedalSensorPwrFault = faultFlag_ptr->pedalSensorVoltageHighFlg 
-  248  1                                                                              | faultFlag_ptr->pedalSensorVoltageLowFlg;
-  249  1              
-  250  1              if(((ptr_adc->brakePedalLocation1 > 200) && (FALSE == g_inBrakeSwValidSts)))
-  251  1              {
-  252  2                      iCAS_InputBrakeSigFault = 1;
-  253  2              }
-  254  1              else
-  255  1              {
-  256  2                      iCAS_InputBrakeSigFault = 0;
-  257  2              }
-  258  1              
-  259  1              iCAS_CylinderSigErr = faultFlag_ptr->cylinderSensorShortFlg 
-  260  1                                                              | faultFlag_ptr->cylinderSensor1OpenFlg
-  261  1                                                              | faultFlag_ptr->cylinderSensorCheckErrorFlg;
-  262  1              
-  263  1              iCAS_PedalSigErr = faultFlag_ptr->pedalSensorShortFlg
-  264  1                                                              | faultFlag_ptr->pedalSensor1OpenFlg
-  265  1                                                              | faultFlag_ptr->pedalSensorCheckErrorFlg;
-  266  1              iCAS_MotorFault = faultFlag_ptr->motorOpenFlg | faultFlag_ptr->motorShortFlg;
-  267  1      
-  268  1              if(ptr_adc->mainCylinderLocation1 > 300)
-  269  1              {
-  270  2                      iCAS_BrakeStatus = 1;
-  271  2              }
-  272  1              else
-  273  1              {
-  274  2                      iCAS_BrakeStatus = 0;
-  275  2              }       
-  276  1      }
-  277         
-  278         void Read_EEPM_InitValue(void)
-  279         {
-  280  1              ReadString_v_g(&PadalInitAD0_Init_EEPM, PEDAL_AD0_INIT_ADDRESS, LONG_PEDAL_AD0_INIT_ADDRESS);   
-  281  1              ReadString_v_g(&PadalInitAD1_Init_EEPM, PEDAL_AD1_INIT_ADDRESS, LONG_PEDAL_AD1_INIT_ADDRESS);
-  282  1              ReadString_v_g(&CylinderInitAD0_Init_EEPM, CYLINDER_AD0_INIT_ADDRESS, LONG_CYLINDER_AD0_INIT_ADDRESS);
-  283  1              ReadString_v_g(&CylinderInitAD1_Init_EEPM, CYLINDER_AD1_INIT_ADDRESS, LONG_CYLINDER_AD1_INIT_ADDRESS);  
-  284  1      }
+  238  1              else
+  239  1              {
+  240  2                      iCAS_BrakeStatus = 0;
+  241  2              }       
+  242  1      }
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         746     --------
+  CODE SIZE        =         576     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -318,8 +276,6 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
-C166 COMPILER V7.57.0, TASK1                                                               11/13/2020 15:09:28 PAGE 6   
-
   BIT SIZE         =    --------     --------
   INIT'L SIZE      =    --------     --------
 END OF MODULE INFORMATION.

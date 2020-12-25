@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 1   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE CCU61
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
    50         
    51         // USER CODE BEGIN (CCU61_General,4)
    52         
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 2   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 2   
 
    53         // USER CODE END
    54         
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
   112         //----------------------------------------------------------------------------
   113         // @Parameters    None
   114         //
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 3   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 3   
 
   115         //----------------------------------------------------------------------------
   116         // @Date          2020/5/8
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
   174  1        ///  - No External run selection is selected.
   175  1        ///  - Timer mode is selected.
   176  1        ///  - 
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 4   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 4   
 
   177  1        ///  - Single shot mode is disabled
   178  1        ///  - Interrupt on period match is disabled
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
   236  1        ///  -----------------------------------------------------------------------
   237  1        ///  Configuration of CCU61 Channel 2:
   238  1        ///  -----------------------------------------------------------------------
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 5   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 5   
 
   239  1        ///  - Channel 2 is disabled
   240  1        ///  - T12 modulation for output CC62 is disabled
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
   298  1      
   299  1        CCU61_INP      =  0x3000;      // Load CCU61 capture/compare interrupt node 
   300  1                                       // pointer register
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 6   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 6   
 
   301  1      
   302  1        CCU61_IEN      =  0x0080;      // Load CCU61 capture/compare interrupt 
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\CCU61.c MODV2 LARGE
   360         //                port pin, the interrupt request flag is set and an 
   361         //                interrupt is triggered (only if enabled).
   362         //                Please note that you have to add application specific code 
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 7   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 7   
 
   363         //                to this function.
   364         //
@@ -446,7 +446,7 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   NEAR-DATA SIZE   =    --------     --------
   FAR-DATA SIZE    =    --------     --------
   XHUGE-DATA SIZE  =    --------     --------
-C166 COMPILER V7.57.0, CCU61                                                               11/13/2020 15:09:21 PAGE 8   
+C166 COMPILER V7.57.0, CCU61                                                               12/25/2020 20:35:56 PAGE 8   
 
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------

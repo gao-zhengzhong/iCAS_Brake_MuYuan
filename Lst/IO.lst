@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 1   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE IO
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\IO.c MODV2 LARGE BR
    50         
    51         // USER CODE END
    52         
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 2   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 2   
 
    53         
    54         //****************************************************************************
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\IO.c MODV2 LARGE BR
   112         //
   113         //----------------------------------------------------------------------------
   114         // @Date          2020/5/8
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 3   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 3   
 
   115         //
   116         //****************************************************************************
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\IO.c MODV2 LARGE BR
   174  1      
   175  1        ///  -----------------------------------------------------------------------
   176  1        ///  Configuration of Port P2:
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 4   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 4   
 
   177  1        ///  -----------------------------------------------------------------------
   178  1        ///  P2.0 is used as alternate input for the CAN0 Receive input(RXDC0C)
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\IO.c MODV2 LARGE BR
   236  1        ///  P6.0 - P6.2 output driver characteristic: strong driver
   237  1      
   238  1        ///  P6.0 - P6.2 output edge characteristic: sharp edge mode
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 5   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 5   
 
   239  1      
   240  1        P6_IOCR02      =  0x0080;      // load port control register 2
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\IO.c MODV2 LARGE BR
   298  1      
   299  1        // USER CODE BEGIN (IO_Function,3)
   300  1      
-C166 COMPILER V7.57.0, IO                                                                  11/13/2020 15:09:22 PAGE 6   
+C166 COMPILER V7.57.0, IO                                                                  12/25/2020 20:35:57 PAGE 6   
 
   301  1        // USER CODE END
   302  1      

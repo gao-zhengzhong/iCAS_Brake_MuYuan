@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 1   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE ADC_SAMPLE
@@ -32,531 +32,493 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
    20         *=====================================================================*/
    21         
    22         #include <string.h>
-   23         
-   24         #include "XC23xxBREGS.h"
-   25         
-   26         #include "adc_if.h"
-   27         #include "adc_sample.h"
-   28         #include "rte.h"
-   29         
-   30         #define ADC_APP_GLOBALS
+   23         #include "XC23xxBREGS.h"
+   24         
+   25         #define ADC_APP_GLOBALS
+   26         #include "adc_sample.h"
+   27         
+   28         #include "adc_if.h"
+   29         #include "rte.h"
+   30         
    31         
-   32         /**** Definition of variables ****/
-   33         T_ADC tAdcSample = {0u};
-   34         ADC_APP_STAT T_ADC_APP tAdcApp = {0u};
-   35         
+   32         
+   33         /**** Definition of variables ****/
+   34         T_ADC tAdcSample = {0u};
+   35         static T_ADC_APP tAdcApp = {0u};
    36         
-   37         /**** Declaration of functions ****/
-   38         ADC_APP_STAT void AdcApp_SampleVehiclePowerVoltage(void);
-   39         ADC_APP_STAT void AdcApp_SampleBrakeMotorVlinkVoltage(void);
-   40         ADC_APP_STAT void AdcApp_SampleBrakeMotorAPhaseVoltage(void);
-   41         ADC_APP_STAT void AdcApp_SampleBrakeMotorBPhaseVoltage(void);
-   42         ADC_APP_STAT void AdcApp_SampleBrakePedalLocationVoltage(void);
-   43         ADC_APP_STAT void AdcApp_SampleMainCylinderVoltage(void);
-   44         ADC_APP_STAT void AdcApp_SampleMainCylinderPressureVoltage(void);
-   45         
-   46         ADC_APP_STAT void AdcApp_SampleBrakePedalLocation1(void);
-   47         ADC_APP_STAT void AdcApp_SampleBrakePedalLocation2(void);
-   48         ADC_APP_STAT void AdcApp_SampleMainCylinderLocation1(void);
-   49         ADC_APP_STAT void AdcApp_SampleMainCylinderLocation2(void);
-   50         
-   51         ADC_APP_STAT void AdcApp_SampleBrakeMotorCurrent(void);
-   52         ADC_APP_STAT void AdcApp_SampleMainCylinderPressure(void);
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 2   
+   37         
+   38         /**** Declaration of functions ****/
+   39         static void AdcApp_SampleVehiclePowerVoltage(void);
+   40         static void AdcApp_SampleBrakeMotorVlinkVoltage(void);
+   41         static void AdcApp_SampleBrakeMotorAPhaseVoltage(void);
+   42         static void AdcApp_SampleBrakeMotorBPhaseVoltage(void);
+   43         static void AdcApp_SampleBrakePedalLocationVoltage(void);
+   44         static void AdcApp_SampleMainCylinderVoltage(void);
+   45         static void AdcApp_SampleMainCylinderPressureVoltage(void);
+   46         
+   47         static void AdcApp_SampleBrakePedalLocation1(void);
+   48         static void AdcApp_SampleBrakePedalLocation2(void);
+   49         static void AdcApp_SampleMainCylinderLocation1(void);
+   50         static void AdcApp_SampleMainCylinderLocation2(void);
+   51         
+   52         static void AdcApp_SampleBrakeMotorCurrent(void);
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 2   
 
-   53         ADC_APP_STAT void AdcApp_SampleEnvironmentTemperature(void);
-   54         
+   53         static void AdcApp_SampleMainCylinderPressure(void);
+   54         static void AdcApp_SampleEnvironmentTemperature(void);
    55         
-   56         /***********************************************************************
-   57         *  Name        : AdcApp_Init
-   58         *  Description : After power on, initiliaze ADC sample variable
-   59         *  Parameter   : None
-   60         *  Returns     : None
-   61         ***********************************************************************/
-   62         void AdcApp_Init(void)
-   63         {
-   64  1              memset(&tAdcSample, 0, sizeof(tAdcSample));
-   65  1              return;
-   66  1      }
-   67         
-   68         /***********************************************************************
-   69         *  Name        : AdcApp_DeInit
-   70         *  Description : During running, need initilize ADC sample variable
-   71         *  Parameter   : None
-   72         *  Returns     : None
-   73         ***********************************************************************/
-   74         void AdcApp_DeInit(void)
-   75         {
-   76  1              return;
-   77  1      }
-   78         
-   79         /***********************************************************************
-   80         *  Name        : ApplAdc_TaskEntry
-   81         *  Description : ADC sample main function
-   82         *  Parameter   : None
-   83         *  Returns     : None
-   84         ***********************************************************************/
-   85         void ApplAdc_TaskEntry(void)
-   86         {
-   87  1              AdcApp_SampleVehiclePowerVoltage();
-   88  1              AdcApp_SampleBrakeMotorVlinkVoltage();
-   89  1              AdcApp_SampleBrakeMotorAPhaseVoltage();
-   90  1              AdcApp_SampleBrakeMotorBPhaseVoltage();
-   91  1              AdcApp_SampleBrakePedalLocationVoltage();
-   92  1              AdcApp_SampleMainCylinderVoltage();     
-   93  1              AdcApp_SampleMainCylinderPressureVoltage();
-   94  1      
-   95  1              AdcApp_SampleBrakePedalLocation1();
-   96  1              AdcApp_SampleBrakePedalLocation2();
-   97  1              AdcApp_SampleMainCylinderLocation1();
-   98  1              AdcApp_SampleMainCylinderLocation2();
-   99  1      
-  100  1              AdcApp_SampleBrakeMotorCurrent();
-  101  1              AdcApp_SampleMainCylinderPressure();
-  102  1              AdcApp_SampleEnvironmentTemperature();  
-  103  1              return;
-  104  1      }
-  105         
-  106         /***********************************************************************
-  107         *  Name        : AdcApp_SampleVehiclePowerVoltage
-  108         *  Description : Vehicle power voltage ADC value switch to real voltage value
-  109         *  Parameter   : None
-  110         *  Returns     : None
-  111         ***********************************************************************/
-  112         ADC_APP_STAT void AdcApp_SampleVehiclePowerVoltage(void)
-  113         {
-  114  1              INT32U tempVehiclePowerVoltage;
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 3   
+   56         
+   57         /***********************************************************************
+   58         *  Name        : AdcApp_Init
+   59         *  Description : After power on, initiliaze ADC sample variable
+   60         *  Parameter   : None
+   61         *  Returns     : None
+   62         ***********************************************************************/
+   63         void AdcApp_Init(void)
+   64         {
+   65  1              memset(&tAdcSample, 0, sizeof(tAdcSample));
+   66  1              return;
+   67  1      }
+   68         
+   69         /***********************************************************************
+   70         *  Name        : AdcApp_DeInit
+   71         *  Description : During running, need initilize ADC sample variable
+   72         *  Parameter   : None
+   73         *  Returns     : None
+   74         ***********************************************************************/
+   75         void AdcApp_DeInit(void)
+   76         {
+   77  1              return;
+   78  1      }
+   79         
+   80         /***********************************************************************
+   81         *  Name        : ApplAdc_TaskEntry
+   82         *  Description : ADC sample main function
+   83         *  Parameter   : None
+   84         *  Returns     : None
+   85         ***********************************************************************/
+   86         void ApplAdc_TaskEntry(void)
+   87         {
+   88  1              AdcApp_SampleVehiclePowerVoltage();
+   89  1              AdcApp_SampleBrakeMotorVlinkVoltage();
+   90  1              AdcApp_SampleBrakeMotorAPhaseVoltage();
+   91  1              AdcApp_SampleBrakeMotorBPhaseVoltage();
+   92  1              AdcApp_SampleBrakePedalLocationVoltage();
+   93  1              AdcApp_SampleMainCylinderVoltage();     
+   94  1              AdcApp_SampleMainCylinderPressureVoltage();
+   95  1      
+   96  1              AdcApp_SampleBrakePedalLocation1();
+   97  1              AdcApp_SampleBrakePedalLocation2();
+   98  1              AdcApp_SampleMainCylinderLocation1();
+   99  1              AdcApp_SampleMainCylinderLocation2();
+  100  1      
+  101  1              AdcApp_SampleBrakeMotorCurrent();
+  102  1              AdcApp_SampleMainCylinderPressure();
+  103  1              AdcApp_SampleEnvironmentTemperature();  
+  104  1              return;
+  105  1      }
+  106         
+  107         /***********************************************************************
+  108         *  Name        : AdcApp_SampleVehiclePowerVoltage
+  109         *  Description : Vehicle power voltage ADC value switch to real voltage value
+  110         *  Parameter   : None
+  111         *  Returns     : None
+  112         ***********************************************************************/
+  113         static void AdcApp_SampleVehiclePowerVoltage(void)
+  114         {
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 3   
 
-  115  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  116  1              
-  117  1              tAdcSample.powerVoltage_Adc = ptr_AdcIf->vehiclePowerVoltage_Adc;
-  118  1              
-  119  1              /* Vehicle power voltage ADC value switch to real voltage value */
-  120  1              tempVehiclePowerVoltage = (INT32U)tAdcSample.powerVoltage_Adc * 20000u;
-  121  1              tAdcApp.vehiclePowerVoltage = (INT16U)(tempVehiclePowerVoltage >> 10);
-  122  1              return;
-  123  1      }
-  124         
-  125         /***********************************************************************
-  126         *  Name        : AdcApp_SampleBrakeMotorVlinkVoltage
-  127         *  Description : Brake motor vlink voltage ADC value switch to real voltage value
-  128         *  Parameter   : None
-  129         *  Returns     : None
-  130         ***********************************************************************/
-  131         ADC_APP_STAT void AdcApp_SampleBrakeMotorVlinkVoltage(void)
-  132         {
-  133  1              INT32U tempVlinkVoltage;
-  134  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  135  1              
-  136  1              tAdcSample.motorVLinkVoltage_Adc = ptr_AdcIf->brakeMotorVlinkSensorVoltage_Adc;
-  137  1              
-  138  1              /* TODO: Brake motor vlink voltage ADC value switch to real voltage value */
-  139  1              tempVlinkVoltage = (INT32U)tAdcSample.motorVLinkVoltage_Adc * 20000u;
-  140  1              tAdcApp.brakeMotorVlinkVoltage = (INT16U)(tempVlinkVoltage >> 10);
-  141  1              return; 
-  142  1      }
-  143         
-  144         /***********************************************************************
-  145         *  Name        : AdcApp_SampleBrakeMotorAPhaseVoltage
-  146         *  Description : Brake motor A phase voltage ADC value switch to real voltage value
-  147         *  Parameter   : None
-  148         *  Returns     : None
-  149         ***********************************************************************/
-  150         ADC_APP_STAT void AdcApp_SampleBrakeMotorAPhaseVoltage(void)
-  151         {
-  152  1              INT32U tempMotorAPhaseVoltage;
-  153  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  154  1      
-  155  1              tAdcSample.motorPhaseVoltage_Adc[0] = ptr_AdcIf->brakeMotorAPhaseSensorVoltage_Adc;     
-  156  1              
-  157  1              /* Brake motor A phase voltage ADC value switch to real voltage value */        
-  158  1              tempMotorAPhaseVoltage = (INT32U)tAdcSample.motorPhaseVoltage_Adc[0] * 20000u;
-  159  1              tAdcApp.brakeMotorAPhaseVoltage = (INT16U)(tempMotorAPhaseVoltage >> 10);
-  160  1              return;
-  161  1      }
-  162         
-  163         /***********************************************************************
-  164         *  Name        : AdcApp_SampleBrakeMotorBPhaseVoltage
-  165         *  Description : Brake motor B phase voltage ADC value switch to real voltage value
-  166         *  Parameter   : None
-  167         *  Returns     : None
-  168         ***********************************************************************/
-  169         ADC_APP_STAT void AdcApp_SampleBrakeMotorBPhaseVoltage(void)
-  170         {
-  171  1              INT32U tempMotorBPhaseVoltage;
-  172  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  173  1              
-  174  1              tAdcSample.motorPhaseVoltage_Adc[1] = ptr_AdcIf->brakeMotorBPhaseSensorVoltage_Adc;     
-  175  1              
-  176  1              /* Brake motor B phase voltage ADC value switch to real voltage value */        
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 4   
+  115  1              INT32U tempVehiclePowerVoltage;
+  116  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  117  1              
+  118  1              tAdcSample.powerVoltage_Adc = ptr_AdcIf->vehiclePowerVoltage_Adc;
+  119  1              
+  120  1              /* Vehicle power voltage ADC value switch to real voltage value */
+  121  1              tempVehiclePowerVoltage = (INT32U)tAdcSample.powerVoltage_Adc * 20000u;
+  122  1              tAdcApp.vehiclePowerVoltage = (INT16U)(tempVehiclePowerVoltage >> 10);
+  123  1              return;
+  124  1      }
+  125         
+  126         /***********************************************************************
+  127         *  Name        : AdcApp_SampleBrakeMotorVlinkVoltage
+  128         *  Description : Brake motor vlink voltage ADC value switch to real voltage value
+  129         *  Parameter   : None
+  130         *  Returns     : None
+  131         ***********************************************************************/
+  132         static void AdcApp_SampleBrakeMotorVlinkVoltage(void)
+  133         {
+  134  1              INT32U tempVlinkVoltage;
+  135  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  136  1              
+  137  1              tAdcSample.motorVLinkVoltage_Adc = ptr_AdcIf->brakeMotorVlinkSensorVoltage_Adc;
+  138  1              
+  139  1              /* TODO: Brake motor vlink voltage ADC value switch to real voltage value */
+  140  1              tempVlinkVoltage = (INT32U)tAdcSample.motorVLinkVoltage_Adc * 20000u;
+  141  1              tAdcApp.brakeMotorVlinkVoltage = (INT16U)(tempVlinkVoltage >> 10);
+  142  1              return; 
+  143  1      }
+  144         
+  145         /***********************************************************************
+  146         *  Name        : AdcApp_SampleBrakeMotorAPhaseVoltage
+  147         *  Description : Brake motor A phase voltage ADC value switch to real voltage value
+  148         *  Parameter   : None
+  149         *  Returns     : None
+  150         ***********************************************************************/
+  151         static void AdcApp_SampleBrakeMotorAPhaseVoltage(void)
+  152         {
+  153  1              INT32U tempMotorAPhaseVoltage;
+  154  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  155  1      
+  156  1              tAdcSample.motorPhaseVoltage_Adc[0] = ptr_AdcIf->brakeMotorAPhaseSensorVoltage_Adc;     
+  157  1              
+  158  1              /* Brake motor A phase voltage ADC value switch to real voltage value */        
+  159  1              tempMotorAPhaseVoltage = (INT32U)tAdcSample.motorPhaseVoltage_Adc[0] * 20000u;
+  160  1              tAdcApp.brakeMotorAPhaseVoltage = (INT16U)(tempMotorAPhaseVoltage >> 10);
+  161  1              return;
+  162  1      }
+  163         
+  164         /***********************************************************************
+  165         *  Name        : AdcApp_SampleBrakeMotorBPhaseVoltage
+  166         *  Description : Brake motor B phase voltage ADC value switch to real voltage value
+  167         *  Parameter   : None
+  168         *  Returns     : None
+  169         ***********************************************************************/
+  170         static void AdcApp_SampleBrakeMotorBPhaseVoltage(void)
+  171         {
+  172  1              INT32U tempMotorBPhaseVoltage;
+  173  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  174  1              
+  175  1              tAdcSample.motorPhaseVoltage_Adc[1] = ptr_AdcIf->brakeMotorBPhaseSensorVoltage_Adc;     
+  176  1              
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 4   
 
-  177  1              tempMotorBPhaseVoltage = (INT32U)tAdcSample.motorPhaseVoltage_Adc[1] * 20000u;
-  178  1              tAdcApp.brakeMotorBPhaseVoltage = (INT16U)(tempMotorBPhaseVoltage >> 10);
-  179  1              return;
-  180  1      }
-  181         
-  182         /***********************************************************************
-  183         *  Name        : AdcApp_SampleMainCylinderVoltage
-  184         *  Description : Brake main cylinder sensor power voltage ADC value switch to real voltage value
-  185         *  Parameter   : None
-  186         *  Returns     : None
-  187         ***********************************************************************/
-  188         ADC_APP_STAT void AdcApp_SampleMainCylinderVoltage(void)
-  189         {
-  190  1              INT32U tempCylinderVoltage;
-  191  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  192  1              
-  193  1              tAdcSample.mainCylinderVoltage_Adc = ptr_AdcIf->brakeMainCylinderSensorVoltage_Adc;     
-  194  1              
-  195  1              /* Brake main cylinder sensor power voltage ADC value switch to real voltage value */   
-  196  1              tempCylinderVoltage = (INT32U)tAdcSample.mainCylinderVoltage_Adc * 20000u;
-  197  1              tAdcApp.mainCylinderVoltage = (INT16U)(tempCylinderVoltage >> 10);
-  198  1              return; 
-  199  1      }
-  200         
-  201         /***********************************************************************
-  202         *  Name        : AdcApp_SampleBrakePedalLocationVoltage
-  203         *  Description : Brake pedal location sensor power voltage ADC value switch to real voltage value
-  204         *  Parameter   : None
-  205         *  Returns     : None
-  206         ***********************************************************************/
-  207         ADC_APP_STAT void AdcApp_SampleBrakePedalLocationVoltage(void)
-  208         {
-  209  1              INT32U tempPedalVoltage;
-  210  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  211  1      
-  212  1              tAdcSample.brakePedalVoltage_Adc = ptr_AdcIf->brakePedalLocationSensorVoltage_Adc;      
-  213  1              
-  214  1              /* Brake pedal location sensor power voltage ADC value switch to real voltage value */  
-  215  1              tempPedalVoltage = (INT32U)tAdcSample.brakePedalVoltage_Adc * 20000u;
-  216  1              tAdcApp.brakePedalLocationVoltage = (INT16U)(tempPedalVoltage >> 10);
-  217  1              return;         
-  218  1      }
-  219         
-  220         /***********************************************************************
-  221         *  Name        : AdcApp_SampleMainCylinderPressureVoltage
-  222         *  Description : Brake main cylinder pressure sensor power voltage ADC value switch to real voltage value
-  223         *  Parameter   : None
-  224         *  Returns     : None
-  225         ***********************************************************************/
-  226         ADC_APP_STAT void AdcApp_SampleMainCylinderPressureVoltage(void)
-  227         {
-  228  1              INT32U tempPressureVoltage;
-  229  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  230  1              
-  231  1              tAdcSample.pressureSensorVoltage_Adc = ptr_AdcIf->brakeMainCylinderPressureSensorVoltage_Adc;   
-  232  1              
-  233  1              /* Brake main cylinder pressure sensor power voltage ADC value switch to real voltage value */  
-  234  1              tempPressureVoltage = (INT32U)tAdcSample.pressureSensorVoltage_Adc * 20000u;
-  235  1              tAdcApp.mainCylinderPressureVoltage = (INT16U)(tempPressureVoltage >> 10);
-  236  1              return;         
-  237  1      }
-  238         
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 5   
+  177  1              /* Brake motor B phase voltage ADC value switch to real voltage value */        
+  178  1              tempMotorBPhaseVoltage = (INT32U)tAdcSample.motorPhaseVoltage_Adc[1] * 20000u;
+  179  1              tAdcApp.brakeMotorBPhaseVoltage = (INT16U)(tempMotorBPhaseVoltage >> 10);
+  180  1              return;
+  181  1      }
+  182         
+  183         /***********************************************************************
+  184         *  Name        : AdcApp_SampleMainCylinderVoltage
+  185         *  Description : Brake main cylinder sensor power voltage ADC value switch to real voltage value
+  186         *  Parameter   : None
+  187         *  Returns     : None
+  188         ***********************************************************************/
+  189         static void AdcApp_SampleMainCylinderVoltage(void)
+  190         {
+  191  1              INT32U tempCylinderVoltage;
+  192  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  193  1              
+  194  1              tAdcSample.mainCylinderVoltage_Adc = ptr_AdcIf->brakeMainCylinderSensorVoltage_Adc;     
+  195  1              
+  196  1              /* Brake main cylinder sensor power voltage ADC value switch to real voltage value */   
+  197  1              tempCylinderVoltage = (INT32U)tAdcSample.mainCylinderVoltage_Adc * 20000u;
+  198  1              tAdcApp.mainCylinderVoltage = (INT16U)(tempCylinderVoltage >> 10);
+  199  1              return; 
+  200  1      }
+  201         
+  202         /***********************************************************************
+  203         *  Name        : AdcApp_SampleBrakePedalLocationVoltage
+  204         *  Description : Brake pedal location sensor power voltage ADC value switch to real voltage value
+  205         *  Parameter   : None
+  206         *  Returns     : None
+  207         ***********************************************************************/
+  208         static void AdcApp_SampleBrakePedalLocationVoltage(void)
+  209         {
+  210  1              INT32U tempPedalVoltage;
+  211  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  212  1      
+  213  1              tAdcSample.brakePedalVoltage_Adc = ptr_AdcIf->brakePedalLocationSensorVoltage_Adc;      
+  214  1              
+  215  1              /* Brake pedal location sensor power voltage ADC value switch to real voltage value */  
+  216  1              tempPedalVoltage = (INT32U)tAdcSample.brakePedalVoltage_Adc * 20000u;
+  217  1              tAdcApp.brakePedalLocationVoltage = (INT16U)(tempPedalVoltage >> 10);
+  218  1              return;         
+  219  1      }
+  220         
+  221         /***********************************************************************
+  222         *  Name        : AdcApp_SampleMainCylinderPressureVoltage
+  223         *  Description : Brake main cylinder pressure sensor power voltage ADC value switch to real voltage value
+  224         *  Parameter   : None
+  225         *  Returns     : None
+  226         ***********************************************************************/
+  227         static void AdcApp_SampleMainCylinderPressureVoltage(void)
+  228         {
+  229  1              INT32U tempPressureVoltage;
+  230  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  231  1              
+  232  1              tAdcSample.pressureSensorVoltage_Adc = ptr_AdcIf->brakeMainCylinderPressureSensorVoltage_Adc;   
+  233  1              
+  234  1              /* Brake main cylinder pressure sensor power voltage ADC value switch to real voltage value */  
+  235  1              tempPressureVoltage = (INT32U)tAdcSample.pressureSensorVoltage_Adc * 20000u;
+  236  1              tAdcApp.mainCylinderPressureVoltage = (INT16U)(tempPressureVoltage >> 10);
+  237  1              return;         
+  238  1      }
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 5   
 
-  239         /***********************************************************************
-  240         *  Name        : AdcApp_SampleBrakePedalLocation1
-  241         *  Description : Brake pedal location sensor 1 signal ADC value switch to real voltage value
-  242         *  Parameter   : None
-  243         *  Returns     : None
-  244         ***********************************************************************/
-  245         ADC_APP_STAT void AdcApp_SampleBrakePedalLocation1(void)
-  246         {
-  247  1              INT32U tempBrakePedalTrip1;
-  248  1              ADC_APP_STAT INT16U brakePedalTrip1_Adc;
-  249  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  250  1      
-  251  1              /* TODO: Brake pedal location sensor 1 signal ADC value switch to real voltage value */ 
-  252  1              tAdcSample.brakePedalTrip_Adc[0] = ptr_AdcIf->brakePedalLocationSensor1_Adc;
-  253  1      
-  254  1              tAdcSample.brakePedalTrip_Adc[0] = ((brakePedalTrip1_Adc * ADC_FILTER_PARM) + 
-  255  1                                                                                      ((INT32U)tAdcSample.brakePedalTrip_Adc[0] * (100u - ADC_FILTER_PARM))) / 100u;  
-*** WARNING C192 IN LINE 255 OF src\app\adc\adc_sample.c: '=': value truncated
-  256  1              PadalInitAD0 = tAdcSample.brakePedalTrip_Adc[0];
+  239         
+  240         /***********************************************************************
+  241         *  Name        : AdcApp_SampleBrakePedalLocation1
+  242         *  Description : Brake pedal location sensor 1 signal ADC value switch to real voltage value
+  243         *  Parameter   : None
+  244         *  Returns     : None
+  245         ***********************************************************************/
+  246         static void AdcApp_SampleBrakePedalLocation1(void)
+  247         {
+  248  1              INT32U tempBrakePedalTrip1;
+  249  1              static INT16U brakePedalTrip1_Adc;
+  250  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  251  1      
+  252  1              /* TODO: Brake pedal location sensor 1 signal ADC value switch to real voltage value */ 
+  253  1              tAdcSample.brakePedalTrip_Adc[0] = ptr_AdcIf->brakePedalLocationSensor1_Adc;
+  254  1      
+  255  1              tAdcSample.brakePedalTrip_Adc[0] = ((brakePedalTrip1_Adc * ADC_FILTER_PARM) + 
+  256  1                                                                                      ((INT32U)tAdcSample.brakePedalTrip_Adc[0] * (100u - ADC_FILTER_PARM))) / 100u;  
+*** WARNING C192 IN LINE 256 OF src\app\adc\adc_sample.c: '=': value truncated
   257  1              brakePedalTrip1_Adc = tAdcSample.brakePedalTrip_Adc[0]; 
   258  1      
   259  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
   260  1               * higher than the initial position and handle factual displacement */
-  261  1      #if (0 == EEPM_INIT_ADC_ENABLE) 
-                      if (tAdcSample.brakePedalTrip_Adc[0] <= BRAKE_PEDAL_INIT_LOCATION)
-                      {
-                              tempBrakePedalTrip1 = BRAKE_PEDAL_INIT_LOCATION;
-                      }
-                      else
-                      {
-                              tempBrakePedalTrip1 = tAdcSample.brakePedalTrip_Adc[0];
-                      }
-                      tempBrakePedalTrip1 = (tempBrakePedalTrip1 - BRAKE_PEDAL_INIT_LOCATION) * BRAKE_PEDAL_MECHANICAL_PARAM;
-              #else
-  272  1              if (tAdcSample.brakePedalTrip_Adc[0] <= PadalInitAD0_Init_EEPM)
-  273  1              {
-  274  2                      tempBrakePedalTrip1 = PadalInitAD0_Init_EEPM;
-  275  2              }
-  276  1              else
-  277  1              {
-  278  2                      tempBrakePedalTrip1 = tAdcSample.brakePedalTrip_Adc[0];
-  279  2              }
-  280  1              tempBrakePedalTrip1 = (tempBrakePedalTrip1 - PadalInitAD0_Init_EEPM) * BRAKE_PEDAL_MECHANICAL_PARAM;
-  281  1      #endif  
-  282  1              tAdcApp.brakePedalLocation1 = (INT16U)(tempBrakePedalTrip1 / SENSOR1_RANGE_PARAM);                              
-  283  1              return; 
-  284  1      }
-  285         
-  286         /***********************************************************************
-  287         *  Name        : AdcApp_SampleBrakePedalLocation2
-  288         *  Description : Brake pedal location sensor 2 signal ADC value switch to real voltage value
-  289         *  Parameter   : None
-  290         *  Returns     : None
-  291         ***********************************************************************/
-  292         ADC_APP_STAT void AdcApp_SampleBrakePedalLocation2(void)
-  293         {
-  294  1              INT32U tempBrakePedalTrip2;
-  295  1              ADC_APP_STAT INT16U brakePedalTrip2_Adc;
-  296  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  297  1              static INT16U brakePedalTrip2_Init = 0;
-  298  1              
-  299  1      #if (0 == EEPM_INIT_ADC_ENABLE )        
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 6   
+  261  1              if (tAdcSample.brakePedalTrip_Adc[0] <= gRTE_pedalInitValue[0])
+  262  1              {
+  263  2                      tempBrakePedalTrip1 = gRTE_pedalInitValue[0];
+  264  2              }
+  265  1              else
+  266  1              {
+  267  2                      tempBrakePedalTrip1 = tAdcSample.brakePedalTrip_Adc[0];
+  268  2              }
+  269  1      
+  270  1              tempBrakePedalTrip1 = (tempBrakePedalTrip1 - gRTE_pedalInitValue[0]) * BRAKE_PEDAL_MECHANICAL_PARAM;
+  271  1              tAdcApp.brakePedalLocation1 = (INT16U)(tempBrakePedalTrip1 / SENSOR1_RANGE_PARAM);                              
+  272  1              return; 
+  273  1      }
+  274         
+  275         /***********************************************************************
+  276         *  Name        : AdcApp_SampleBrakePedalLocation2
+  277         *  Description : Brake pedal location sensor 2 signal ADC value switch to real voltage value
+  278         *  Parameter   : None
+  279         *  Returns     : None
+  280         ***********************************************************************/
+  281         static void AdcApp_SampleBrakePedalLocation2(void)
+  282         {
+  283  1              INT32U tempBrakePedalTrip2;
+  284  1              static INT16U brakePedalTrip2_Adc;
+  285  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  286  1      
+  287  1              /* TODO: Brake pedal location sensor 2 signal ADC value switch to real voltage value */ 
+  288  1              tAdcSample.brakePedalTrip_Adc[1] = ptr_AdcIf->brakePedalLocationSensor2_Adc;
+  289  1      
+  290  1              tAdcSample.brakePedalTrip_Adc[1] = ((brakePedalTrip2_Adc * ADC_FILTER_PARM) + 
+  291  1                                                                                  ((INT32U)tAdcSample.brakePedalTrip_Adc[1] * (100u - ADC_FILTER_PARM))) / 100u;      
+*** WARNING C192 IN LINE 291 OF src\app\adc\adc_sample.c: '=': value truncated
+  292  1              brakePedalTrip2_Adc = tAdcSample.brakePedalTrip_Adc[1]; 
+  293  1              
+  294  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
+  295  1               * higher than the initial position and handle factual displacement */
+  296  1              if (tAdcSample.brakePedalTrip_Adc[1] <= gRTE_pedalInitValue[1])
+  297  1              {
+  298  2                      tempBrakePedalTrip2 = gRTE_pedalInitValue[1];
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 6   
 
-                      brakePedalTrip2_Init = BRAKE_PEDAL_INIT_LOCATION >> 1;
-              #else
-  302  1              brakePedalTrip2_Init = PadalInitAD0_Init_EEPM >> 1;
-  303  1      #endif
-  304  1              /* TODO: Brake pedal location sensor 2 signal ADC value switch to real voltage value */ 
-  305  1              tAdcSample.brakePedalTrip_Adc[1] = ptr_AdcIf->brakePedalLocationSensor2_Adc;
-  306  1      
-  307  1              tAdcSample.brakePedalTrip_Adc[1] = ((brakePedalTrip2_Adc * ADC_FILTER_PARM) + 
-  308  1                                                                                  ((INT32U)tAdcSample.brakePedalTrip_Adc[1] * (100u - ADC_FILTER_PARM))) / 100u;      
-*** WARNING C192 IN LINE 308 OF src\app\adc\adc_sample.c: '=': value truncated
-  309  1              PadalInitAD1 = tAdcSample.brakePedalTrip_Adc[1];
-  310  1              brakePedalTrip2_Adc = tAdcSample.brakePedalTrip_Adc[1]; 
-  311  1              
-  312  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
-  313  1               * higher than the initial position and handle factual displacement */
-  314  1              if (tAdcSample.brakePedalTrip_Adc[1] <= brakePedalTrip2_Init)
-  315  1              {
-  316  2                      tempBrakePedalTrip2 = brakePedalTrip2_Init;
-  317  2              }
-  318  1              else
-  319  1              {
-  320  2                      tempBrakePedalTrip2 = tAdcSample.brakePedalTrip_Adc[1];
-  321  2              }
-  322  1      
-  323  1              tempBrakePedalTrip2 = (tempBrakePedalTrip2 - brakePedalTrip2_Init) * BRAKE_PEDAL_MECHANICAL_PARAM;
-  324  1              tAdcApp.brakePedalLocation2 = (INT16U)(tempBrakePedalTrip2 / SENSOR2_RANGE_PARAM);                              
-  325  1              return; 
-  326  1      }
-  327         
-  328         /***********************************************************************
-  329         *  Name        : AdcApp_SampleMainCylinderLocation1
-  330         *  Description : Brake main cylinder location sensor 1 signal ADC value switch to real voltage value
-  331         *  Parameter   : None
-  332         *  Returns     : None
-  333         ***********************************************************************/
-  334         ADC_APP_STAT void AdcApp_SampleMainCylinderLocation1(void)
-  335         {
-  336  1              INT32U tempMainCylinderTrip1;
-  337  1              ADC_APP_STAT INT16U mainCylinderTrip1_Adc;
-  338  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  339  1      
-  340  1              /* TODO: Brake main cylinder location sensor 1 signal ADC value switch to real voltage value */ 
-  341  1              tAdcSample.mainCylinderTrip_Adc[0] = ptr_AdcIf->brakeMainCylinderLocationSensor1_Adc;
-  342  1      
-  343  1              tAdcSample.mainCylinderTrip_Adc[0] = ((mainCylinderTrip1_Adc * ADC_FILTER_PARM) + 
-  344  1                                                                                        ((INT32U)tAdcSample.mainCylinderTrip_Adc[0] * (100u - ADC_FILTER_PARM))) / 100u;      
-*** WARNING C192 IN LINE 344 OF src\app\adc\adc_sample.c: '=': value truncated
-  345  1              CylinderInitAD0 = tAdcSample.mainCylinderTrip_Adc[0];
-  346  1              mainCylinderTrip1_Adc = tAdcSample.mainCylinderTrip_Adc[0];     
-  347  1      
-  348  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
-  349  1               * higher than the initial position and handle factual displacement */
-  350  1      #if (0 == EEPM_INIT_ADC_ENABLE )                
-                      if (tAdcSample.mainCylinderTrip_Adc[0] <= MAIN_CYLINDER_INIT_LOCATION)
-                      {
-                              tempMainCylinderTrip1 = MAIN_CYLINDER_INIT_LOCATION;
-                      }
-                      else
-                      {
-                              tempMainCylinderTrip1 = tAdcSample.mainCylinderTrip_Adc[0];
-                      }       
-                      tempMainCylinderTrip1 = (tempMainCylinderTrip1 - MAIN_CYLINDER_INIT_LOCATION) * MAIN_CYLINDER_MECHANICAL_
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 7   
+  299  2              }
+  300  1              else
+  301  1              {
+  302  2                      tempBrakePedalTrip2 = tAdcSample.brakePedalTrip_Adc[1];
+  303  2              }
+  304  1      
+  305  1              tempBrakePedalTrip2 = (tempBrakePedalTrip2 - gRTE_pedalInitValue[1]) * BRAKE_PEDAL_MECHANICAL_PARAM;
+  306  1              tAdcApp.brakePedalLocation2 = (INT16U)(tempBrakePedalTrip2 / SENSOR2_RANGE_PARAM);                              
+  307  1              return; 
+  308  1      }
+  309         
+  310         /***********************************************************************
+  311         *  Name        : AdcApp_SampleMainCylinderLocation1
+  312         *  Description : Brake main cylinder location sensor 1 signal ADC value switch to real voltage value
+  313         *  Parameter   : None
+  314         *  Returns     : None
+  315         ***********************************************************************/
+  316         static void AdcApp_SampleMainCylinderLocation1(void)
+  317         {
+  318  1              INT32U tempMainCylinderTrip1;
+  319  1              static INT16U mainCylinderTrip1_Adc;
+  320  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  321  1      
+  322  1              /* TODO: Brake main cylinder location sensor 1 signal ADC value switch to real voltage value */ 
+  323  1              tAdcSample.mainCylinderTrip_Adc[0] = ptr_AdcIf->brakeMainCylinderLocationSensor1_Adc;
+  324  1      
+  325  1              tAdcSample.mainCylinderTrip_Adc[0] = ((mainCylinderTrip1_Adc * ADC_FILTER_PARM) + 
+  326  1                                                                                        ((INT32U)tAdcSample.mainCylinderTrip_Adc[0] * (100u - ADC_FILTER_PARM))) / 100u;      
+*** WARNING C192 IN LINE 326 OF src\app\adc\adc_sample.c: '=': value truncated
+  327  1              mainCylinderTrip1_Adc = tAdcSample.mainCylinderTrip_Adc[0];     
+  328  1      
+  329  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
+  330  1               * higher than the initial position and handle factual displacement */
+  331  1              if (tAdcSample.mainCylinderTrip_Adc[0] <= gRTE_cylinderInitValue[0])
+  332  1              {
+  333  2                      tempMainCylinderTrip1 = gRTE_cylinderInitValue[0];
+  334  2              }
+  335  1              else
+  336  1              {
+  337  2                      tempMainCylinderTrip1 = tAdcSample.mainCylinderTrip_Adc[0];
+  338  2              }
+  339  1              
+  340  1              tempMainCylinderTrip1 = (tempMainCylinderTrip1 - gRTE_cylinderInitValue[0]) * MAIN_CYLINDER_MECHANICAL_PA
+             -RAM;
+  341  1              tAdcApp.mainCylinderLocation1 = (INT16U)(tempMainCylinderTrip1 / SENSOR1_RANGE_PARAM);
+  342  1              return;
+  343  1      }
+  344         
+  345         /***********************************************************************
+  346         *  Name        : AdcApp_SampleMainCylinderLocation2
+  347         *  Description : Brake main cylinder location sensor 2 signal ADC value switch to real voltage value
+  348         *  Parameter   : None
+  349         *  Returns     : None
+  350         ***********************************************************************/
+  351         static void AdcApp_SampleMainCylinderLocation2(void)
+  352         {
+  353  1              INT32U tempMainCylinderTrip2;
+  354  1              static INT16U mainCylinderTrip2_Adc;
+  355  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  356  1      
+  357  1              /* TODO: Brake main cylinder location sensor 2 signal ADC value switch to real voltage value */ 
+  358  1              tAdcSample.mainCylinderTrip_Adc[1] = ptr_AdcIf->brakeMainCylinderLocationSensor2_Adc;
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 7   
 
-             -PARAM;
-              #else
-  361  1              if (tAdcSample.mainCylinderTrip_Adc[0] <= CylinderInitAD0_Init_EEPM)
-  362  1              {
-  363  2                      tempMainCylinderTrip1 = CylinderInitAD0_Init_EEPM;
-  364  2              }
-  365  1              else
-  366  1              {
-  367  2                      tempMainCylinderTrip1 = tAdcSample.mainCylinderTrip_Adc[0];
-  368  2              }       
-  369  1              tempMainCylinderTrip1 = (tempMainCylinderTrip1 - CylinderInitAD0_Init_EEPM) * MAIN_CYLINDER_MECHANICAL_PA
-             -RAM;        
-  370  1      #endif
-  371  1              tAdcApp.mainCylinderLocation1 = (INT16U)(tempMainCylinderTrip1 / SENSOR1_RANGE_PARAM);
-  372  1              return;
-  373  1      }
-  374         
-  375         /***********************************************************************
-  376         *  Name        : AdcApp_SampleMainCylinderLocation2
-  377         *  Description : Brake main cylinder location sensor 2 signal ADC value switch to real voltage value
-  378         *  Parameter   : None
-  379         *  Returns     : None
-  380         ***********************************************************************/
-  381         ADC_APP_STAT void AdcApp_SampleMainCylinderLocation2(void)
-  382         {
-  383  1              INT32U tempMainCylinderTrip2;
-  384  1              ADC_APP_STAT INT16U mainCylinderTrip2_Adc;
-  385  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  386  1              
-  387  1              static INT16U mainCylinderTrip2_Init = 0;
-  388  1      #if (0 == EEPM_INIT_ADC_ENABLE )        
-                      mainCylinderTrip2_Init = MAIN_CYLINDER_INIT_LOCATION >> 1;
-              #else
-  391  1              mainCylinderTrip2_Init = CylinderInitAD0_Init_EEPM >> 1;
-  392  1      #endif
-  393  1              /* TODO: Brake main cylinder location sensor 2 signal ADC value switch to real voltage value */ 
-  394  1              tAdcSample.mainCylinderTrip_Adc[1] = ptr_AdcIf->brakeMainCylinderLocationSensor2_Adc;
-  395  1      
-  396  1              tAdcSample.mainCylinderTrip_Adc[1] = ((mainCylinderTrip2_Adc * ADC_FILTER_PARM) + 
-  397  1                                                                                        ((INT32U)tAdcSample.mainCylinderTrip_Adc[1] * (100u - ADC_FILTER_PARM))) / 100u;
-*** WARNING C192 IN LINE 397 OF src\app\adc\adc_sample.c: '=': value truncated
-  398  1              CylinderInitAD1 = tAdcSample.mainCylinderTrip_Adc[1];
-  399  1              mainCylinderTrip2_Adc = tAdcSample.mainCylinderTrip_Adc[1];     
-  400  1      
-  401  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
-  402  1               * higher than the initial position and handle factual displacement */
-  403  1              if (tAdcSample.mainCylinderTrip_Adc[1] <= mainCylinderTrip2_Init)
-  404  1              {
-  405  2                      tempMainCylinderTrip2 = mainCylinderTrip2_Init;
-  406  2              }
-  407  1              else
-  408  1              {
-  409  2                      tempMainCylinderTrip2 = tAdcSample.mainCylinderTrip_Adc[1];
-  410  2              }
-  411  1              
-  412  1              tempMainCylinderTrip2 = (tempMainCylinderTrip2 - mainCylinderTrip2_Init) * MAIN_CYLINDER_MECHANICAL_PARAM
-             -;
-  413  1              tAdcApp.mainCylinderLocation2 = (INT16U)(tempMainCylinderTrip2 / SENSOR2_RANGE_PARAM);
-  414  1              return; 
-  415  1      }
-  416         
-  417         /***********************************************************************
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 8   
-
-  418         *  Name        : AdcApp_SampleBrakeMotorCurrent
-  419         *  Description : Brake motor current sensor ADC value switch to real voltage value
-  420         *  Parameter   : None
-  421         *  Returns     : None
-  422         ***********************************************************************/
-  423         ADC_APP_STAT void AdcApp_SampleBrakeMotorCurrent(void)
-  424         {
-  425  1              INT32S tempMotorCurrent;
-  426  1              ADC_APP_STAT INT16U motorCurrent_Adc;
-  427  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  428  1      
-  429  1              /* TODO: Brake motor current sensor ADC value switch to real voltage value */   
-  430  1              tAdcSample.motorCurrent_Adc = ptr_AdcIf->brakeMotorCurrentSensor_Adc;
-  431  1              
-  432  1              tAdcSample.motorCurrent_Adc = ((motorCurrent_Adc * ADC_FILTER_PARM) + 
-  433  1                                                                         ((INT32U)tAdcSample.motorCurrent_Adc * (100u - ADC_FILTER_PARM))) / 100u;
-*** WARNING C192 IN LINE 433 OF src\app\adc\adc_sample.c: '=': value truncated
-  434  1              motorCurrent_Adc = tAdcSample.motorCurrent_Adc;
-  435  1      
-  436  1              tempMotorCurrent = tAdcSample.motorCurrent_Adc;
-  437  1              
-  438  1      #if(0 == HARDWARE_VERSION)
+  359  1      
+  360  1              tAdcSample.mainCylinderTrip_Adc[1] = ((mainCylinderTrip2_Adc * ADC_FILTER_PARM) + 
+  361  1                                                                                        ((INT32U)tAdcSample.mainCylinderTrip_Adc[1] * (100u - ADC_FILTER_PARM))) / 100u;
+*** WARNING C192 IN LINE 361 OF src\app\adc\adc_sample.c: '=': value truncated
+  362  1              mainCylinderTrip2_Adc = tAdcSample.mainCylinderTrip_Adc[1];     
+  363  1      
+  364  1              /* Limitter processing, lower than the initial position and handle as the initial position, 
+  365  1               * higher than the initial position and handle factual displacement */
+  366  1              if (tAdcSample.mainCylinderTrip_Adc[1] <= gRTE_cylinderInitValue[1])
+  367  1              {
+  368  2                      tempMainCylinderTrip2 = gRTE_cylinderInitValue[1];
+  369  2              }
+  370  1              else
+  371  1              {
+  372  2                      tempMainCylinderTrip2 = tAdcSample.mainCylinderTrip_Adc[1];
+  373  2              }
+  374  1              
+  375  1              tempMainCylinderTrip2 = (tempMainCylinderTrip2 - gRTE_cylinderInitValue[1]) * MAIN_CYLINDER_MECHANICAL_PA
+             -RAM;
+  376  1              tAdcApp.mainCylinderLocation2 = (INT16U)(tempMainCylinderTrip2 / SENSOR2_RANGE_PARAM);
+  377  1              return; 
+  378  1      }
+  379         
+  380         /***********************************************************************
+  381         *  Name        : AdcApp_SampleBrakeMotorCurrent
+  382         *  Description : Brake motor current sensor ADC value switch to real voltage value
+  383         *  Parameter   : None
+  384         *  Returns     : None
+  385         ***********************************************************************/
+  386         static void AdcApp_SampleBrakeMotorCurrent(void)
+  387         {
+  388  1              INT32S tempMotorCurrent;
+  389  1              static INT16U motorCurrent_Adc;
+  390  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  391  1      
+  392  1              /* TODO: Brake motor current sensor ADC value switch to real voltage value */   
+  393  1              tAdcSample.motorCurrent_Adc = ptr_AdcIf->brakeMotorCurrentSensor_Adc;
+  394  1              
+  395  1              tAdcSample.motorCurrent_Adc = ((motorCurrent_Adc * ADC_FILTER_PARM) + 
+  396  1                                                                         ((INT32U)tAdcSample.motorCurrent_Adc * (100u - ADC_FILTER_PARM))) / 100u;
+*** WARNING C192 IN LINE 396 OF src\app\adc\adc_sample.c: '=': value truncated
+  397  1              motorCurrent_Adc = tAdcSample.motorCurrent_Adc;
+  398  1      
+  399  1              tempMotorCurrent = tAdcSample.motorCurrent_Adc;
+  400  1              
+  401  1      #if (0 == HARDWARE_VERSION)
                       tempMotorCurrent = (tempMotorCurrent - MOTOR_CURRENT_THRESHOLD) * 10000u;
                       tAdcApp.brakeMotorCurrent = (INT16S)(tempMotorCurrent / MOTOR_CURRENT_PARAM);
               #else
-  442  1              tempMotorCurrent = (MOTOR_CURRENT_THRESHOLD - tempMotorCurrent) * 10000u;
-  443  1              tAdcApp.brakeMotorCurrent = (INT16S)(tempMotorCurrent / MOTOR_CURRENT_PARAM);
-  444  1      #endif
-  445  1              
-  446  1              return;
-  447  1      }
-  448         
-  449         /***********************************************************************
-  450         *  Name        : AdcApp_SampleEnvironmentTemperature
-  451         *  Description : Environment temperature sensor ADC value switch to real voltage value
-  452         *  Parameter   : None
-  453         *  Returns     : None
-  454         ***********************************************************************/
-  455         ADC_APP_STAT void AdcApp_SampleEnvironmentTemperature(void)
-  456         {
-  457  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  458  1      
-  459  1              /* TODO: Environment temperature sensor ADC value switch to real voltage value */       
-  460  1              tAdcSample.temperatureValue_Adc = ptr_AdcIf->environmentTemperatureSensor_Adc;
-  461  1              tAdcApp.environmentTemperature = Rte_calcTemperature(tAdcSample.temperatureValue_Adc);
-  462  1              return;
-  463  1      }
-  464         
-  465         /***********************************************************************
-  466         *  Name        : AdcApp_SampleMainCylinderPressure
-  467         *  Description : Brake main cylinder sensor ADC value switch to real voltage value
-  468         *  Parameter   : None
-  469         *  Returns     : None
-  470         ***********************************************************************/
-  471         ADC_APP_STAT void AdcApp_SampleMainCylinderPressure(void)
-  472         {
-  473  1              INT32U tempMainCylinderPressure;
-  474  1              ADC_APP_STAT INT16U mainCylinderPressure_Adc;
-  475  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
-  476  1      
-  477  1              /* TODO: Brake main cylinder sensor ADC value switch to real voltage value */   
-  478  1              tAdcSample.mainCylinderPressure_Adc = ptr_AdcIf->brakeMainCylinderPressureSensor_Adc;
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          11/13/2020 15:09:25 PAGE 9   
+  405  1              tempMotorCurrent = (MOTOR_CURRENT_THRESHOLD - tempMotorCurrent) * 10000u;
+  406  1              tAdcApp.brakeMotorCurrent = (INT16S)(tempMotorCurrent / MOTOR_CURRENT_PARAM);
+  407  1      #endif
+  408  1              
+  409  1              return;
+  410  1      }
+  411         
+  412         /***********************************************************************
+  413         *  Name        : AdcApp_SampleEnvironmentTemperature
+  414         *  Description : Environment temperature sensor ADC value switch to real voltage value
+  415         *  Parameter   : None
+  416         *  Returns     : None
+  417         ***********************************************************************/
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 8   
 
-  479  1      
-  480  1              tAdcSample.mainCylinderPressure_Adc = ((mainCylinderPressure_Adc * ADC_FILTER_PARM) + 
-  481  1                                                                                         ((INT32U)tAdcSample.mainCylinderPressure_Adc * (100u - ADC_FILTER_PARM))) / 100u;    
-*** WARNING C192 IN LINE 481 OF src\app\adc\adc_sample.c: '=': value truncated
-  482  1              mainCylinderPressure_Adc = tAdcSample.mainCylinderPressure_Adc;
-  483  1              
-  484  1              tempMainCylinderPressure = tAdcSample.mainCylinderPressure_Adc;
-  485  1              tAdcApp.mainCylinderPressure = (INT16U)(tempMainCylinderPressure * 100000u / CYLINDER_PRESSURE_PARAM);
-  486  1              return;
-  487  1      }
-  488         
-  489         /***********************************************************************
-  490         *  Name        : Adc_SampleData
-  491         *  Description : ADC sample module interface
-  492         *  Parameter   : None
-  493         *  Returns     : ADC sample data structure access address
-  494         ***********************************************************************/
-  495         const T_ADC* Adc_SampleData(void)
-  496         {
-  497  1              return (&tAdcSample);
-  498  1      }       
-  499         
-  500         const T_ADC_APP* AdcApp_SampleData(void)
-  501         {
-  502  1              return (&tAdcApp);
-  503  1      }       
-  504         
-  505         /* _END_OF_ADC_SAMPLE_ */
+  418         static void AdcApp_SampleEnvironmentTemperature(void)
+  419         {
+  420  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  421  1      
+  422  1              /* TODO: Environment temperature sensor ADC value switch to real voltage value */       
+  423  1              tAdcSample.temperatureValue_Adc = ptr_AdcIf->environmentTemperatureSensor_Adc;
+  424  1              tAdcApp.environmentTemperature = Rte_calcTemperature(tAdcSample.temperatureValue_Adc);
+  425  1              return;
+  426  1      }
+  427         
+  428         /***********************************************************************
+  429         *  Name        : AdcApp_SampleMainCylinderPressure
+  430         *  Description : Brake main cylinder sensor ADC value switch to real voltage value
+  431         *  Parameter   : None
+  432         *  Returns     : None
+  433         ***********************************************************************/
+  434         static void AdcApp_SampleMainCylinderPressure(void)
+  435         {
+  436  1              INT32U tempMainCylinderPressure;
+  437  1              static INT16U mainCylinderPressure_Adc;
+  438  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
+  439  1      
+  440  1              /* TODO: Brake main cylinder sensor ADC value switch to real voltage value */   
+  441  1              tAdcSample.mainCylinderPressure_Adc = ptr_AdcIf->brakeMainCylinderPressureSensor_Adc;
+  442  1      
+  443  1              tAdcSample.mainCylinderPressure_Adc = ((mainCylinderPressure_Adc * ADC_FILTER_PARM) + 
+  444  1                                                                                         ((INT32U)tAdcSample.mainCylinderPressure_Adc * (100u - ADC_FILTER_PARM))) / 100u;    
+*** WARNING C192 IN LINE 444 OF src\app\adc\adc_sample.c: '=': value truncated
+  445  1              mainCylinderPressure_Adc = tAdcSample.mainCylinderPressure_Adc;
+  446  1              
+  447  1              tempMainCylinderPressure = tAdcSample.mainCylinderPressure_Adc;
+  448  1              tAdcApp.mainCylinderPressure = (INT16U)(tempMainCylinderPressure * 100000u / CYLINDER_PRESSURE_PARAM);
+  449  1              return;
+  450  1      }
+  451         
+  452         /***********************************************************************
+  453         *  Name        : Adc_SampleData
+  454         *  Description : ADC sample module interface
+  455         *  Parameter   : None
+  456         *  Returns     : ADC sample data structure access address
+  457         ***********************************************************************/
+  458         const T_ADC* Adc_SampleData(void)
+  459         {
+  460  1              return (&tAdcSample);
+  461  1      }       
+  462         
+  463         const T_ADC_APP* AdcApp_SampleData(void)
+  464         {
+  465  1              return (&tAdcApp);
+  466  1      }       
+  467         
+  468         /* _END_OF_ADC_SAMPLE_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        1502     --------
+  CODE SIZE        =        1460     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =          16     --------
+  NEAR-DATA SIZE   =          12     --------
   FAR-DATA SIZE    =          64     --------
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 9   
+
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          88     --------
+  INIT'L SIZE      =          76     --------
 END OF MODULE INFORMATION.
 
 

@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 1   
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE BOOSTER
@@ -35,1487 +35,1547 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\booster.c MO
    23         #include <stdlib.h>
    24         #include <string.h>
    25         
-   26         #include "adc_sample.h"
+   26         #define BOOSTER_GLOBALS
    27         #include "booster.h"
-   28         #include "rte.h"
-   29         #include "energy_recovery.h"
-   30         #include "pid.h"
-   31         #include "FLTD.h"
-   32         #include "pwm.h"
+   28         #include "booster_Cfg.h"
+   29         
+   30         #include "adc_sample.h"
+   31         #include "rte.h"
+   32         #include "energy_recovery.h"
    33         #include "wire_control.h"
-   34         
-   35         #define BOOSTER_GLOBALS
-   36         
-   37         /**** Definition of variables ****/
-   38         BOOSTER_STAT T_BOOSTER tBooster = {0u};
-   39         INT16S pedalRateAccumulate = 0;
-   40         
-   41         static INT8U exhaustStep = 0;
-   42         static INT8U exhaustPushCnt = 0;
-   43         
-   44         /**** Declaration of functions ****/
-   45         static void Booster_OnlyLocationLoop(void);
-   46         static void Booster_OnlyCurrentLoop(void);
-   47         static void Booster_LocationAndCurrentLoop(void);
-   48         BOOSTER_STAT void Booster_CalculateMainCylinderObjLocationFromPedal(void);
-   49         BOOSTER_STAT INT16U Booster_CalculateMixBrakeCylinderLocationFromTorque(INT16U objTorque);
-   50         BOOSTER_STAT INT16U Booster_CalculateCurrentFromMainCylinder(INT16U objLoc);
-   51         BOOSTER_STAT void Booster_CalculateMotorObjCurrentFromPedal(void);
-   52         BOOSTER_STAT void Booster_JudgeEnergyRecoveryCondition(void);
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 2   
+   34         #include "pid.h"
+   35         #include "FLTD.h"
+   36         #include "pwm.h"
+   37         
+   38         
+   39         
+   40         /**** Definition of variables ****/
+   41         static T_BOOSTER tBooster = {0};
+   42         INT16S pedalRateAccumulate = 0;
+   43         static BOOLEAN g_energyRecoverHitFlag = FALSE;
+   44         static INT16U timeDetectCount = 0;
+   45         
+   46         /**** Declaration of functions ****/
+   47         static void Booster_systemModeJudge(void);
+   48         static void Booster_pressureSensorNormalJudge(void);
+   49         static void Booster_OnlyLocationLoop(void);
+   50         static void Booster_OnlyCurrentLoop(void);
+   51         static void Booster_LocationAndCurrentLoop(void);
+   52         
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 2   
 
-   53         BOOSTER_STAT void Booster_BrakeStatusMashine(void);
-   54         BOOSTER_STAT void Booster_BrakeForceDistribution(void);
-   55         BOOSTER_STAT void Booster_CylinderMinLocationCheck(void);
-   56         BOOSTER_STAT INT16U Booster_RegenerationBrakeQuitSpeed(INT16U torque);
-   57         BOOSTER_STAT INT16U Booster_CalculateBrakeTorque(INT16U objLoc);
-   58         BOOSTER_STAT void Booster_PedalLocationPredict(void);
-   59         BOOSTER_STAT void Booster_PedalLocationRateCalculation(void);
-   60         BOOSTER_STAT void Booster_CylinderLocationRateCalculation(void);
-   61         BOOSTER_STAT INT16U Booster_CurrentCompensation(INT16U calcCurrent);
-   62         INT16S Booster_CurrentGiven(void);
-   63         BOOSTER_STAT void Booster_ClosedLoopControl(void);
-   64         static void Booster_cylinderExhaust(void);
-   65         
+   53         static INT16U Booster_calcCylinderObjLocationFromPedal(INT16U pedalLoc);
+   54         INT16U Booster_calcForwardPwm(INT16S objCurrent);
+   55         static INT16U Booster_calcMotorObjCurrentFromPedal(INT16U pedalLoc);
+   56         static void Booster_PedalLocationRateCalculation(void);
+   57         static void Booster_CylinderLocationRateCalculation(void);
+   58         static INT16U Booster_CurrentCompensation(INT16U calcCurrent);
+   59         static void Booster_ClosedLoopControl(void);
+   60         
+   61         static void Booster_JudgeEnergyRecoveryCondition(void);
+   62         static void Booster_BrakeStatusMashine(void);
+   63         static void Booster_BrakeForceDistribution(void);
+   64         static void Booster_mcuObjTorqueCheck(INT16S* torque);
+   65         static INT16U Booster_CylinderMinLocationCheck(void);
    66         
-   67         /***********************************************************************
-   68         *  Name        : Booster_Init
-   69         *  Description : After power on, initiliaze booster alogrithm variable
-   70         *  Parameter   : None
-   71         *  Returns     : None
-   72         ***********************************************************************/
-   73         void Booster_Init(void)
-   74         {
-   75  1              memset(&tBooster, 0, sizeof(tBooster));
-   76  1              return;
-   77  1      }
-   78         
-   79         /***********************************************************************
-   80         *  Name        : Booster_DeInit
-   81         *  Description : During running, need initilize booster algorithm variable
-   82         *  Parameter   : None
-   83         *  Returns     : None
-   84         ***********************************************************************/
-   85         void Booster_DeInit(void)
-   86         {
-   87  1              return;
-   88  1      }
-   89         
-   90         /***********************************************************************
-   91         *  Name        : Booster_Algorithm
-   92         *  Description : Booster control algorithm
-   93         *  Parameter   : None
-   94         *  Returns     : None
-   95         ***********************************************************************/
-   96         void Booster_Algorithm(void)
-   97         {
-   98  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
-   99  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();      
-  100  1              
-  101  1              tBooster.brakePedalLocation = adcApp_ptr->brakePedalLocation1;
-  102  1              tBooster.mainCylinderLocation = adcApp_ptr->mainCylinderLocation1;
-  103  1              tBooster.motorCurrent = adcApp_ptr->brakeMotorCurrent;
-  104  1              tBooster.cylinderPressure = adcApp_ptr->mainCylinderPressure;
-  105  1              
-  106  1              Booster_CylinderLocationRateCalculation();
-  107  1              Booster_CalculateTemperatureProtectCoeff();
-  108  1              
-  109  1      #if 0
-                      if(TRUE == g_cylinderExhaustEnFlag)
+   67         static INT16U Booster_CalculateMixBrakeCylinderLocationFromTorque(INT16S objTorque);
+   68         static INT16U Booster_RegenerationBrakeQuitSpeed(INT16S torque);
+   69         static INT16S Booster_CalculateBrakeTorque(INT16U objLoc);
+   70         static void Booster_PedalLocationPredict(void);
+   71         
+   72         
+   73         
+   74         /***********************************************************************
+   75         *  Name        : Booster_Init
+   76         *  Description : After power on, initiliaze booster alogrithm variable
+   77         *  Parameter   : None
+   78         *  Returns     : None
+   79         ***********************************************************************/
+   80         void Booster_Init(void)
+   81         {
+   82  1              memset(&tBooster, 0, sizeof(tBooster));
+   83  1              
+   84  1              tBooster.temperatureProtectCoeff = PROTECT_INIT_COEFF;
+   85  1              tBooster.currentDampCoeff = PROTECT_INIT_COEFF;
+   86  1              tBooster.cylinderDampCoeff = PROTECT_INIT_COEFF;
+   87  1              
+   88  1              tBooster.pedalToCylinderArrayLength = sizeof(pedal_To_cylinder[0]) / sizeof(INT16U);
+   89  1              tBooster.cylinderToCurrentArrayLength = sizeof(cylinder_To_current[0]) / sizeof(INT16U);
+   90  1              tBooster.currentToPwmArrayLength = sizeof(current_To_pwm[0]) / sizeof(INT16U);
+   91  1              tBooster.pedalToCurrentArrayLength = sizeof(pedal_To_current[0]) / sizeof(INT16U);
+   92  1      }
+   93         
+   94         /***********************************************************************
+   95         *  Name        : Booster_DeInit
+   96         *  Description : During running, need initilize booster algorithm variable
+   97         *  Parameter   : None
+   98         *  Returns     : None
+   99         ***********************************************************************/
+  100         void Booster_DeInit(void)
+  101         {
+  102  1              return;
+  103  1      }
+  104         
+  105         /***********************************************************************
+  106         *  Name        : Booster_Algorithm
+  107         *  Description : Booster control algorithm
+  108         *  Parameter   : None
+  109         *  Returns     : None
+  110         ***********************************************************************/
+  111         void Booster_Algorithm(void)
+  112         {
+  113  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
+  114  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();      
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 3   
+
+  115  1              
+  116  1              tBooster.brakePedalLocation = adcApp_ptr->brakePedalLocation1;
+  117  1              tBooster.mainCylinderLocation = adcApp_ptr->mainCylinderLocation1;
+  118  1              tBooster.motorCurrent = adcApp_ptr->brakeMotorCurrent;
+  119  1              tBooster.cylinderPressure = adcApp_ptr->mainCylinderPressure;
+  120  1              tBooster.environmentTemperature = adcApp_ptr->environmentTemperature;
+  121  1              
+  122  1      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
+  123  1              tBooster.mcuMotorMaxiumTorque = MCU_MotToqLmt * 0.5 - 4000;
+  124  1              tBooster.mcuMotorActualTorque = MCU_MotActuToq * 0.5 - 4000;
+  125  1      #endif
+  126  1              
+  127  1              Booster_systemModeJudge();
+  128  1                      
+  129  1              Booster_PedalLocationRateCalculation();
+  130  1              Booster_CylinderLocationRateCalculation();
+  131  1              Booster_CalculateTemperatureProtectCoeff();
+  132  1              Booster_CalcTimeOutProtectCoef();
+  133  1              Booster_PedalLocationPredict();
+  134  1              Booster_BrakeStatusMashine();
+  135  1              
+  136  1              WireControl_Algorithm();
+  137  1              Booster_pressureSensorNormalJudge();
+  138  1              
+  139  1              if((TRUE == FLTDAct_ptr->fixedDecelerationFlg) || (3 == gRTE_pidTypeSw))
+  140  1              {
+  141  2                      gRTE_pidTypeSts = 3;
+  142  2                      if(BoosterBrakeMode == BrakeSysMode)
+  143  2                      {
+  144  3                              if(TRUE == g_inBrakeSwValidSts)
+  145  3                              {
+  146  4                                      Pwm_Control(700);
+  147  4                              }
+  148  3                              else
+  149  3                              {
+  150  4                                      Pwm_Control(0);
+  151  4                              }
+  152  3                      }
+  153  2                      else if(WireCtrlBrakeMode == BrakeSysMode)
+  154  2                      {
+  155  3                              if((TRUE == g_wireControlEnFlag) && (g_wireControlObjPressure > 0))
+  156  3                              {
+  157  4                                      Pwm_Control(700);
+  158  4                              }
+  159  3                              else
+  160  3                              {
+  161  4                                      Pwm_Control(0);
+  162  4                              }
+  163  3                      }
+  164  2              }
+  165  1      #if 1
+  166  1              else
+  167  1              {
+  168  2                      gRTE_pidTypeSts = 2;
+  169  2                      Booster_OnlyCurrentLoop();
+  170  2                      WireControl_CurrentToPressure();
+  171  2              }
+  172  1      #else
+                      else if((TRUE == FLTDAct_ptr->brakingDependsOnCurrentFlg) || (2 == gRTE_pidTypeSw) || (TRUE == g_cylinder
+             -ExhaustEnFlag))
                       {
-                              Booster_cylinderExhaust();
+                              gRTE_pidTypeSts = 2;
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 4   
+
+                              Booster_OnlyCurrentLoop();
+                              WireControl_CurrentToPressure();
+                      }
+                      else if((TRUE == FLTDAct_ptr->brakingDependsOnCylinderFlg) ||(1 == gRTE_pidTypeSw))
+                      {
+                              gRTE_pidTypeSts = 1;
+                              Booster_OnlyLocationLoop();
+                              WireControl_CylinderToPressure();
+                      }
+                      else if(0 == gRTE_pidTypeSw)
+                      {
+                              gRTE_pidTypeSts = 0;
+                              Booster_LocationAndCurrentLoop();
+                              WireControl_CylinderToPressure();
+                      }
+                      
+              #endif
+  193  1              
+  194  1      }
+  195         
+  196         /***********************************************************************
+  197         *  Name        : Booster_systemModeJudge
+  198         *  Description : booster system mode judge. 0: booster mode ; 1: wireControl mode 
+  199         *  Parameter   : None
+  200         *  Returns     : None
+  201         ***********************************************************************/
+  202         static void Booster_systemModeJudge(void)
+  203         {
+  204  1              static INT8U brakeSysModeLast = 0;
+  205  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
+  206  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();      
+  207  1              
+  208  1              /*---------------Ì¤°å¸ÉÔ¤µÄÅÐ¶ÏÂß¼­------------------------*/
+  209  1      #if (0 != BRAKE_SIGNAL_SOURCE)
+                      if((TRUE == g_wireControlEnFlag) || (TRUE == g_cylinderExhaustEnFlag))
+                      {
+                              if((TRUE == g_inBrakeSwValidSts)
+                                      || ((FALSE == FLTDAct_ptr->fixedDecelerationFlg) && (adcApp_ptr->brakePedalLocation1 > BRAKE_PEDAL_LOCA
+             -TION_VALID)))
+                              {
+                                      BrakeSysMode = BoosterBrakeMode;
+                                      
+                                      if(brakeSysModeLast != BrakeSysMode)
+                                      {
+                                              g_pedalInterveneFlag = TRUE;
+                                      }
+                              }
+                              else
+                              {
+                                      BrakeSysMode = WireCtrlBrakeMode;
+                              }       
                       }
                       else
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 3   
+                      {
+                              BrakeSysMode = BoosterBrakeMode;
+                      }
+                      brakeSysModeLast = BrakeSysMode;
+              #else
+  233  1              BrakeSysMode = WireCtrlBrakeMode;
+  234  1      #endif
+  235  1      }
+  236         
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 5   
 
-              #endif
-  116  1              {
-  117  2                      exhaustStep = 1;
-  118  2                      exhaustPushCnt = 0;     
-  119  2                      WireControl_Algorithm();        
-  120  2              }
-  121  1      }
-  122         
-  123         
-  124         /***********************************************************************
-  125         *  Name        : Booster_LocationAndCurrentLoop
-  126         *  Description : Booster control algorithm
-  127         *  Parameter   : None
-  128         *  Returns     : None
-  129         ***********************************************************************/
-  130         static void Booster_LocationAndCurrentLoop(void)
-  131         {
-  132  1              Booster_CalculateTemperatureProtectCoeff();
-  133  1      //      Booster_CalculateMainCylinderObjLocationFromPedal();
-  134  1      //      Booster_PedalLocationRateCalculation();
-  135  1      //      Booster_CylinderLocationRateCalculation();
-  136  1      //      Booster_PedalLocationPredict();
-  137  1      //      Booster_BrakeStatusMashine();
-  138  1      //      Booster_BrakeForceDistribution();
-  139  1      //      Booster_CylinderMinLocationCheck();
-  140  1      //      Booster_ClosedLoopControl();    
-  141  1      //      
-  142  1      //      Motor_Auto_Run();
-  143  1              WireControl_Algorithm();
-  144  1              return;
-  145  1      }
-  146         
-  147         /***********************************************************************
-  148         *  Name        : Booster_OnlyLocationLoop
-  149         *  Description : Booster control algorithm
-  150         *  Parameter   : None
-  151         *  Returns     : None
-  152         ***********************************************************************/
-  153         static void Booster_OnlyLocationLoop(void)
-  154         {
-  155  1              Booster_CalculateTemperatureProtectCoeff();
-  156  1              Booster_CalculateMainCylinderObjLocationFromPedal();
-  157  1              Pid_OnlyLocationClosedLoopControl(tBooster.mainCylinderObjLocation);
-  158  1              
-  159  1              return;
-  160  1      }
-  161         
-  162         
-  163         /***********************************************************************
-  164         *  Name        : Booster_OnlyCurrentLoop
-  165         *  Description : Booster control algorithm
-  166         *  Parameter   : None
-  167         *  Returns     : None
-  168         ***********************************************************************/
-  169         static void Booster_OnlyCurrentLoop(void)
-  170         {
-  171  1              Booster_CalculateTemperatureProtectCoeff();
-  172  1              Booster_CalculateMotorObjCurrentFromPedal();
-  173  1              Pid_CurrentClosedLoopControl(tBooster.brakeMotorObjCurrent);
-  174  1              
-  175  1              return;
-  176  1      }
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 4   
-
-  177         
-  178         /***********************************************************************
-  179         *  Name        : Booster_CalculateTemperatureProtectCoeff
-  180         *  Description : Detect temperature to calculate setting main cylinder curve
-  181         *                temperature protect compensation coeff, decline output PWM
-  182         *                to protect brake motor.
-  183         *  Parameter   : None
-  184         *  Returns     : None
-  185         ***********************************************************************/
-  186         void Booster_CalculateTemperatureProtectCoeff(void)
-  187         {
-  188  1              BOOSTER_STAT INT8U tempDetectCount = 0u;
-  189  1              BOOSTER_STAT INT8U tempProtectCount = 0u;
-  190  1              BOOSTER_STAT BOOLEAN tempDetectFlag = FALSE;
-  191  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
-  192  1      
-  193  1              if (FALSE == tempDetectFlag)
-  194  1              {
-  195  2                      /* Judge environment temperature higher than setting protect trigger condition,
-  196  2                       * set compensation coeff to decline output to protect brake motor. */
-  197  2                      if (ptr_adc->environmentTemperature >= TEMPERATURE_PROTECT_TRIGGER)
-  198  2                      {
-  199  3                              tempDetectCount++;
-  200  3                              if (tempDetectCount >= TEMPERATURE_PROTECT_DETECT_TIME)
-  201  3                              {
-  202  4                                      tempDetectCount = 0u;
-  203  4                                      tempDetectFlag = TRUE;
-  204  4                                      tBooster.temperatureProtectCoeff = TEMPERATURE_PROTECT_SET_COEFF;
-  205  4                              }
-  206  3                      }
-  207  2                      else
-  208  2                      {
-  209  3                              tempDetectCount = 0u;
-  210  3                              tBooster.temperatureProtectCoeff = TEMPERATURE_PROTECT_INIT_COEFF;
-  211  3                      }
-  212  2              }
-  213  1              else
-  214  1              {
-  215  2                      /* Judge environment temperature lower than release protect trigger condition,
-  216  2                       * resume initialize coeff to make brake motor normal output. If keeping temperature
-  217  2                       * protect more than timeout, further reduce output in cycle. */
-  218  2                      if (ptr_adc->environmentTemperature <= TEMPERATURE_PROTECT_RELEASE)
-  219  2                      {
-  220  3                              tempDetectCount++;
-  221  3                              if (tempDetectCount >= TEMPERATURE_PROTECT_DETECT_TIME)
-  222  3                              {
-  223  4                                      tempDetectCount = 0u;
-  224  4                                      tempDetectFlag = FALSE;
-  225  4                                      tBooster.temperatureProtectCoeff = TEMPERATURE_PROTECT_INIT_COEFF;
-  226  4                              }
-  227  3                      }
-  228  2                      else
-  229  2                      {
-  230  3                              tempProtectCount++;
-  231  3                              if (tempProtectCount >= TEMPERATURE_PROTECT_EXCUTE_TIME)
-  232  3                              {
-  233  4                                      tempProtectCount = 0u;  
-  234  4                                      if (tBooster.temperatureProtectCoeff > TEMPERATURE_PROTECT_SET_COEFF)
-  235  4                                      {
-  236  5                                              tBooster.temperatureProtectCoeff--;
-  237  5                                      }
-  238  4                              }
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 5   
-
-  239  3                      }
-  240  2              }
-  241  1              
-  242  1              return;
-  243  1      }
-  244         
-  245         
-  246         /***********************************************************************
-  247         *  Name        : Booster_TimeOutProtectCoeff
-  248         *  Description : When the motor current is over 12A (1200),the system 
-  249                          would reduce objcurrent to protect ECU.
-  250         *  Parameter   : None
-  251         *  Returns     : None
-  252         ***********************************************************************/
-  253         BOOSTER_STAT void Booster_TimeOutProtectCoef(void)
-  254         {
-  255  1              INT16S objcylinder = 0;
-  256  1              INT16S dalta_cylinder = 0;
-  257  1              INT16S onereducecylinder = 0;
-  258  1              
-  259  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  260  1              objcylinder = tBooster.mainCylinderObjLocation;
-  261  1              dalta_cylinder = objcylinder - 675;
-  262  1              onereducecylinder = dalta_cylinder/60u;
-  263  1              
-  264  1              if(BeginTimeCount < 5000)           // 40000 mean 2min long time .
-  265  1              {
-  266  2                      CylinderReduceCoff = 1;
-  267  2                      tBooster.mainCylinderObjLocation = tBooster.mainCylinderObjLocation * CylinderReduceCoff;
-  268  2              }               
-  269  1              else
-  270  1              {        
-  271  2                      if( tBooster.mainCylinderObjLocation < 675)
-  272  2                              tBooster.mainCylinderObjLocation = 675;
-  273  2                      else 
-  274  2                      {
-  275  3                              CylinderReduceCoff =(FP32)ReduceTimeCount/60;
-  276  3                              tBooster.mainCylinderObjLocation = 675 + dalta_cylinder * (1 - CylinderReduceCoff);     
-  277  3                      }               
-  278  2                      if(ptr_adc->brakePedalLocation1 < 50u) 
+  237         
+  238         /***********************************************************************
+  239         *  Name        : Booster_pressureSensorNormalJudge
+  240         *  Description : pressure sensor fault judge
+  241         *  Parameter   : None
+  242         *  Returns     : None
+  243         ***********************************************************************/
+  244         static void Booster_pressureSensorNormalJudge(void)
+  245         {
+  246  1              static INT16U faultTimeCnt = 0;
+  247  1              static INT16U recoverTimeCnt = 0;
+  248  1              static BOOLEAN pressureFaultFlag = TRUE;
+  249  1              const T_PID* ptr_Pid = Pid_AlogrithmData();
+  250  1              
+  251  1              if((FALSE == gRTE_wireControlPressureLoopFlag))
+  252  1              {
+  253  2                      if( (g_wireControlActualPressure >= 10) && (g_wireControlObjPressure >= 10) ) // added to avoid motor re
+             -versal motion, for the case of brake system pre-pressed
+  254  2                      {
+  255  3                              if(recoverTimeCnt < 200)
+  256  3                              {
+  257  4                                      recoverTimeCnt++;
+  258  4                              }
+  259  3                              else
+  260  3                              {
+  261  4                                      recoverTimeCnt = 0;
+  262  4                                      pressureFaultFlag = FALSE;
+  263  4                              }
+  264  3                      }
+  265  2                      else
+  266  2                      {
+  267  3                              recoverTimeCnt = 0;
+  268  3                      }
+  269  2              }
+  270  1              else
+  271  1              {
+  272  2                      if(g_wireControlObjPressure < 10)
+  273  2                      {
+  274  3                              faultTimeCnt = 0;
+  275  3                              pressureFaultFlag = TRUE;
+  276  3                      }
+  277  2                      
+  278  2                      if(ABSOLUTE(ptr_Pid->pressure.ObjectValue, g_wireControlActualPressure) >= 30) //The error exceeds 3Mpa
   279  2                      {
-  280  3                          BeginTimeCount = 0;
-  281  3                          CylinderReduceCoff = 1;
-  282  3                              ReduceTimeCount = 0;
-  283  3                      }                       
-  284  2              }                  
-  285  1      }
-  286         /***********************************************************************
-  287         *  Name        : Booster_CalculateMainCylinderObjLocationFromPedal
-  288         *  Description : According to the brake pedal location to calculate the
-  289         *                main cylinder object location.
-  290         *  Parameter   : None
-  291         *  Returns     : None
-  292         ***********************************************************************/
-  293         BOOSTER_STAT void Booster_CalculateMainCylinderObjLocationFromPedal(void)
-  294         {
-  295  1              INT16U kx = 0;
-  296  1              INT32U tempMainCylinderObjLoc = 0u;
-  297  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  298  1      
-  299  1              if (ptr_adc->brakePedalLocation1 < 100u)
-  300  1              {
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 6   
+  280  3                              if(faultTimeCnt < 350)
+  281  3                              {
+  282  4                                      faultTimeCnt++;
+  283  4                              }
+  284  3                              else
+  285  3                              {
+  286  4                                      faultTimeCnt = 0;
+  287  4                                      pressureFaultFlag = TRUE;
+  288  4                              }
+  289  3                      }
+  290  2                      else
+  291  2                      {
+  292  3                              faultTimeCnt = 0;
+  293  3                      }
+  294  2              }
+  295  1              
+  296  1              if((FALSE == g_PressureSensorFaultFlag) && (FALSE == pressureFaultFlag))
+  297  1              {
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 6   
 
-  301  2                      tempMainCylinderObjLoc = 0;
-  302  2              }
-  303  1              else if (ptr_adc->brakePedalLocation1 < 200u)
-  304  1              {
-  305  2                      kx = ptr_adc->brakePedalLocation1;
-  306  2                      tempMainCylinderObjLoc = kx ;   
-  307  2              }
-  308  1              else if (ptr_adc->brakePedalLocation1 < 300u)
-  309  1              {
-  310  2                      kx = ptr_adc->brakePedalLocation1;
-  311  2                      tempMainCylinderObjLoc = kx ;   
-  312  2              }
-  313  1              else if (ptr_adc->brakePedalLocation1 < 400u)
-  314  1              {
-  315  2                      kx = ptr_adc->brakePedalLocation1 ;
-  316  2                      tempMainCylinderObjLoc = kx ;   
-  317  2              }
-  318  1              else if (ptr_adc->brakePedalLocation1 < 600u)
-  319  1              {
-  320  2                      kx = ptr_adc->brakePedalLocation1 /2;
-  321  2                      tempMainCylinderObjLoc = kx + 200;      
-  322  2              }
-  323  1              else if (ptr_adc->brakePedalLocation1 < 800u)
-  324  1              {
-  325  2                      kx = ptr_adc->brakePedalLocation1 /2;
-  326  2                      tempMainCylinderObjLoc = kx + 200;      
-  327  2              }
-  328  1              else if (ptr_adc->brakePedalLocation1 < 1000u)
-  329  1              {
-  330  2                      kx = ptr_adc->brakePedalLocation1 /2;
-  331  2                      tempMainCylinderObjLoc = kx + 200;      
-  332  2              }
-  333  1              else if (ptr_adc->brakePedalLocation1 < 1200u)
-  334  1              {
-  335  2                      kx = ptr_adc->brakePedalLocation1 /2;
-  336  2                      tempMainCylinderObjLoc = kx + 200;              
-  337  2              }
-  338  1              else if (ptr_adc->brakePedalLocation1 < 1400u)
-  339  1              {
-  340  2                      kx = ptr_adc->brakePedalLocation1 * 3 / 4;
-  341  2                      tempMainCylinderObjLoc = kx -100;               
-  342  2              }
-  343  1              else if (ptr_adc->brakePedalLocation1 < 1600u)
-  344  1              {
-  345  2                      kx = ptr_adc->brakePedalLocation1 * 3 / 4;
-  346  2                      tempMainCylinderObjLoc = kx -100;
-  347  2              }
-  348  1              else if (ptr_adc->brakePedalLocation1 < 1800u)
-  349  1              {
-  350  2                      kx = ptr_adc->brakePedalLocation1 * 3 / 4;
-  351  2                      tempMainCylinderObjLoc = kx -100;
-  352  2              }
-  353  1              else if (ptr_adc->brakePedalLocation1 < 2000u)
+  298  2                      gRTE_wireControlPressureLoopFlag = TRUE;
+  299  2              }
+  300  1              else
+  301  1              {
+  302  2                      gRTE_wireControlPressureLoopFlag = FALSE;
+  303  2              }
+  304  1      }
+  305         
+  306         
+  307         /***********************************************************************
+  308         *  Name        : Booster_LocationAndCurrentLoop
+  309         *  Description : Booster control algorithm
+  310         *  Parameter   : None
+  311         *  Returns     : None
+  312         ***********************************************************************/
+  313         static void Booster_LocationAndCurrentLoop(void)
+  314         {
+  315  1              INT32U tempCylinderObjLoc = 0;
+  316  1              INT32U tempObjPressure = 0;
+  317  1              const T_WIRE_CONTROL* ptr_WireControl = WireControl_AlogrithmData();
+  318  1              
+  319  1              /* Single - location ring differentiates assisted braking and wire - controlled braking.
+  320  1                      The source of the target location is different */
+  321  1              if(BoosterBrakeMode == BrakeSysMode)
+  322  1              {
+  323  2                      tempCylinderObjLoc = Booster_calcCylinderObjLocationFromPedal(tBooster.brakePedalLocation);
+  324  2              }
+  325  1              else if(WireCtrlBrakeMode == BrakeSysMode)
+  326  1              {
+  327  2                      if(FALSE == gRTE_wireControlPressureLoopFlag)
+  328  2                      {
+  329  3                              tempCylinderObjLoc = WireControl_PressureToCylinder(ptr_WireControl->cylinderObjPressure);
+  330  3                      }
+  331  2                      else
+  332  2                      {
+  333  3                              /* Pressure ring protection */
+  334  3                              tempObjPressure = ptr_WireControl->cylinderObjPressure;
+  335  3                              tBooster.protectCoeff = MIN(tBooster.cylinderDampCoeff, tBooster.temperatureProtectCoeff);
+  336  3                              tempObjPressure = tempObjPressure * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  337  3                              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  338  3                                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  339  3                                      && (tempObjPressure < gRTE_dampMinPressure))
+  340  3                              {
+  341  4                                      tempObjPressure = gRTE_dampMinPressure;
+  342  4                              }
+  343  3                              (void)Pid_PressureClosedLoopControl(tempObjPressure);
+*** WARNING C192 IN LINE 343 OF src\app\alogrithm\booster.c: 'parameter 1': value truncated
+  344  3                              return;
+  345  3                      }
+  346  2              }
+  347  1              
+  348  1              /*---------- Cylinder Damping Protection ----------------*/
+  349  1              tBooster.protectCoeff = MIN(tBooster.cylinderDampCoeff, tBooster.temperatureProtectCoeff);
+  350  1              tempCylinderObjLoc = tempCylinderObjLoc * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  351  1              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  352  1                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  353  1                      && (tempCylinderObjLoc < gRTE_dampMinCylinder))
   354  1              {
-  355  2                      kx = ptr_adc->brakePedalLocation1 ;
-  356  2                      tempMainCylinderObjLoc = kx - 550;      
-  357  2              }
-  358  1              else
-  359  1              {
-  360  2                      kx = ptr_adc->brakePedalLocation1 /4;
-  361  2                      tempMainCylinderObjLoc = kx + 950;      
-  362  2              }
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 7   
+  355  2                      tBooster.mainCylinderObjLocation = gRTE_dampMinCylinder;
+  356  2              }
+  357  1              else
+  358  1              {
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 7   
 
-  363  1      
-  364  1              // limit / protection
-  365  1              if (tempMainCylinderObjLoc > 1500)
-  366  1              {
-  367  2                      tempMainCylinderObjLoc = 1500;
-  368  2              }
-  369  1                      
-  370  1      
-  371  1              
-  372  1              /* Multiplue the temperature protect compensation coeff. */
-  373  1              tBooster.mainCylinderObjLocation = (INT16U)((tempMainCylinderObjLoc/10u) * tBooster.temperatureProtectCoe
-             -ff / 10u);
-  374  1              
-  375  1              //Booster_TimeOutProtectCoef();
-  376  1              
-  377  1              return;
-  378  1      }
-  379         
-  380         
-  381         /***********************************************************************
-  382         *  Name        : Booster_CalculateMixBrakeCylinderLocationFromTorque
-  383         *  Description : According to friction brake object torque to calculate
-  384         *                brake main cylinder object location.
-  385         *  Parameter   : None
-  386         *  Returns     : brakeTorque
-  387         ***********************************************************************/
-  388         BOOSTER_STAT INT16U Booster_CalculateMixBrakeCylinderLocationFromTorque(INT16U objTorque)
-  389         {
-  390  1              INT16U mainCylinderObjLocation;
-  391  1      
-  392  1              if (objTorque < 0)
-  393  1              {
-  394  2                      mainCylinderObjLocation = 350u;
-  395  2              }
-  396  1              else if (objTorque < 280u)
-  397  1              {
-  398  2                      mainCylinderObjLocation = 350u + objTorque * 54u / 100u;
-  399  2              }
-  400  1              else if (objTorque < 4723u)
-  401  1              {
-  402  2                      mainCylinderObjLocation = 375u + (INT32U)objTorque * 4474u / 10000u;
-*** WARNING C192 IN LINE 402 OF src\app\alogrithm\booster.c: '=': value truncated
-  403  2              }
-  404  1              else
-  405  1              {
-  406  2                      mainCylinderObjLocation = 2500u;
-  407  2              }
-  408  1              
-  409  1              return mainCylinderObjLocation;
-  410  1      }
-  411         
-  412         
-  413         /***********************************************************************
-  414         *  Name        : Booster_CalculateCurrentFromMainCylinder
-  415         *  Description : Use main cylinder location to calculate feedforward 
-  416         *                brake motor current.
-  417         *  Parameter   : objLoc
-  418         *  Returns     : motorCurrent
-  419         ***********************************************************************/
-  420         BOOSTER_STAT INT16U Booster_CalculateCurrentFromMainCylinder(INT16U objLoc)
-  421         {
-  422  1              INT16U motorCurrent = 0;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 8   
+  359  2                      tBooster.mainCylinderObjLocation = (INT16U)tempCylinderObjLoc;
+  360  2              }
+  361  1              
+  362  1              
+  363  1              if(BoosterBrakeMode == BrakeSysMode)
+  364  1              {
+  365  2                      Booster_BrakeForceDistribution();
+  366  2              }
+  367  1              Booster_ClosedLoopControl();
+  368  1      }
+  369         
+  370         /***********************************************************************
+  371         *  Name        : Booster_OnlyLocationLoop
+  372         *  Description : Booster control algorithm
+  373         *  Parameter   : None
+  374         *  Returns     : None
+  375         ***********************************************************************/
+  376         static void Booster_OnlyLocationLoop(void)
+  377         {
+  378  1              INT32U tempCylinderObjLoc = 0;
+  379  1              INT32U tempObjPressure = 0;
+  380  1              const T_WIRE_CONTROL* ptr_WireControl = WireControl_AlogrithmData();
+  381  1              
+  382  1              /* Single - location ring differentiates assisted braking and wire - controlled braking.
+  383  1                      The source of the target location is different */
+  384  1              if(BoosterBrakeMode == BrakeSysMode)
+  385  1              {
+  386  2                      tempCylinderObjLoc = Booster_calcCylinderObjLocationFromPedal(tBooster.brakePedalLocation);
+  387  2              }
+  388  1              else if(WireCtrlBrakeMode == BrakeSysMode)
+  389  1              {
+  390  2                      if(FALSE == gRTE_wireControlPressureLoopFlag)
+  391  2                      {
+  392  3                              tempCylinderObjLoc = WireControl_PressureToCylinder(ptr_WireControl->cylinderObjPressure);
+  393  3                      }
+  394  2                      else
+  395  2                      {
+  396  3                              /* Pressure ring protection */
+  397  3                              tempObjPressure = ptr_WireControl->cylinderObjPressure;
+  398  3                              tBooster.protectCoeff = MIN(tBooster.cylinderDampCoeff, tBooster.temperatureProtectCoeff);
+  399  3                              tempObjPressure = tempObjPressure * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  400  3                              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  401  3                                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  402  3                                      && (tempObjPressure < gRTE_dampMinPressure))
+  403  3                              {
+  404  4                                      tempObjPressure = gRTE_dampMinPressure;
+  405  4                              }
+  406  3                              (void)Pid_PressureClosedLoopControl(tempObjPressure);
+*** WARNING C192 IN LINE 406 OF src\app\alogrithm\booster.c: 'parameter 1': value truncated
+  407  3                              return;
+  408  3                      }
+  409  2              }
+  410  1              
+  411  1              /*---------- Cylinder Damping Protection ----------------*/
+  412  1              tBooster.protectCoeff = MIN(tBooster.cylinderDampCoeff, tBooster.temperatureProtectCoeff);
+  413  1              tempCylinderObjLoc = tempCylinderObjLoc * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  414  1              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  415  1                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  416  1                      && (tempCylinderObjLoc < gRTE_dampMinCylinder))
+  417  1              {
+  418  2                      tBooster.mainCylinderObjLocation = gRTE_dampMinCylinder;
+  419  2              }
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 8   
 
-  423  1              INT16U kx = 0;
-  424  1      
-  425  1              if (objLoc <= 100u) 
-  426  1              {
-  427  2                      motorCurrent = 0u;
-  428  2              }
-  429  1              else if (objLoc < 330u) 
-  430  1              {
-  431  2                      kx = objLoc * 21 / 23;
-  432  2                      motorCurrent = kx + 59; 
-  433  2              }
-  434  1              else if (objLoc < 730u) 
-  435  1              {
-  436  2                      kx = objLoc + objLoc * 19 / 40;
-  437  2                      motorCurrent = kx - 127;
-  438  2              }
-  439  1              else if (objLoc < 1260u) 
-  440  1              {
-  441  2                      kx= objLoc * 3 + objLoc * 6 / 53;
-  442  2                      motorCurrent = kx - 1323;
-  443  2              }
-  444  1              else if (objLoc < 1660)
-  445  1              {
-  446  2                      kx= objLoc * 3 + objLoc * 2 / 5;
-  447  2                      motorCurrent = kx - 1684;
+  420  1              else
+  421  1              {
+  422  2                      tBooster.mainCylinderObjLocation = (INT16U)tempCylinderObjLoc;
+  423  2              }
+  424  1              
+  425  1              (void)Pid_OnlyLocationClosedLoopControl(tBooster.mainCylinderObjLocation);
+  426  1      }
+  427         
+  428         
+  429         /***********************************************************************
+  430         *  Name        : Booster_OnlyCurrentLoop
+  431         *  Description : Booster control algorithm
+  432         *  Parameter   : None
+  433         *  Returns     : None
+  434         ***********************************************************************/
+  435         static void Booster_OnlyCurrentLoop(void)
+  436         {
+  437  1              INT16U feedForwardPwm = 0;
+  438  1              INT16S feedBackPwm = 0;
+  439  1              INT32U tempObjCurrent = 0;      
+  440  1              INT32U tempObjPressure = 0;
+  441  1              const T_WIRE_CONTROL* ptr_WireControl = WireControl_AlogrithmData();
+  442  1              
+  443  1              /* Single - current ring differentiates assisted braking and wire - controlled braking.
+  444  1                      The source of the target current is different */
+  445  1              if(BoosterBrakeMode == BrakeSysMode)
+  446  1              {
+  447  2                      tempObjCurrent = Booster_calcMotorObjCurrentFromPedal(tBooster.brakePedalLocation);
   448  2              }
-  449  1              else
+  449  1              else if(WireCtrlBrakeMode == BrakeSysMode)
   450  1              {
-  451  2                      kx= objLoc * 3 + objLoc * 2 / 5;
-  452  2                      motorCurrent = kx - 1684;
-  453  2              }
-  454  1      
-  455  1              /* commented 20200829 */
-  456  1      //      if (objLoc > 1347u)
-  457  1      //      {
-  458  1      //              INT16U u;
-  459  1      //              u = (motorCurrent - 3168u);
-  460  1      //              u = u - (u >> 3);
-  461  1      //              motorCurrent = motorCurrent - (u);
-  462  1      //      }
-  463  1      
-  464  1              return motorCurrent;
-  465  1      }
-  466         
-  467         
-  468         
-  469         /***********************************************************************
-  470         *  Name        : Booster_CalculateMotorObjCurrentFromPedal
-  471         *  Description : According to the brake pedal location to calculate the
-  472         *                object current.
-  473         *  Parameter   : None
-  474         *  Returns     : None
-  475         ***********************************************************************/
-  476         BOOSTER_STAT void Booster_CalculateMotorObjCurrentFromPedal(void)
-  477         {
-  478  1              INT16U kx = 0;
-  479  1              INT16U tempObjCurrent = 0u;     
-  480  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  481  1      
-  482  1              if (ptr_adc->brakePedalLocation1 < 100u)
-  483  1              {
-  484  2                      tempObjCurrent = 0;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 9   
+  451  2                      if((FALSE == gRTE_wireControlPressureLoopFlag) || (TRUE == g_cylinderExhaustEnFlag)) //Exhaust mode also
+             - uses current PID
+  452  2                      {
+  453  3                              tempObjCurrent = WireControl_PressureToCurrent(ptr_WireControl->cylinderObjPressure);
+  454  3                      }
+  455  2                      else
+  456  2                      {
+  457  3                              /* Pressure ring protection */
+  458  3                              tempObjPressure = ptr_WireControl->cylinderObjPressure;
+  459  3                              tBooster.protectCoeff = MIN(tBooster.cylinderDampCoeff, tBooster.temperatureProtectCoeff);
+  460  3                              tempObjPressure = tempObjPressure * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  461  3                              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  462  3                                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  463  3                                      && (tempObjPressure < gRTE_dampMinPressure))
+  464  3                              {
+  465  4                                      tempObjPressure = gRTE_dampMinPressure;
+  466  4                              }
+  467  3                              (void)Pid_PressureClosedLoopControl(tempObjPressure);
+*** WARNING C192 IN LINE 467 OF src\app\alogrithm\booster.c: 'parameter 1': value truncated
+  468  3                              return;
+  469  3                      }
+  470  2              }
+  471  1              
+  472  1              /*---------- Current Damping Protection ----------------*/
+  473  1              tBooster.protectCoeff = MIN(tBooster.currentDampCoeff, tBooster.temperatureProtectCoeff);
+  474  1              tempObjCurrent = tempObjCurrent * tBooster.protectCoeff / PROTECT_INIT_COEFF;
+  475  1              if((tBooster.protectCoeff < PROTECT_INIT_COEFF) 
+  476  1                      && (PROTECT_INIT_COEFF == tBooster.temperatureProtectCoeff)
+  477  1                      && (tempObjCurrent < gRTE_dampMinCurrent))
+  478  1              {
+  479  2                      tBooster.brakeMotorObjCurrent = gRTE_dampMinCurrent;
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 9   
 
-  485  2              }
-  486  1              else if (ptr_adc->brakePedalLocation1 < 200u)
-  487  1              {
-  488  2                      kx = ptr_adc->brakePedalLocation1 *2;
-  489  2                      tempObjCurrent = kx - 200;      
-  490  2              }
-  491  1              else if (ptr_adc->brakePedalLocation1 < 300u)
-  492  1              {
-  493  2                      kx = ptr_adc->brakePedalLocation1 *2;
-  494  2                      tempObjCurrent = kx - 200;      
-  495  2              }
-  496  1              else if (ptr_adc->brakePedalLocation1 < 400u)
-  497  1              {
-  498  2                      kx = ptr_adc->brakePedalLocation1 ;
-  499  2                      tempObjCurrent = kx + 100;      
-  500  2              }
-  501  1              else if (ptr_adc->brakePedalLocation1 < 600)
-  502  1              {
-  503  2                      kx = ptr_adc->brakePedalLocation1 / 2;
-  504  2                      tempObjCurrent = kx + 300;
-  505  2              }
-  506  1              else if (ptr_adc->brakePedalLocation1 < 800)
-  507  1              {
-  508  2                      kx = ptr_adc->brakePedalLocation1 *3 / 4;
-  509  2                      tempObjCurrent = kx + 150;
-  510  2              }
-  511  1              else if (ptr_adc->brakePedalLocation1 < 1000)
-  512  1              {
-  513  2                      kx = ptr_adc->brakePedalLocation1 *5/4;
-  514  2                      tempObjCurrent = kx - 250;
-  515  2              }
-  516  1              else if (ptr_adc->brakePedalLocation1 < 1200)
-  517  1              {
-  518  2                      kx = ptr_adc->brakePedalLocation1 ;
-  519  2                      tempObjCurrent = kx ;
-  520  2              }
-  521  1              else if (ptr_adc->brakePedalLocation1 < 1400)
-  522  1              {
-  523  2                      kx = ptr_adc->brakePedalLocation1 * 7 / 4;
-  524  2                      tempObjCurrent = kx - 900;
-  525  2              }
-  526  1              else if (ptr_adc->brakePedalLocation1 < 1600)
-  527  1              {
-  528  2                      kx = ptr_adc->brakePedalLocation1 * 2;
-  529  2                      tempObjCurrent = kx - 1250;
-  530  2              }
-  531  1              else if (ptr_adc->brakePedalLocation1 < 1800)
-  532  1              {
-  533  2                      kx = ptr_adc->brakePedalLocation1 * 3;
-  534  2                      tempObjCurrent = kx - 2850;
-  535  2              }
-  536  1              else
-  537  1              {
-  538  2                      kx = ptr_adc->brakePedalLocation1 * 3 + ptr_adc->brakePedalLocation1/4;
-  539  2                      tempObjCurrent = kx - 3300;
-  540  2              }
-  541  1              
-  542  1              if (tempObjCurrent >= 3300)
-  543  1              {
-  544  2                      tempObjCurrent = 3300;
-  545  2              }
-  546  1              
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 10  
+  480  2              }
+  481  1              else
+  482  1              {
+  483  2                      tBooster.brakeMotorObjCurrent = (INT16U)tempObjCurrent;
+  484  2              }
+  485  1      
+  486  1              
+  487  1              feedForwardPwm = Booster_calcForwardPwm(tBooster.brakeMotorObjCurrent);
+  488  1              feedBackPwm = Pid_CurrentClosedLoopControl(tBooster.brakeMotorObjCurrent);
+  489  1              tBooster.calcForwardPwm = feedForwardPwm;
+  490  1              
+  491  1              Pwm_Control(feedForwardPwm + feedBackPwm);
+  492  1      }
+  493         
+  494         /***********************************************************************
+  495         *  Name        : Booster_CalculateTemperatureProtectCoeff
+  496         *  Description : Detect temperature to calculate setting main cylinder curve
+  497         *                temperature protect compensation coeff, decline output PWM
+  498         *                to protect brake motor.
+  499         *  Parameter   : None
+  500         *  Returns     : None
+  501         ***********************************************************************/
+  502         void Booster_CalculateTemperatureProtectCoeff(void)
+  503         {
+  504  1              static INT16U tempDetectCount = 0;
+  505  1              static INT16U tempProtectCount = 0;
+  506  1              static BOOLEAN highTemperatureFlag = FALSE;
+  507  1              const T_ADC_APP *ptr_adcApp = AdcApp_SampleData();
+  508  1      
+  509  1              if (FALSE == highTemperatureFlag)
+  510  1              {
+  511  2                      /* Judge environment temperature higher than setting protect trigger condition,
+  512  2                       * set compensation coeff to decline output to protect brake motor. */
+  513  2                      if (ptr_adcApp->environmentTemperature >= TEMPERATURE_PROTECT_TRIGGER)
+  514  2                      {
+  515  3                              tempDetectCount++;
+  516  3                              if (tempDetectCount > TEMPERATURE_PROTECT_DETECT_TIME)
+  517  3                              {
+  518  4                                      tempDetectCount = 0;
+  519  4                                      highTemperatureFlag = TRUE;
+  520  4                              }
+  521  3                      }
+  522  2                      else
+  523  2                      {
+  524  3                              tempProtectCount++;
+  525  3                              if (tempProtectCount > TEMPERATURE_PROTECT_EXCUTE_TIME)
+  526  3                              {
+  527  4                                      tempProtectCount = 0;   
+  528  4                                      if (tBooster.temperatureProtectCoeff < PROTECT_INIT_COEFF)
+  529  4                                      {
+  530  5                                              tBooster.temperatureProtectCoeff++;
+  531  5                                      }
+  532  4                              }
+  533  3                      }
+  534  2              }
+  535  1              else
+  536  1              {
+  537  2                      /* Judge environment temperature lower than release protect trigger condition,
+  538  2                       * resume initialize coeff to make brake motor normal output. If keeping temperature
+  539  2                       * protect more than timeout, further reduce output in cycle. */
+  540  2                      if (ptr_adcApp->environmentTemperature <= TEMPERATURE_PROTECT_RELEASE)
+  541  2                      {
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 10  
 
-  547  1              tBooster.brakeMotorObjCurrent = tempObjCurrent;
-  548  1              return;
-  549  1      }
-  550         
-  551         /***********************************************************************
-  552         *  Name        : Booster_JudgeEnergyRecoveryCondition
-  553         *  Description : Judge brake energy recovery condition
-  554         *  Parameter   : None
-  555         *  Returns     : None
-  556         ***********************************************************************/
-  557         BOOSTER_STAT void Booster_JudgeEnergyRecoveryCondition(void)
-  558         {
-  559  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  560  1      
-  561  1              /* Brake energy recovery condition include:
-  562  1               * 1) MCU motor actual speed more than default value
-  563  1               * 2) brake pedal location less than 13mm(not emergency brake)
-  564  1               * 3) VCU allow brake energy recovery(CAN signal)
-  565  1               * 4) TODO:brake pedal location change speed meet condition 
-  566  1               */
-  567  1              if ((MCU_MotActuSpd > RB_END_OF_QUIT_SPEED) 
-  568  1                      && (ptr_adc->brakePedalLocation1 < PEDAL_ENERGY_RECOVERY_RANG)
-  569  1                      && (TRUE == MCU_AllowFeedbackFlag)
-  570  1                      && (tBooster.pedalPredictedLocation <= PEDAL_ENERGY_RECOVERY_UPPER_LOC))
-  571  1              {
-  572  2                      tBooster.meetEnergyRecoveryCondition = TRUE;
-  573  2              }
-  574  1              else
-  575  1              {
-  576  2                      tBooster.meetEnergyRecoveryCondition = FALSE;
-  577  2              }
-  578  1      
-  579  1              return;
-  580  1      }
-  581         
-  582         BOOSTER_STAT INT8U coef;
-  583         /***********************************************************************
-  584         *  Name        : Booster_BrakeStatusMashine
-  585         *  Description : None
-  586         *  Parameter   : None
-  587         *  Returns     : None
-  588         ***********************************************************************/
-  589         BOOSTER_STAT void Booster_BrakeStatusMashine(void)
-  590         {
-  591  1              BOOSTER_STAT INT16U brakeStatusCount = 0u;
-  592  1              BOOSTER_STAT INT16U hydridBrakeReleaseCount = 0u;
-  593  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();         
-  594  1      
-  595  1              switch (tBooster.brakeStatus)
-  596  1              {
-  597  2                      case STATUS_INIT_BRAKE:
-  598  2                              brakeStatusCount = 0u;
-  599  2                              
-  600  2                              if ((TRUE == g_inBrakeSwValidSts) || (ptr_adc->brakePedalLocation1 > BRAKE_PEDAL_LOCATION_VALID))
-  601  2                              {
-  602  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-  603  3                              }
-  604  2                              break;
-  605  2                              
-  606  2                      case STATUS_FRICTION_BRAKE:
-  607  2                              /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
-  608  2                               * get ready to return STATUS_INIT_BRAKE. */
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 11  
+  542  3                              tempDetectCount++;
+  543  3                              if (tempDetectCount > TEMPERATURE_PROTECT_DETECT_TIME)
+  544  3                              {
+  545  4                                      tempDetectCount = 0;
+  546  4                                      highTemperatureFlag = FALSE;
+  547  4                              }
+  548  3                      }
+  549  2                      else
+  550  2                      {
+  551  3                              tempProtectCount++;
+  552  3                              if (tempProtectCount > TEMPERATURE_PROTECT_EXCUTE_TIME)
+  553  3                              {
+  554  4                                      tempProtectCount = 0;   
+  555  4                                      if (tBooster.temperatureProtectCoeff > TEMPERATURE_PROTECT_SET_COEFF)
+  556  4                                      {
+  557  5                                              tBooster.temperatureProtectCoeff--;
+  558  5                                      }
+  559  4                              }
+  560  3                      }
+  561  2              }
+  562  1      }
+  563         
+  564         
+  565         /***********************************************************************
+  566         *  Name        : Booster_CalcTimeOutProtectCoef
+  567         *  Description : The system PWM output time exceeds a certain value, reduces the output, protects the hard
+             -ware 
+  568         *  Parameter   : None
+  569         *  Returns     : None
+  570         ***********************************************************************/
+  571         void Booster_CalcTimeOutProtectCoef(void)
+  572         {
+  573  1              static INT16U timeProtectCount = 0;
+  574  1              static BOOLEAN timeOutFlag = FALSE;
+  575  1              static INT8U pedalReturnTimeCnt = 0;
+  576  1              static INT8U g_wireControlObjPressureLast = 0;
+  577  1              const T_PWM* Pwm_ptr = Pwm_ControlData();
+  578  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();      
+  579  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
+  580  1              
+  581  1              /* reset time */
+  582  1              if(BoosterBrakeMode == BrakeSysMode)
+  583  1              {
+  584  2                      if((FALSE == g_inBrakeSwValidSts)
+  585  2                              || ((FALSE == FLTDAct_ptr->fixedDecelerationFlg) && (adcApp_ptr->brakePedalLocation1 < BRAKE_PEDAL_LOCA
+             -TION_VALID)))
+  586  2                      {
+  587  3                              timeDetectCount = 0;
+  588  3                      }
+  589  2              }
+  590  1              else if(WireCtrlBrakeMode == BrakeSysMode)
+  591  1              {
+  592  2                      if(0 == g_wireControlObjPressure)
+  593  2                      //if(g_wireControlObjPressure < (gRTE_dampMinPressure / 100 - 5))
+  594  2                      {
+  595  3                              timeDetectCount = 0;
+  596  3                      }
+  597  2              }
+  598  1              
+  599  1              if(FALSE == timeOutFlag)
+  600  1              {
+  601  2                      pedalReturnTimeCnt = 0;
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 11  
 
-  609  2                              if ((FALSE == g_inBrakeSwValidSts) && (ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID))
-  610  2                              {
-  611  3                                      brakeStatusCount = 0u;
-  612  3                                      tBooster.brakeStatus = STATUS_TRANSIENT;
-  613  3                              }
-  614  2                              else
-  615  2                              {
-  616  3      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                              /* Meet brake energy recovery condition keeping 80*2.5ms enter STATUS_HYBRID_BRAKE. */
-                                              Booster_JudgeEnergyRecoveryCondition();
-              
-                                              if (TRUE == tBooster.meetEnergyRecoveryCondition)
-                                              {
-              
-                                                      brakeStatusCount++;
-                                                      if (brakeStatusCount >= 80u)
-                                                      {
-                                                              brakeStatusCount = 0u;                                          
-                                                              tBooster.brakeStatus = STATUS_HYBRID_BRAKE;
-                                                      }
-                                              }
-                                              else
-                                              {
-                                                      brakeStatusCount = 0u;
-                                              }
-              #else
-  635  3                              brakeStatusCount = 0u;
-  636  3      #endif
-  637  3                              }
-  638  2                              break;
-  639  2                              
-  640  2                      case STATUS_TRANSIENT:
-  641  2                              if ((TRUE == g_inBrakeSwValidSts) || (ptr_adc->brakePedalLocation1 > BRAKE_PEDAL_LOCATION_VALID))
-  642  2                              {
-  643  3      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                              /* If meet brake energy recovery condition, enter STATUS_HYBRID_BRAKE, else enter 
-                                               * STATUS_FRICTION_BRAKE at once*/
-                                              Booster_JudgeEnergyRecoveryCondition(); 
-              
-                                              if (TRUE == tBooster.meetEnergyRecoveryCondition)
-                                              {
-                                                      tBooster.brakeStatus = STATUS_HYBRID_BRAKE;
-                                              }
-                                              else
-                                              {
-                                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-                                              }
-              #else
-  657  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-  658  3      #endif
-  659  3                              }
-  660  2                              else
-  661  2                              {
-  662  3                                      /* Waiting enter STATUS_INIT_BRAKE, 80*2.5ms */
-  663  3                                      brakeStatusCount++;
-  664  3                                      if (brakeStatusCount >= 80u)
-  665  3                                      {
-  666  4                                              brakeStatusCount = 0u;
-  667  4                                              tBooster.brakeStatus = STATUS_INIT_BRAKE;
-  668  4                                      }
-  669  3                              }
-  670  2                              break;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 12  
+  602  2                      if((Pwm_ptr->motorCtrl - PWM_AMPLITUDE_DEFAULT) >= gRTE_pwmProtectThreshold)
+  603  2                      {
+  604  3                              timeDetectCount++;
+  605  3                              if(timeDetectCount > PWM_TIMEOUT_PROTECT_DETECT_TIME)
+  606  3                              {
+  607  4                                      timeDetectCount = 0;
+  608  4                                      timeOutFlag = TRUE;
+  609  4                              }
+  610  3                      }
+  611  2                      else
+  612  2                      {
+  613  3                              timeProtectCount++;
+  614  3                              if(timeProtectCount > PWM_TIMEOUT_PROTECT_EXCUTE_TIME)
+  615  3                              {
+  616  4                                      timeProtectCount = 0;
+  617  4                                      if (tBooster.currentDampCoeff < PROTECT_INIT_COEFF)
+  618  4                                      {
+  619  5                                              tBooster.currentDampCoeff++;
+  620  5                                      }
+  621  4                                      if (tBooster.cylinderDampCoeff < PROTECT_INIT_COEFF)
+  622  4                                      {
+  623  5                                              tBooster.cylinderDampCoeff++;
+  624  5                                      }                                                       
+  625  4                              }
+  626  3                      }
+  627  2              }
+  628  1              else
+  629  1              {
+  630  2                      if(BoosterBrakeMode == BrakeSysMode)
+  631  2                      {
+  632  3                              if((FALSE == g_inBrakeSwValidSts) || (tBooster.pedalRate < -80) || (TRUE == g_pedalInterveneFlag))
+  633  3                              {
+  634  4                                      if(pedalReturnTimeCnt > 10)
+  635  4                                      {
+  636  5                                              timeOutFlag = FALSE;
+  637  5                                              timeDetectCount = 0;
+  638  5                                      
+  639  5                                              g_pedalInterveneFlag = FALSE;
+  640  5                                              tBooster.currentDampCoeff = PROTECT_INIT_COEFF;
+  641  5                                              tBooster.cylinderDampCoeff = PROTECT_INIT_COEFF;
+  642  5                                      }
+  643  4                                      else
+  644  4                                      {
+  645  5                                              pedalReturnTimeCnt++;
+  646  5                                      }
+  647  4                              }
+  648  3                      }
+  649  2                      else if(WireCtrlBrakeMode == BrakeSysMode)
+  650  2                      {
+  651  3                              //if((0 == g_wireControlObjPressure) && (0 != g_wireControlObjPressureLast))
+  652  3                              if(g_wireControlObjPressure < (gRTE_dampMinPressure / 100 - 5))
+  653  3                              {
+  654  4                                      timeOutFlag = FALSE;
+  655  4                                      timeDetectCount = 0;
+  656  4                                      
+  657  4                                      tBooster.currentDampCoeff = PROTECT_INIT_COEFF;
+  658  4                                      tBooster.cylinderDampCoeff = PROTECT_INIT_COEFF;
+  659  4                              }
+  660  3                              
+  661  3                              g_wireControlObjPressureLast = g_wireControlObjPressure;
+  662  3                      }
+  663  2      
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 12  
 
-  671  2                              
-  672  2                      case STATUS_HYBRID_BRAKE:
-  673  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                      /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
-                                       * get ready to return STATUS_INIT_BRAKE. */
-                                      if ((FALSE == g_inBrakeSwValidSts) && (ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID))
-                                      {
-                                              brakeStatusCount = 0u;
-                                              tBooster.brakeStatus = STATUS_TRANSIENT;
-                                      }
-                                      else
-                                      {
-                                              /* If not meet brake energy recovery condition, enter STATUS_FRICTION_BRAKE at once*/
-                                              Booster_JudgeEnergyRecoveryCondition(); 
-              
-                                              if (FALSE == tBooster.meetEnergyRecoveryCondition)
-                                              {
-                                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-                                              }
-                                              else
-                                              {
-                                                      if (MCU_MotActuSpd < tBooster.rbQuitSpeed)
-                                                      {
-                                                              hydridBrakeReleaseCount = 0u;
-                                                              tBooster.brakeStatus = STATUS_RELASE_HYBRID_BRAKE;
-                                                      }
-                                              }
-                                      }
-              #else   
-  700  2                              brakeStatusCount = 0u;
-  701  2                              tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-  702  2      #endif
-  703  2                              break;
-  704  2      
-  705  2                      case STATUS_RELASE_HYBRID_BRAKE:
-  706  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)      
-                                      /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
-                                       * get ready to return STATUS_INIT_BRAKE. */
-                                      if ((FALSE == g_inBrakeSwValidSts) && (ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID))
-                                      {
-                                              brakeStatusCount = 0u;
-                                              hydridBrakeReleaseCount = 0u;
-                                              tBooster.brakeStatus = STATUS_TRANSIENT;
-                                      }       
-                                      else
-                                      {
-                                              /* Brake energy recovery quit condition include:
-                                               * 1) MCU motor actual speed less than default value
-                                               * 2) brake pedal location more than 17mm(not emergency brake)
-                                               * 3) TODO:brake pedal location change speed meet condition 
-                                               */
-                                              if ((MCU_MotActuSpd < RB_END_OF_QUIT_SPEED) 
-                                               || (ptr_adc->brakePedalLocation1 > 1700u)
-                                               || (tBooster.pedalRate * 5 > 85))
-                                              {
-                                                      brakeStatusCount = 0u;
-                                                      hydridBrakeReleaseCount = 0u;
-                                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;                                   
-                                              }
-                                              else
-                                              {
-                                                      if (MCU_MotActuSpd > tBooster.rbQuitSpeed)
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 13  
-
-                                                      {
-                                                              hydridBrakeReleaseCount++;
-                                                              if (hydridBrakeReleaseCount >= 80u)
-                                                              {
-                                                                      brakeStatusCount = 0u;
-                                                                      hydridBrakeReleaseCount = 0u;
-                                                                      tBooster.brakeStatus = STATUS_HYBRID_BRAKE;                                                             
-                                                              }
-                                                      }
-                                                      else
-                                                      {
-                                                              if (MCU_MotActuSpd <= RB_END_OF_QUIT_SPEED)
-                                                              {
-                                                                      coef = 0;
-                                                              }
-                                                              else
-                                                              {
-                                                                      if (MCU_MotActuSpd >= tBooster.rbQuitSpeed)
-                                                                      {
-                                                                              coef = 1;
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                              coef = (MCU_MotActuSpd - RB_END_OF_QUIT_SPEED) / (tBooster.rbQuitSpeed - RB_END_OF_QUIT_SPEED);
-                                                                      }
-                                                              }
-                                                      }
-                                              }
-                                      }
-              #else
-  763  2                              brakeStatusCount = 0u;
-  764  2                              hydridBrakeReleaseCount = 0u;
-  765  2                              tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
-  766  2      #endif
-  767  2                              break;
-  768  2      
-  769  2                      default:
-  770  2                              brakeStatusCount = 0u;
-  771  2                              hydridBrakeReleaseCount = 0u;
-  772  2                              tBooster.brakeStatus = STATUS_INIT_BRAKE;
-  773  2                              break;
-  774  2              }
-  775  1      
-  776  1              return;
-  777  1      }
-  778                 
-  779         /***********************************************************************
-  780         *  Name        : Booster_BrakeForceDistribution
-  781         *  Description : Booster brake force distribution, include VCU motor torque and
-  782         *                brake motor friction torque.
-  783         *  Parameter   : None
-  784         *  Returns     : None
-  785         ***********************************************************************/
-  786         BOOSTER_STAT void Booster_BrakeForceDistribution(void)
-  787         {
-  788  1              switch (tBooster.brakeStatus)
-  789  1              {
-  790  2                      case STATUS_INIT_BRAKE:
-  791  2                              tBooster.mainCylinderObjLocation = 0u;
-  792  2                              tBooster.totalTorqueRequest = ZERO_RB_TORQUE;
-  793  2                              tBooster.frictionBrakeObjTorque = ZERO_RB_TORQUE;                       
-  794  2                              break;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 14  
-
-  795  2      
-  796  2                      case STATUS_FRICTION_BRAKE:
-  797  2                      case STATUS_TRANSIENT:          
-  798  2                              /* Use main cylinder location to calculate total brake torque request. */
-  799  2                              tBooster.totalTorqueRequest = Booster_CalculateBrakeTorque(tBooster.mainCylinderObjLocation - MAIN_CYLI
-             -NER_EMPTY_LOCATION);
-  800  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                      tBooster.frictionBrakeObjTorque = EnergyRecovery_CalculateFrictionObjTorque();
-                                      tBooster.mainCylinderObjLocation = Booster_CalculateMixBrakeCylinderLocationFromTorque(tBooster.frictio
-             -nBrakeObjTorque) + MAIN_CYLINER_EMPTY_LOCATION;
-              #else
-  804  2                              /* Not have VCU motor torque, total brake request use friction brake. */
-  805  2                              tBooster.frictionBrakeObjTorque = tBooster.totalTorqueRequest;
-  806  2      #endif
-  807  2                              break;
-  808  2      
-  809  2                      case STATUS_HYBRID_BRAKE:       
-  810  2                              /* Use main cylinder location to calculate total brake torque request. */
-  811  2                              tBooster.totalTorqueRequest = Booster_CalculateBrakeTorque(tBooster.mainCylinderObjLocation - MAIN_CYLI
-             -NER_EMPTY_LOCATION);
-  812  2      
-  813  2                              /* The quit speed of regenerative braking is calculated according to the total braking force. */
-  814  2                              tBooster.rbQuitSpeed = Booster_RegenerationBrakeQuitSpeed(tBooster.totalTorqueRequest);         
-  815  2                      
-  816  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                      tBooster.frictionBrakeObjTorque = EnergyRecovery_CalculateFrictionObjTorque();
-                                      tBooster.mainCylinderObjLocation = Booster_CalculateMixBrakeCylinderLocationFromTorque(tBooster.frictio
-             -nBrakeObjTorque) + MAIN_CYLINER_EMPTY_LOCATION;
-              #else
-  820  2                              /* Not have VCU motor torque, total brake request use friction brake. */
-  821  2                              tBooster.frictionBrakeObjTorque = tBooster.totalTorqueRequest;
-  822  2      #endif
-  823  2                              break;
-  824  2      
-  825  2                      case STATUS_RELASE_HYBRID_BRAKE:
-  826  2                              /* Use main cylinder location to calculate total brake torque request. */
-  827  2                              tBooster.totalTorqueRequest = Booster_CalculateBrakeTorque(tBooster.mainCylinderObjLocation - MAIN_CYLI
-             -NER_EMPTY_LOCATION);                  
-  828  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-                                      tBooster.frictionBrakeObjTorque = EnergyRecovery_CalculateFrictionObjTorque();
-                                      tBooster.mainCylinderObjLocation = Booster_CalculateMixBrakeCylinderLocationFromTorque(tBooster.frictio
-             -nBrakeObjTorque) + MAIN_CYLINER_EMPTY_LOCATION;
-              #else
-  832  2                              tBooster.frictionBrakeObjTorque = tBooster.totalTorqueRequest;
-  833  2      #endif          
-  834  2                              break;
-  835  2      
-  836  2                      default:
-  837  2                              tBooster.mainCylinderObjLocation = 0u;
-  838  2                              tBooster.totalTorqueRequest = ZERO_RB_TORQUE;
-  839  2                              tBooster.frictionBrakeObjTorque = ZERO_RB_TORQUE;
-  840  2                              break;
-  841  2              }
-  842  1              
-  843  1              return;
-  844  1      }
-  845         
-  846         
-  847         
-  848         /***********************************************************************
-  849         *  Name        : Booster_CylinderMinLocationCheck
-  850         *  Description : There is a mechanical gap between the pedal and the cylinder, 
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 15  
-
-  851         *                                Limit the minimum position of the cylinder to avoid collision 
-  852         *                                with the pedal mandrel.
-  853         *  Parameter   : None
-  854         *  Returns     : None
-  855         ***********************************************************************/
-  856         BOOSTER_STAT void Booster_CylinderMinLocationCheck(void)
-  857         {
-  858  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  859  1              INT16U temp = 0u;
-  860  1              
-  861  1              if(STATUS_INIT_BRAKE != tBooster.brakeStatus)
-  862  1              {
-  863  2                      if(ptr_adc->brakePedalLocation1 > tBooster.mainCylinderObjLocation)
-  864  2                      {
-  865  3                              temp = ptr_adc->brakePedalLocation1 - tBooster.mainCylinderObjLocation;
-  866  3                              
-  867  3                              if (temp > PEDAL_CYLINDER_INTERVAL)
-  868  3                              {
-  869  4                                      tBooster.mainCylinderObjLocation = ptr_adc->brakePedalLocation1 - PEDAL_CYLINDER_INTERVAL;
-  870  4                              }
-  871  3                      }
-  872  2              }
-  873  1      }
-  874         
-  875         /***********************************************************************
-  876         *  Name        : Booster_CalculateBrakeTorque
-  877         *  Description : According to main cylinder location to calculate brake torque.
-  878         *  Parameter   : None
-  879         *  Returns     : brakeTorque
-  880         ***********************************************************************/
-  881         BOOSTER_STAT INT16U Booster_CalculateBrakeTorque(INT16U objLoc)
-  882         {
-  883  1              INT16U tempTorque;
-  884  1              INT16U brakeTorque;
-  885  1      
-  886  1              if (objLoc > 500u)
-  887  1              {
-  888  2                      tempTorque = (INT32U)objLoc * 2335u / 1000u;
-*** WARNING C192 IN LINE 888 OF src\app\alogrithm\booster.c: '=': value truncated
-  889  2                      brakeTorque = 30838u - tempTorque;
-  890  2              }
-  891  1              else
-  892  1              {
-  893  2                      tempTorque = (INT32U)objLoc * 120u / 100u;
-*** WARNING C192 IN LINE 893 OF src\app\alogrithm\booster.c: '=': value truncated
-  894  2                      brakeTorque = 30320u - tempTorque;                      
-  895  2              }
-  896  1      
-  897  1              /* Brake torque not allow more than ZERO_RB_TORQUE. More than default torque
-  898  1               * is traction and less than default torque is braking. */
-  899  1              if (brakeTorque > ZERO_RB_TORQUE)
-  900  1              {
-  901  2                      brakeTorque = ZERO_RB_TORQUE;
-  902  2              }
-  903  1      
-  904  1              return brakeTorque;
-  905  1      }
-  906         
-  907         
-  908         
-  909         
-  910         /***********************************************************************
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 16  
-
-  911         *  Name        : Booster_RegenerationBrakeQuitSpeed
-  912         *  Description : regenerative brake quit speed.
-  913         *  Parameter   : None
-  914         *  Returns     : quitSpeed
-  915         ***********************************************************************/
-  916         BOOSTER_STAT INT16U Booster_RegenerationBrakeQuitSpeed(INT16U torque)
-  917         {
-  918  1              INT16U tempTorque, quitSpeed;
-  919  1      
-  920  1              tempTorque = RB_START_QUIT_SPEED - torque;
-  921  1      
-  922  1              quitSpeed = 5u * tempTorque / 8u + 21408u;
-  923  1      
-  924  1              if (quitSpeed > RB_QUIT_SPEED1)
-  925  1              {
-  926  2                      quitSpeed = RB_QUIT_SPEED1;
-  927  2              }
-  928  1              else
-  929  1              {
-  930  2                      if (quitSpeed < RB_QUIT_SPEED2)
-  931  2                      {
-  932  3                              quitSpeed = RB_QUIT_SPEED2;
-  933  3                      }
-  934  2              }
-  935  1              
-  936  1              return quitSpeed;
-  937  1      }
-  938         
-  939         
-  940         
-  941         
-  942         /***********************************************************************
-  943         *  Name        : Booster_PedalLocationPredict
-  944         *  Description : 
-  945         *  Parameter   : None
-  946         *  Returns     : None
-  947         ***********************************************************************/
-  948         BOOSTER_STAT void Booster_PedalLocationPredict(void)
-  949         {
-  950  1              const T_ADC *adcPtr = Adc_SampleData();
-  951  1              BOOSTER_STAT INT16S pedalRateFiltered = 0u;
-  952  1              INT16U pedalTravelAdc = 0u;
-  953  1              INT16U tempPedalRate = 0u;
-  954  1      
-  955  1              if(adcPtr->brakePedalTrip_Adc[0] < BRAKE_PEDAL_INIT_LOCATION)
-  956  1              {
-  957  2                      pedalTravelAdc = BRAKE_PEDAL_INIT_LOCATION;
-  958  2              }
-  959  1              else
-  960  1              {
-  961  2                      pedalTravelAdc = adcPtr->brakePedalTrip_Adc[0] - BRAKE_PEDAL_INIT_LOCATION;
-  962  2              }
-  963  1              
-  964  1              if(tBooster.pedalRate < pedalRateFiltered)
-  965  1              {
-  966  2                      tempPedalRate = pedalRateFiltered - tBooster.pedalRate + 8;
-  967  2                      tempPedalRate = tempPedalRate >> 4;
-  968  2                      pedalRateFiltered = pedalRateFiltered - tempPedalRate;
-  969  2              }
-  970  1              else
-  971  1              {
-  972  2                      tempPedalRate = tBooster.pedalRate - pedalRateFiltered + 8;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 17  
-
-  973  2                      tempPedalRate = tempPedalRate >> 4;
-  974  2                      pedalRateFiltered = pedalRateFiltered + tempPedalRate;
-  975  2              }
-  976  1              
-  977  1              if(pedalRateFiltered < 0)
-  978  1              {
-  979  2                      tempPedalRate = -pedalRateFiltered;
-  980  2                      tempPedalRate = tempPedalRate << 3;
-  981  2                      if(pedalTravelAdc < tempPedalRate)
-  982  2                      {
-  983  3                              tBooster.pedalPredictedLocation = 0u;
-  984  3                      }
-  985  2                      else
-  986  2                      {
-  987  3                              tBooster.pedalPredictedLocation = pedalTravelAdc - tempPedalRate;
-  988  3                      }
-  989  2              }
-  990  1              else
-  991  1              {
-  992  2                      tempPedalRate = tempPedalRate << 3;
-  993  2                      tBooster.pedalPredictedLocation = pedalTravelAdc + tempPedalRate;
-  994  2              }
-  995  1      }
-  996         
-  997         
-  998         /***********************************************************************
-  999         *  Name        : Booster_PedalLocationRateCalculation
- 1000         *  Description : 
- 1001         *  Parameter   : None
- 1002         *  Returns     : None
- 1003         ***********************************************************************/
- 1004         BOOSTER_STAT void Booster_PedalLocationRateCalculation(void)
- 1005         {
- 1006  1              BOOSTER_STAT INT16U travel[4] = {0u};
- 1007  1              //const T_ADC *adc_ptr = Adc_SampleData();
- 1008  1              //tBooster.pedalRate  = 2 * adc_ptr->brakePedalTrip_Adc[0]+ travel[3] - travel[1] - 2 * travel[0];
- 1009  1      
- 1010  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();
- 1011  1              tBooster.pedalRate  = 2 * adcApp_ptr->brakePedalLocation1 + travel[3] - travel[1] - 2 * travel[0];
- 1012  1              
- 1013  1              /* update travel data buffer */
- 1014  1              travel[0] = travel[1];
- 1015  1              travel[1] = travel[2];
- 1016  1              travel[2] = travel[3];  
- 1017  1              //travel[3] = adc_ptr->brakePedalTrip_Adc[0];   
- 1018  1              travel[3] = adcApp_ptr->brakePedalLocation1;    
- 1019  1      
- 1020  1              return ;
- 1021  1      }
- 1022         
- 1023         /***********************************************************************
- 1024         *  Name        : Pid_CylinderLocationRateCalculation
- 1025         *  Description : 
- 1026         *  Parameter   : None
- 1027         *  Returns     : None
- 1028         ***********************************************************************/
- 1029         BOOSTER_STAT void Booster_CylinderLocationRateCalculation(void)
- 1030         {
- 1031  1              BOOSTER_STAT INT16U travel[4] = {0u};
- 1032  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();
- 1033  1      
- 1034  1              tBooster.cylinderRate = 2 * adcApp_ptr->mainCylinderLocation1 + travel[3] - travel[1] - 2 * travel[0];
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 18  
-
- 1035  1      
- 1036  1              /* update travel data buffer */
- 1037  1              travel[0] = travel[1];
- 1038  1              travel[1] = travel[2];
- 1039  1              travel[2] = travel[3];  
- 1040  1              travel[3] = adcApp_ptr->mainCylinderLocation1;  
- 1041  1      
- 1042  1              return;
- 1043  1      }
- 1044         
- 1045         
- 1046         /***********************************************************************
- 1047         *  Name        : Booster_CurrentCompensation
- 1048         *  Description : Calculate the compensation current based on the given current and pedal speed
- 1049         *  Parameter   : current value according to cylinder travel
- 1050         *  Returns     : compensation current
- 1051         ***********************************************************************/
- 1052         BOOSTER_STAT INT16U Booster_CurrentCompensation(INT16U calcCurrent)
- 1053         {
- 1054  1              INT16U compensationCurrent = 0;
- 1055  1              INT16S pedalRate = 0;
- 1056  1              INT16S pedalRateTemp = 0;
- 1057  1              
- 1058  1              INT16U u=0; // temp var
- 1059  1      
- 1060  1              /* Calculate the pedal movement speed */
- 1061  1              pedalRate = tBooster.pedalRate * 5;
- 1062  1              if(pedalRate < -250)
- 1063  1              {
- 1064  2                      pedalRateTemp = -250;
- 1065  2              }
- 1066  1              else if(pedalRate > 250)
- 1067  1              {
- 1068  2                      pedalRateTemp = 250;
- 1069  2              }
- 1070  1              else
- 1071  1              {
- 1072  2                      pedalRateTemp = pedalRate;
- 1073  2              }
- 1074  1              pedalRateAccumulate = pedalRateAccumulate - pedalRateAccumulate / 64;
- 1075  1              pedalRateAccumulate = pedalRateAccumulate + pedalRateTemp;
- 1076  1              
- 1077  1              /* If the feedforward current is greater than 4.5A and the brake pedal in the return or very slow to go *
-             -/
- 1078  1              if((calcCurrent > 450) && (pedalRateAccumulate < 160))
- 1079  1              {
- 1080  2      //              pedalRateTemp = 160 - pedalRateAccumulate;
- 1081  2      //              pedalRateTemp = pedalRateTemp / 80;
- 1082  2      //              if(pedalRateTemp > 10)
- 1083  2      //              {
- 1084  2      //                      pedalRateTemp = 10;
- 1085  2      //              }
- 1086  2      //              compensationCurrent = - (pedalRateTemp * 100);
- 1087  2                      
- 1088  2                      /* modified by temp var u 20200330 */
- 1089  2                      u = 160 - pedalRateAccumulate;
- 1090  2                      u = u / 80;
- 1091  2                      if(u > 10)
- 1092  2                      {
- 1093  3                              u = 10;
- 1094  3                      }
- 1095  2                      
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 19  
-
- 1096  2                      compensationCurrent =  (u * 100);
- 1097  2                      /* modified by temp var u 20200330 end */               
- 1098  2                      
- 1099  2                      if(ABS(compensationCurrent) < 200)
-*** WARNING C115 IN LINE 1099 OF src\app\alogrithm\booster.c: '-' applied to unsigned type, result still unsigned
- 1100  2                      {
- 1101  3                              compensationCurrent = 200;
- 1102  3                      }
- 1103  2              }
- 1104  1              else
- 1105  1              {
- 1106  2                      compensationCurrent = 0;
- 1107  2              }
- 1108  1              
- 1109  1              return compensationCurrent;
- 1110  1      }
- 1111         
- 1112         
- 1113         /***********************************************************************
- 1114         *  Name        : Booster_CurrentGiven
- 1115         *  Description : Current loop PID target current given function
- 1116         *  Parameter   : None
- 1117         *  Returns     : INT16S
- 1118         ***********************************************************************/
- 1119         INT16S Booster_CurrentGiven(void)
- 1120         {
- 1121  1              INT32S tempbrakeMotorObjCurrent = 0u, compCurrent = 0;
- 1122  1              INT16U feedForwardCurrent = 0u;
- 1123  1              
- 1124  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
- 1125  1              const T_PID* ptr_Pid = Pid_AlogrithmData();
- 1126  1              
- 1127  1              if(STATUS_TRANSIENT != tBooster.brakeStatus)
- 1128  1              {
- 1129  2                      /* Obtain feedforward current value according to cylinder travel. */
- 1130  2                      if (STATUS_INIT_BRAKE != tBooster.brakeStatus)
- 1131  2                      {
- 1132  3                              feedForwardCurrent = Booster_CalculateCurrentFromMainCylinder(tBooster.mainCylinderObjLocation);
- 1133  3                      }
- 1134  2                      else
- 1135  2                      {
- 1136  3                              feedForwardCurrent = 0u;
- 1137  3                      }
- 1138  2                      
- 1139  2                      tBooster.cylinderCalcCurrent = feedForwardCurrent;
- 1140  2                      
- 1141  2                      /* Calculate the compensation current based on the given current and pedal speed */
- 1142  2                      compCurrent = Booster_CurrentCompensation(feedForwardCurrent);
- 1143  2                      
- 1144  2      #if 0
-                              /* Pedal travel less than 2mm, the current is fixed at 2.2A, improve the motor response speed*/
-                              if(ptr_adc->brakePedalLocation1 < 200)
-                              {
-                                      feedForwardCurrent = 200;
-                              }
+  664  2                      
+  665  2                      timeProtectCount++;
+  666  2                      if(timeProtectCount > PWM_TIMEOUT_PROTECT_EXCUTE_TIME)
+  667  2                      {
+  668  3                              timeProtectCount = 0;
+  669  3      
+  670  3                              if (tBooster.currentDampCoeff > CURRENT_PROTECT_SET_COEFF)
+  671  3                              {
+  672  4                                      tBooster.currentDampCoeff--;
+  673  4                              }
+  674  3                              if (tBooster.cylinderDampCoeff > CYLINDER_PROTECT_SET_COEFF)
+  675  3                              {
+  676  4                                      tBooster.cylinderDampCoeff--;
+  677  4                              }
+  678  3                      }
+  679  2              }                  
+  680  1      }
+  681         
+  682         
+  683         /***********************************************************************
+  684         *  Name        : Booster_calcCylinderObjLocationFromPedal
+  685         *  Description : According to the brake pedal location to calculate the main cylinder object location.
+  686         *  Parameter   : pedal Location
+  687         *  Returns     : None
+  688         ***********************************************************************/
+  689         static INT16U Booster_calcCylinderObjLocationFromPedal(INT16U pedalLoc)
+  690         {
+  691  1              INT16U tempMainCylinderObjLoc = 0;
+  692  1              
+  693  1              tempMainCylinderObjLoc = lookupTable_1D(pedalLoc, pedal_To_cylinder[0], pedal_To_cylinder[1], tBooster.pe
+             -dalToCylinderArrayLength - 1);
+  694  1              
+  695  1              return tempMainCylinderObjLoc;
+  696  1      }
+  697         
+  698         
+  699         /***********************************************************************
+  700         *  Name        : Booster_calcForwardCurrent
+  701         *  Description : The feedforward current is calculated according to the target stroke of the master cylind
+             -er and pedal pedal speed
+  702         *  Parameter   : None
+  703         *  Returns     : feed Forward Current
+  704         ***********************************************************************/
+  705         INT16U Booster_calcForwardCurrent(INT16U objLoc)
+  706         {
+  707  1              INT16S compCurrent = 0;
+  708  1              INT16U feedForwardCurrent = 0;
+  709  1      
+  710  1              feedForwardCurrent = lookupTable_1D(objLoc, cylinder_To_current[0], cylinder_To_current[1], tBooster.cyli
+             -nderToCurrentArrayLength - 1);
+  711  1      
+  712  1              /* Calculate the compensation current based on the given current and pedal speed */
+  713  1              compCurrent = Booster_CurrentCompensation(feedForwardCurrent);
+  714  1              
+  715  1      #if 0
+                      /* Pedal travel less than 2mm, the current is fixed at 2.2A, improve the motor response speed*/
+                      if(ptr_adc->brakePedalLocation1 < 200)
+                      {
+                              feedForwardCurrent = 200;
+                      }
               #endif
- 1151  2                      
- 1152  2              }
- 1153  1              else
- 1154  1                      /* When waiting enter STATUS_INIT_BRAKE, gradually reduce
- 1155  1                       * the target current of brake motor. */
- 1156  1              {
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 20  
+  722  1              
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 13  
 
- 1157  2                      INT32U temp32;
- 1158  2                      INT16U temp;
- 1159  2                      
- 1160  2                      if(tempbrakeMotorObjCurrent < 0)
- 1161  2                      {
- 1162  3                                temp = - tempbrakeMotorObjCurrent;
-*** WARNING C192 IN LINE 1162 OF src\app\alogrithm\booster.c: '=': value truncated
- 1163  3                                temp32 = (INT32U)temp * BRAKE_MOTOR_CURRENT_REDUCE_COEFF;
- 1164  3                                temp = temp32 / 1000u;
-*** WARNING C192 IN LINE 1164 OF src\app\alogrithm\booster.c: '=': value truncated
- 1165  3                                tBooster.brakeMotorObjCurrent = - temp;
-*** WARNING C115 IN LINE 1165 OF src\app\alogrithm\booster.c: '-' applied to unsigned type, result still unsigned
- 1166  3                      }
- 1167  2                      else
- 1168  2                      {
- 1169  3                              temp = tempbrakeMotorObjCurrent;
-*** WARNING C192 IN LINE 1169 OF src\app\alogrithm\booster.c: '=': value truncated
- 1170  3                              temp32 = (INT32U)temp * BRAKE_MOTOR_CURRENT_REDUCE_COEFF;
- 1171  3                              tBooster.brakeMotorObjCurrent = temp32 / 1000u;
-*** WARNING C192 IN LINE 1171 OF src\app\alogrithm\booster.c: '=': value truncated
- 1172  3                      }
- 1173  2              }
- 1174  1              
- 1175  1              return (feedForwardCurrent);
- 1176  1      }
- 1177         
- 1178         /***********************************************************************
- 1179         *  Name        : Booster_ClosedLoopControl
- 1180         *  Description : Brake booster control alogrithm
- 1181         *  Parameter   : None
- 1182         *  Returns     : None
- 1183         ***********************************************************************/
- 1184         BOOSTER_STAT void Booster_ClosedLoopControl(void)
- 1185         {
- 1186  1              INT16S feedForwardCurrent = 0; 
- 1187  1              INT16S feedBackCurrent = 0;
- 1188  1              
- 1189  1              //if(STATUS_TRANSIENT != tBooster.brakeStatus)
- 1190  1              {
- 1191  2                      feedBackCurrent = Pid_LocationClosedLoopControl(tBooster.mainCylinderObjLocation);
- 1192  2              }
- 1193  1      
- 1194  1              
- 1195  1              feedForwardCurrent = Booster_CurrentGiven();
- 1196  1      
- 1197  1              /* The target current of the motor is the fixed quantity plus the calculated value of position PID */
- 1198  1              tBooster.brakeMotorObjCurrent = feedForwardCurrent + feedBackCurrent; 
- 1199  1                      
- 1200  1              /* The target current is not negative */        
- 1201  1              if(tBooster.brakeMotorObjCurrent < 0)
- 1202  1              {
- 1203  2                      tBooster.brakeMotorObjCurrent = 0;
- 1204  2              }
- 1205  1              else if(tBooster.brakeMotorObjCurrent > 4000)
- 1206  1              {
- 1207  2                      tBooster.brakeMotorObjCurrent = 4000;   
- 1208  2              }       
- 1209  1              Pid_CurrentClosedLoopControl(tBooster.brakeMotorObjCurrent);
- 1210  1              
- 1211  1              return;
- 1212  1      }
- 1213         
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 21  
+  723  1              return feedForwardCurrent;
+  724  1      }
+  725         
+  726         
+  727         /***********************************************************************
+  728         *  Name        : Booster_calcForwardPwm
+  729         *  Description : According to the PV characteristic, the target current is used to calculate the feed forw
+             -ard PWM 
+  730         *  Parameter   : void
+  731         *  Returns     : feedForwardPwm
+  732         ***********************************************************************/
+  733         INT16U Booster_calcForwardPwm(INT16S objCurrent)
+  734         {
+  735  1              INT16U feedForwardPwm = 0;
+  736  1              INT16U objCurrentAbsolute = 0;
+  737  1              
+  738  1              if(objCurrent <= 0)
+  739  1              {
+  740  2                      return 0;
+  741  2              }
+  742  1              else
+  743  1              {
+  744  2                      objCurrentAbsolute = objCurrent;
+  745  2              }
+  746  1              
+  747  1              feedForwardPwm = lookupTable_1D(objCurrentAbsolute, current_To_pwm[0], current_To_pwm[1], tBooster.curren
+             -tToPwmArrayLength - 1);
+  748  1      
+  749  1              return feedForwardPwm;
+  750  1      }
+  751         
+  752         
+  753         /***********************************************************************
+  754         *  Name        : Booster_calcMotorObjCurrentFromPedal
+  755         *  Description : According to the brake pedal location to calculate the object current.
+  756         *  Parameter   : pedal location
+  757         *  Returns     : None
+  758         ***********************************************************************/
+  759         static INT16U Booster_calcMotorObjCurrentFromPedal(INT16U pedalLoc)
+  760         {
+  761  1              INT16U tempObjCurrent = 0;      
+  762  1              
+  763  1              tempObjCurrent = lookupTable_1D(pedalLoc, pedal_To_current[0], pedal_To_current[1], tBooster.pedalToCurre
+             -ntArrayLength - 1);
+  764  1              
+  765  1              return tempObjCurrent;
+  766  1      }
+  767         
+  768         
+  769         /***********************************************************************
+  770         *  Name        : Booster_PedalLocationRateCalculation
+  771         *  Description : 
+  772         *  Parameter   : None
+  773         *  Returns     : None
+  774         ***********************************************************************/
+  775         static void Booster_PedalLocationRateCalculation(void)
+  776         {
+  777  1              static INT16U travel[4] = {0u};
+  778  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();
+  779  1              tBooster.pedalRate  = 2 * adcApp_ptr->brakePedalLocation1 + travel[3] - travel[1] - 2 * travel[0];
+  780  1              
+  781  1              /* update travel data buffer */
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 14  
 
- 1214         /***********************************************************************
- 1215         *  Name        : Booster_AlogrithmData
- 1216         *  Description : Brake booster control alogrithm data
- 1217         *  Parameter   : None
- 1218         *  Returns     : Brake booster control alogrithm data structure access address
- 1219         ***********************************************************************/
- 1220         const T_BOOSTER* Booster_AlogrithmData(void)
- 1221         {
- 1222  1              return (&tBooster);
- 1223  1      }
- 1224         
- 1225         /* _END_OF_BOOSTER_ */
- 1226         
- 1227         
- 1228         
- 1229         static void Booster_cylinderExhaust(void)
- 1230         {
- 1231  1              static INT32U periodCnt = 0;
- 1232  1              static INT16S exhaustPwmMaxValue = 1500;
- 1233  1              INT16S exhaustPwmValueTemp = 0;
- 1234  1              INT16S exhaustPwmValue = 0;
- 1235  1              
- 1236  1              switch(exhaustStep)
- 1237  1              {
- 1238  2                      case 0:
- 1239  2                      {       
- 1240  3                              //g_cylinderExhaustInformFlag = FALSE;
- 1241  3                              Pwm_Control(-500);
- 1242  3                              if(tBooster.mainCylinderLocation < 100)
- 1243  3                              {
- 1244  4                                      exhaustStep = 1;
- 1245  4                                      periodCnt = 0;
- 1246  4                              }
- 1247  3                              break;
- 1248  3                      }
- 1249  2                      
- 1250  2                      case 1:
- 1251  2                      {       
- 1252  3                              periodCnt++;
- 1253  3                              exhaustPwmValueTemp = periodCnt * (exhaustPushCnt + 1);
-*** WARNING C192 IN LINE 1253 OF src\app\alogrithm\booster.c: '=': value truncated
- 1254  3                              exhaustPwmValue = exhaustPwmValueTemp > exhaustPwmMaxValue ? exhaustPwmMaxValue : exhaustPwmValueTemp;
- 1255  3                              Pwm_Control(((INT32U)exhaustPwmValue * tBooster.temperatureProtectCoeff) / 100);
-*** WARNING C192 IN LINE 1255 OF src\app\alogrithm\booster.c: 'parameter 1': value truncated
- 1256  3                              
- 1257  3                              if(exhaustPushCnt >= 4)
- 1258  3                              {
- 1259  4                                      if(periodCnt > 3000)
- 1260  4                                      {
- 1261  5                                              exhaustPushCnt = 0;
- 1262  5                                              exhaustStep = 0;
- 1263  5                                      }
- 1264  4                                      
- 1265  4                                      if((exhaustPwmValue >= exhaustPwmMaxValue)
- 1266  4                                              && (tBooster.cylinderRate < 15))
- 1267  4                                      {
- 1268  5                                              //g_cylinderExhaustInformFlag = TRUE;
- 1269  5                                      }
- 1270  4                              }
- 1271  3                              else
- 1272  3                              {
- 1273  4                                      if(periodCnt > 600)
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 22  
+  782  1              travel[0] = travel[1];
+  783  1              travel[1] = travel[2];
+  784  1              travel[2] = travel[3];          
+  785  1              travel[3] = adcApp_ptr->brakePedalLocation1;
+  786  1      }
+  787         
+  788         /***********************************************************************
+  789         *  Name        : Pid_CylinderLocationRateCalculation
+  790         *  Description : 
+  791         *  Parameter   : None
+  792         *  Returns     : None
+  793         ***********************************************************************/
+  794         static void Booster_CylinderLocationRateCalculation(void)
+  795         {
+  796  1              static INT16U travel[4] = {0u};
+  797  1              const T_ADC_APP *adcApp_ptr = AdcApp_SampleData();
+  798  1      
+  799  1              tBooster.cylinderRate = 2 * adcApp_ptr->mainCylinderLocation1 + travel[3] - travel[1] - 2 * travel[0];
+  800  1      
+  801  1              /* update travel data buffer */
+  802  1              travel[0] = travel[1];
+  803  1              travel[1] = travel[2];
+  804  1              travel[2] = travel[3];  
+  805  1              travel[3] = adcApp_ptr->mainCylinderLocation1;  
+  806  1      }
+  807         
+  808         
+  809         
+  810         /***********************************************************************
+  811         *  Name        : Booster_CurrentCompensation
+  812         *  Description : Calculate the compensation current based on the given current and pedal speed
+  813         *  Parameter   : current value according to cylinder travel
+  814         *  Returns     : compensation current
+  815         ***********************************************************************/
+  816         static INT16U Booster_CurrentCompensation(INT16U calcCurrent)
+  817         {
+  818  1              INT16U compensationCurrent = 0;
+  819  1              INT16S pedalRate = 0;
+  820  1              INT16S pedalRateTemp = 0;
+  821  1              
+  822  1              INT16U u=0; // temp var
+  823  1      
+  824  1              /* Calculate the pedal movement speed */
+  825  1              pedalRate = tBooster.pedalRate * 5;
+  826  1              if(pedalRate < -250)
+  827  1              {
+  828  2                      pedalRateTemp = -250;
+  829  2              }
+  830  1              else if(pedalRate > 250)
+  831  1              {
+  832  2                      pedalRateTemp = 250;
+  833  2              }
+  834  1              else
+  835  1              {
+  836  2                      pedalRateTemp = pedalRate;
+  837  2              }
+  838  1              pedalRateAccumulate = pedalRateAccumulate - pedalRateAccumulate / 64;
+  839  1              pedalRateAccumulate = pedalRateAccumulate + pedalRateTemp;
+  840  1              
+  841  1              /* If the feedforward current is greater than 4.5A and the brake pedal in the return or very slow to go *
+             -/
+  842  1              if((calcCurrent > 450) && (pedalRateAccumulate < 160))
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 15  
 
- 1274  4                                      {
- 1275  5                                              exhaustPushCnt++;
- 1276  5                                              exhaustStep = 0;
- 1277  5                                      }
- 1278  4                              }
- 1279  3      
- 1280  3                              break;
- 1281  3                      }
- 1282  2      
- 1283  2                      default:
- 1284  2                              break;
- 1285  2              }
- 1286  1      }
- 1287         
- 1288         
- 1289         /***********************************************************************
- 1290         *  Name        : Motor_Auto_Run
- 1291         *  Description : Motor_Auto_Run, according to MCTimer
- 1292         *  Parameter   : None
- 1293         *  Returns     : None
- 1294         ***********************************************************************/
- 1295         BOOSTER_EXT void Motor_Auto_Run(void) 
- 1296         {
- 1297  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
- 1298  1              INT16S tempObjCurrent = 0;      // for motor auto move - current
- 1299  1              INT16S temp_pwm = 0;
- 1300  1              
- 1301  1              // for motor auto move - pwm
- 1302  1              
- 1303  1              /* Judge environment temperature higher than setting protect trigger condition,
- 1304  1               * set compensation coeff to decline output to protect brake motor. */
- 1305  1              if (ptr_adc->environmentTemperature >= TEMPERATURE_PROTECT_TRIGGER)
+  843  1              {
+  844  2      //              pedalRateTemp = 160 - pedalRateAccumulate;
+  845  2      //              pedalRateTemp = pedalRateTemp / 80;
+  846  2      //              if(pedalRateTemp > 10)
+  847  2      //              {
+  848  2      //                      pedalRateTemp = 10;
+  849  2      //              }
+  850  2      //              compensationCurrent = - (pedalRateTemp * 100);
+  851  2                      
+  852  2                      /* modified by temp var u 20200330 */
+  853  2                      u = 160 - pedalRateAccumulate;
+  854  2                      u = u / 80;
+  855  2                      if(u > 10)
+  856  2                      {
+  857  3                              u = 10;
+  858  3                      }
+  859  2                      
+  860  2                      compensationCurrent =  (u * 100);
+  861  2                      /* modified by temp var u 20200330 end */               
+  862  2                      
+  863  2                      if(ABS(compensationCurrent) < 200)
+*** WARNING C115 IN LINE 863 OF src\app\alogrithm\booster.c: '-' applied to unsigned type, result still unsigned
+  864  2                      {
+  865  3                              compensationCurrent = 200;
+  866  3                      }
+  867  2              }
+  868  1              else
+  869  1              {
+  870  2                      compensationCurrent = 0;
+  871  2              }
+  872  1              
+  873  1              return compensationCurrent;
+  874  1      }
+  875         
+  876         
+  877         /***********************************************************************
+  878         *  Name        : Booster_ClosedLoopControl
+  879         *  Description : Brake booster control alogrithm
+  880         *  Parameter   : None
+  881         *  Returns     : None
+  882         ***********************************************************************/
+  883         static void Booster_ClosedLoopControl(void)
+  884         {
+  885  1              INT16U feedForwardCurrent = 0; 
+  886  1              INT16S feedBackCurrent = 0;
+  887  1              
+  888  1              INT16U feedForwardPwm = 0; 
+  889  1              INT16S feedBackPwm = 0;
+  890  1              
+  891  1              feedForwardCurrent = Booster_calcForwardCurrent(tBooster.mainCylinderObjLocation);
+  892  1              feedBackCurrent = Pid_LocationClosedLoopControl(tBooster.mainCylinderObjLocation);
+  893  1              tBooster.calcForwardCurrent = feedForwardCurrent;
+  894  1              
+  895  1              tBooster.brakeMotorObjCurrent = feedForwardCurrent + feedBackCurrent;
+  896  1      
+  897  1              
+  898  1              /* The target current is not negative */        
+  899  1              if(tBooster.brakeMotorObjCurrent < 0)
+  900  1              {
+  901  2                      tBooster.brakeMotorObjCurrent = 0;
+  902  2              }
+  903  1              else if(tBooster.brakeMotorObjCurrent > gRTE_controlMaxCurrent)
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 16  
+
+  904  1              {
+  905  2                      tBooster.brakeMotorObjCurrent = gRTE_controlMaxCurrent; 
+  906  2              }       
+  907  1              
+  908  1              feedForwardPwm = Booster_calcForwardPwm(tBooster.brakeMotorObjCurrent);
+  909  1              feedBackPwm = Pid_CurrentClosedLoopControl(tBooster.brakeMotorObjCurrent);
+  910  1              tBooster.calcForwardPwm = feedForwardPwm;
+  911  1              
+  912  1              Pwm_Control(feedForwardPwm + feedBackPwm);
+  913  1      }
+  914         
+  915         
+  916         
+  917         /***********************************************************************
+  918         *  Name        : Booster_JudgeEnergyRecoveryCondition
+  919         *  Description : Judge brake energy recovery condition
+  920         *  Parameter   : None
+  921         *  Returns     : None
+  922         ***********************************************************************/
+  923         static void Booster_JudgeEnergyRecoveryCondition(void)
+  924         {
+  925  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+  926  1      
+  927  1              /* Brake energy recovery condition include:
+  928  1               * 1) MCU motor actual speed more than default value
+  929  1               * 2) brake pedal location less than 13mm(not emergency brake)
+  930  1               * 3) VCU allow brake energy recovery(CAN signal)
+  931  1               * 4) TODO:brake pedal location change speed meet condition 
+  932  1               */     
+  933  1              if ((VCU_VehicleSpeed > RB_END_OF_QUIT_SPEED)
+  934  1                      //&& (ptr_adc->brakePedalLocation1 < PEDAL_ENERGY_RECOVERY_RANG) 
+  935  1                      && (TRUE == MCU_AllowFeedbackFlag)
+  936  1                  && (tBooster.pedalRate < 250)
+  937  1                      && (FALSE == g_energyRecoverHitFlag)
+  938  1      //              && 0    // disable      // 20200921 am
+  939  1                      )
+  940  1              {
+  941  2                      tBooster.meetEnergyRecoveryCondition = TRUE;
+  942  2              }
+  943  1              else
+  944  1              {
+  945  2                      tBooster.meetEnergyRecoveryCondition = FALSE;
+  946  2              }
+  947  1              
+  948  1      }
+  949         
+  950         
+  951         /***********************************************************************
+  952         *  Name        : Booster_BrakeStatusMashine
+  953         *  Description : None
+  954         *  Parameter   : None
+  955         *  Returns     : None
+  956         ***********************************************************************/
+  957         static void Booster_BrakeStatusMashine(void)
+  958         {
+  959  1              FP32 u = 0.0;
+  960  1              static INT16U brakeStatusCount = 0u;
+  961  1              static INT16U hybridBrakeReleaseCount = 0u;
+  962  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  963  1              static E_STATUS_BRAKE brakeStatusLast = STATUS_INIT_BRAKE;
+  964  1              
+  965  1              if(tBooster.brakeStatus != brakeStatusLast)
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 17  
+
+  966  1              {
+  967  2                      brakeStatusCount = 0u;
+  968  2                      hybridBrakeReleaseCount = 0u;
+  969  2              }
+  970  1              brakeStatusLast = tBooster.brakeStatus;
+  971  1              
+  972  1              switch (tBooster.brakeStatus)
+  973  1              {
+  974  2                      case STATUS_INIT_BRAKE:
+  975  2                              g_energyRecoverHitFlag = FALSE;
+  976  2                              if (ptr_adc->brakePedalLocation1 > BRAKE_PEDAL_LOCATION_VALID)
+  977  2                              {
+  978  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
+  979  3                              }
+  980  2                              break;
+  981  2                              
+  982  2                      case STATUS_FRICTION_BRAKE:
+  983  2                              /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
+  984  2                               * get ready to return STATUS_INIT_BRAKE. */
+  985  2                              if (ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID)
+  986  2                              {                               
+  987  3                                      tBooster.brakeStatus = STATUS_TRANSIENT;
+  988  3                              }
+  989  2      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
+  990  2                              else
+  991  2                              {
+  992  3                                      if(((VCU_VehicleSpeed < 2500))
+  993  3                                              || (VCU_VehicleSpeed > 7500)) // >75km/h
+  994  3                                      {
+  995  4                                              g_energyRecoverHitFlag = TRUE;
+  996  4                                      }
+  997  3                                      
+  998  3                                      Booster_JudgeEnergyRecoveryCondition();
+  999  3                                      /* Meet brake energy recovery condition keeping 80*3ms enter STATUS_HYBRID_BRAKE. */
+ 1000  3                                      if (TRUE == tBooster.meetEnergyRecoveryCondition)
+ 1001  3                                      {               
+ 1002  4                                              tBooster.brakeStatus = STATUS_HYBRID_BRAKE;
+ 1003  4                                      }
+ 1004  3                              }               
+ 1005  2      #endif
+ 1006  2                              break;
+ 1007  2                              
+ 1008  2                      case STATUS_TRANSIENT:
+ 1009  2                              g_energyRecoverHitFlag = FALSE;
+ 1010  2                      
+ 1011  2                              if (ptr_adc->brakePedalLocation1 > BRAKE_PEDAL_LOCATION_VALID)
+ 1012  2                              {
+ 1013  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
+ 1014  3                              }
+ 1015  2                              else
+ 1016  2                              {
+ 1017  3                                      if(brakeStatusCount >= 80u)
+ 1018  3                                      {
+ 1019  4                                              tBooster.brakeStatus = STATUS_INIT_BRAKE;
+ 1020  4                                      }
+ 1021  3                                      else
+ 1022  3                                      {
+ 1023  4                                              brakeStatusCount++;
+ 1024  4                                      }
+ 1025  3                              }
+ 1026  2                              break;
+ 1027  2                              
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 18  
+
+ 1028  2                      case STATUS_HYBRID_BRAKE:
+ 1029  2      
+ 1030  2                              Booster_JudgeEnergyRecoveryCondition();
+ 1031  2                      
+ 1032  2                              /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
+ 1033  2                               * get ready to return STATUS_INIT_BRAKE. */
+ 1034  2                              if (ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID)
+ 1035  2                              {
+ 1036  3                                      tBooster.brakeStatus = STATUS_TRANSIENT;
+ 1037  3                              }
+ 1038  2                              else if((FALSE == tBooster.meetEnergyRecoveryCondition))                        
+ 1039  2                              {
+ 1040  3                                      /* If not meet brake energy recovery condition, enter STATUS_FRICTION_BRAKE at once*/
+ 1041  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;
+ 1042  3                              }
+ 1043  2                              else if((VCU_VehicleSpeed < tBooster.rbQuitSpeed))
+ 1044  2                              {
+ 1045  3                                      tBooster.State4coef = 1;
+ 1046  3                                      tBooster.brakeStatus = STATUS_RELASE_HYBRID_BRAKE;
+ 1047  3                              }
+ 1048  2      
+ 1049  2                              break;
+ 1050  2      
+ 1051  2                      case STATUS_RELASE_HYBRID_BRAKE:
+ 1052  2                              
+ 1053  2                              Booster_JudgeEnergyRecoveryCondition();
+ 1054  2                      
+ 1055  2                              /* Not have brake switch signal and brake pedal resume init location, enter STATUS_TRANSIENT
+ 1056  2                               * get ready to return STATUS_INIT_BRAKE. */
+ 1057  2                              if ((ptr_adc->brakePedalLocation1 <= BRAKE_PEDAL_LOCATION_VALID))
+ 1058  2                              {
+ 1059  3                                      tBooster.brakeStatus = STATUS_TRANSIENT;
+ 1060  3                              }       
+ 1061  2                              else if((FALSE == tBooster.meetEnergyRecoveryCondition))
+ 1062  2                              {
+ 1063  3                                      tBooster.brakeStatus = STATUS_FRICTION_BRAKE;                   
+ 1064  3                              }
+ 1065  2                              else 
+ 1066  2                              {
+ 1067  3                                  if( VCU_VehicleSpeed < RB_END_OF_QUIT_SPEED )
+ 1068  3                                      {
+ 1069  4                                              tBooster.brakeStatus = STATUS_FRICTION_BRAKE; 
+ 1070  4                                      }
+ 1071  3                                      else if(VCU_VehicleSpeed > tBooster.rbQuitSpeed)
+ 1072  3                                      {
+ 1073  4                                              if(hybridBrakeReleaseCount > 80)
+ 1074  4                                              {
+ 1075  5                                                      tBooster.brakeStatus = STATUS_HYBRID_BRAKE;
+ 1076  5                                              }
+ 1077  4                                              else
+ 1078  4                                              {
+ 1079  5                                                      hybridBrakeReleaseCount++;
+ 1080  5                                              }
+ 1081  4                                      }
+ 1082  3                                      else
+ 1083  3                                      {
+ 1084  4                                              u = VCU_VehicleSpeed - RB_END_OF_QUIT_SPEED;
+ 1085  4                                              tBooster.State4coef = u / (FP32)(tBooster.rbQuitSpeed - RB_END_OF_QUIT_SPEED);
+ 1086  4                                      }
+ 1087  3                              }
+ 1088  2      
+ 1089  2                              break;
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 19  
+
+ 1090  2      
+ 1091  2                      default:
+ 1092  2                              brakeStatusCount = 0u;
+ 1093  2                              hybridBrakeReleaseCount = 0u;
+ 1094  2                              tBooster.brakeStatus = STATUS_INIT_BRAKE;
+ 1095  2                              break;
+ 1096  2              }
+ 1097  1      }
+ 1098                 
+ 1099         /***********************************************************************
+ 1100         *  Name        : Booster_BrakeForceDistribution
+ 1101         *  Description : Booster brake force distribution, include VCU motor torque and
+ 1102         *                brake motor friction torque.
+ 1103         *  Parameter   : None
+ 1104         *  Returns     : None
+ 1105         ***********************************************************************/
+ 1106         static void Booster_BrakeForceDistribution(void)
+ 1107         {
+ 1108  1              INT16U frictionObjLocation = 0;
+ 1109  1              static INT16U cylinderObjLocationDiff = 0;
+ 1110  1              static INT16S mcuMotorObjTorqueHybridBrakeLast = 0;
+ 1111  1              static INT16S mcuMotorObjTorqueReleaseHybridBrakeLast = 0;
+ 1112  1              
+ 1113  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+ 1114  1              
+ 1115  1              frictionObjLocation = Booster_CylinderMinLocationCheck();
+ 1116  1              
+ 1117  1              tBooster.totalObjLocation = tBooster.mainCylinderObjLocation;
+ 1118  1              tBooster.frictionObjLocation = frictionObjLocation;
+ 1119  1              
+ 1120  1              switch (tBooster.brakeStatus)
+ 1121  1              {
+ 1122  2                      case STATUS_INIT_BRAKE:
+ 1123  2                              tBooster.totalTorqueRequest = 0;
+ 1124  2                              tBooster.frictionBrakeObjTorque = 0;
+ 1125  2                              tBooster.mcuMotorObjTorque = 0;
+ 1126  2                  iCAS_Brake_MotToqReq_Flag = 1;              
+ 1127  2                              break;
+ 1128  2      
+ 1129  2      
+ 1130  2                      case STATUS_FRICTION_BRAKE:
+ 1131  2                              tBooster.mcuMotorObjTorque = 0;
+ 1132  2                          iCAS_Brake_MotToqReq_Flag = 1;
+ 1133  2                              break;
+ 1134  2                      
+ 1135  2                      case STATUS_TRANSIENT:
+ 1136  2                              if(tBooster.mcuMotorObjTorque < -20)
+ 1137  2                              {
+ 1138  3                                      tBooster.mcuMotorObjTorque += 10;
+ 1139  3                                      iCAS_Brake_MotToqReq_Flag = 0;
+ 1140  3                              }
+ 1141  2                              else
+ 1142  2                              {
+ 1143  3                                      tBooster.mcuMotorObjTorque = 0;
+ 1144  3                                      iCAS_Brake_MotToqReq_Flag = 1;
+ 1145  3                              }
+ 1146  2                              break;
+ 1147  2      
+ 1148  2                      case STATUS_HYBRID_BRAKE:       
+ 1149  2      
+ 1150  2                              /* Use main cylinder location to calculate total brake torque request. */
+ 1151  2                              tBooster.totalTorqueRequest = Booster_CalculateBrakeTorque(tBooster.mainCylinderObjLocation);
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 20  
+
+ 1152  2                      
+ 1153  2                              if(frictionObjLocation > MAIN_CYLINER_EMPTY_LOCATION)
+ 1154  2                              {
+ 1155  3                                      tBooster.frictionBrakeObjTorque = Booster_CalculateBrakeTorque(frictionObjLocation);    // sth strange he
+             -re
+ 1156  3                              }
+ 1157  2                              else
+ 1158  2                              {
+ 1159  3                                      tBooster.frictionBrakeObjTorque = 0;
+ 1160  3                              }
+ 1161  2                              
+ 1162  2                              //tBooster.mcuMotorObjTorque = tBooster.totalTorqueRequest - tBooster.frictionBrakeObjTorque;
+ 1163  2                              tBooster.mcuMotorObjTorque = tBooster.totalTorqueRequest;
+ 1164  2                              
+ 1165  2                              /* The quit speed of regenerative braking is calculated according to the total braking force. */
+ 1166  2                              tBooster.rbQuitSpeed = Booster_RegenerationBrakeQuitSpeed(tBooster.totalTorqueRequest);
+ 1167  2                              
+ 1168  2                          if(tBooster.mcuMotorObjTorque < tBooster.mcuMotorMaxiumTorque)
+ 1169  2                              {
+ 1170  3                                      tBooster.mcuMotorObjTorque = tBooster.mcuMotorMaxiumTorque;
+ 1171  3                              }
+ 1172  2                              Booster_mcuObjTorqueCheck(&(tBooster.mcuMotorObjTorque));
+ 1173  2                              iCAS_Brake_MotToqReq_Flag = 0;
+ 1174  2                              
+ 1175  2                              mcuMotorObjTorqueHybridBrakeLast = tBooster.mcuMotorObjTorque;
+ 1176  2                              mcuMotorObjTorqueReleaseHybridBrakeLast = mcuMotorObjTorqueHybridBrakeLast;
+ 1177  2                              cylinderObjLocationDiff = tBooster.mainCylinderObjLocation - frictionObjLocation;
+ 1178  2                              
+ 1179  2                              tBooster.mainCylinderObjLocation = frictionObjLocation;
+ 1180  2      
+ 1181  2                              break;
+ 1182  2      
+ 1183  2                      case STATUS_RELASE_HYBRID_BRAKE:
+ 1184  2      
+ 1185  2                              /* Use main cylinder location to calculate total brake torque request. */
+ 1186  2                              tBooster.totalTorqueRequest = Booster_CalculateBrakeTorque(tBooster.mainCylinderObjLocation);               
+ 1187  2                          tBooster.mcuMotorObjTorque = EnergyRecovery_BrakeTorqueReduction(mcuMotorObjTorqueHybridBrakeLast, t
+             -Booster.State4coef);
+ 1188  2                              if(tBooster.mcuMotorObjTorque < mcuMotorObjTorqueReleaseHybridBrakeLast)
+ 1189  2                              {
+ 1190  3                                      tBooster.mcuMotorObjTorque = mcuMotorObjTorqueReleaseHybridBrakeLast;
+ 1191  3                              }
+ 1192  2                              
+ 1193  2                              if(tBooster.mcuMotorObjTorque < tBooster.mcuMotorMaxiumTorque)
+ 1194  2                              {
+ 1195  3                                      tBooster.mcuMotorObjTorque = tBooster.mcuMotorMaxiumTorque;
+ 1196  3                              }
+ 1197  2                              
+ 1198  2                              Booster_mcuObjTorqueCheck(&(tBooster.mcuMotorObjTorque));
+ 1199  2                              mcuMotorObjTorqueReleaseHybridBrakeLast = tBooster.mcuMotorObjTorque;
+ 1200  2                              
+ 1201  2                              
+ 1202  2                              tBooster.mainCylinderObjLocation = frictionObjLocation + EnergyRecovery_ObjLocationIncrement(cylinderOb
+             -jLocationDiff, tBooster.State4coef);
+ 1203  2                      
+ 1204  2                              break;
+ 1205  2      
+ 1206  2                      default:
+ 1207  2                              tBooster.totalTorqueRequest = 0;
+ 1208  2                              tBooster.frictionBrakeObjTorque = 0;
+ 1209  2                              break;
+ 1210  2              }
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 21  
+
+ 1211  1      }
+ 1212         
+ 1213         /***********************************************************************
+ 1214         *  Name        : Booster_mcuObjTorqueCheck(INT16S torque)
+ 1215         *  Description : There is a mechanical gap between the pedal and the cylinder, 
+ 1216         *  Parameter   : None
+ 1217         *  Returns     : None
+ 1218         ***********************************************************************/
+ 1219         static void Booster_mcuObjTorqueCheck(INT16S* torque)
+ 1220         {
+ 1221  1          INT16S rb_objtorque = 0;
+ 1222  1              
+ 1223  1              rb_objtorque = *torque;
+ 1224  1              
+ 1225  1              if(rb_objtorque >= MCU_MOTOR_TORQUE_DEFAULT)
+ 1226  1              {
+ 1227  2                 rb_objtorque = MCU_MOTOR_TORQUE_DEFAULT;
+ 1228  2              }
+ 1229  1              if(rb_objtorque <= MCU_MOTOR_TORQUE_MAX_LIMIT)
+ 1230  1              {
+ 1231  2                 rb_objtorque = MCU_MOTOR_TORQUE_MAX_LIMIT;
+ 1232  2              }       
+ 1233  1              
+ 1234  1          *torque = rb_objtorque;     
+ 1235  1      }
+ 1236         
+ 1237         
+ 1238         /***********************************************************************
+ 1239         *  Name        : Booster_CylinderMinLocationCheck
+ 1240         *  Description : There is a mechanical gap between the pedal and the cylinder, 
+ 1241         *                                Limit the minimum position of the cylinder to avoid collision 
+ 1242         *                                with the pedal mandrel.
+ 1243         *  Parameter   : None
+ 1244         *  Returns     : None
+ 1245         ***********************************************************************/
+ 1246         static INT16U Booster_CylinderMinLocationCheck(void)
+ 1247         {
+ 1248  1              INT16U frictionCylinderObjLocation = 0;
+ 1249  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+ 1250  1              
+ 1251  1              if(ptr_adc->brakePedalLocation1 <= (MAIN_CYLINER_EMPTY_LOCATION + TOLERATE_COMPRESS_MAX_VALUE))
+ 1252  1              {
+ 1253  2                      //MAIN_CYLINER_EMPTY_LOCATION = 400(4mm)
+ 1254  2                      if(ptr_adc->brakePedalLocation1 < 100)
+ 1255  2                      {
+ 1256  3                              frictionCylinderObjLocation = tBooster.mainCylinderObjLocation;
+ 1257  3                      }
+ 1258  2                      else
+ 1259  2                      {
+ 1260  3                              //frictionCylinderObjLocation = ptr_adc->brakePedalLocation1 * 0.42 - 42;
+ 1261  3                              frictionCylinderObjLocation = ptr_adc->brakePedalLocation1 * 0.44 - 44;
+ 1262  3                      }
+ 1263  2              }
+ 1264  1              else if(tBooster.mainCylinderObjLocation > (ptr_adc->brakePedalLocation1 - TOLERATE_COMPRESS_MAX_VALUE)) 
+             -// do not understand
+ 1265  1              {
+ 1266  2                      frictionCylinderObjLocation = ptr_adc->brakePedalLocation1 - TOLERATE_COMPRESS_MAX_VALUE;
+ 1267  2              }
+ 1268  1              else
+ 1269  1              {
+ 1270  2                      frictionCylinderObjLocation = tBooster.mainCylinderObjLocation;
+ 1271  2              }
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 22  
+
+ 1272  1      
+ 1273  1              return frictionCylinderObjLocation;
+ 1274  1      }
+ 1275         
+ 1276         
+ 1277         
+ 1278         /***********************************************************************
+ 1279         *  Name        : Booster_CalculateMixBrakeCylinderLocationFromTorque
+ 1280         *  Description : According to friction brake object torque to calculate
+ 1281         *                brake main cylinder object location.
+ 1282         *  Parameter   : None
+ 1283         *  Returns     : brakeTorque
+ 1284         ***********************************************************************/
+ 1285         static INT16U Booster_CalculateMixBrakeCylinderLocationFromTorque(INT16S objTorque)
+ 1286         {
+ 1287  1              INT16U cylinderObjLocation = 0;
+ 1288  1      
+ 1289  1              if(objTorque >= 0)
+ 1290  1              {
+ 1291  2                      cylinderObjLocation = 0;
+ 1292  2              }
+ 1293  1              else if(objTorque > -192)
+ 1294  1              {
+ 1295  2                      cylinderObjLocation = -1.0417 * objTorque + 200;
+ 1296  2              }
+ 1297  1              else if(objTorque > -800)
+ 1298  1              {
+ 1299  2                      cylinderObjLocation = -0.3289 * objTorque + 336.84;
+ 1300  2              }
+ 1301  1              else if(objTorque > -1650)
+ 1302  1              {
+ 1303  2                      cylinderObjLocation = -0.2353 * objTorque + 411.76;
+ 1304  2              }
+ 1305  1              else
  1306  1              {
- 1307  2                      MCTimer = 0;
+ 1307  2                      cylinderObjLocation = -0.16 * objTorque + 536;
  1308  2              }
- 1309  1              else
- 1310  1              {
- 1311  2                      if(MCTimer <= 1000)
- 1312  2                      {
- 1313  3                              temp_pwm = 0;
- 1314  3                      }
- 1315  2                      else if(MCTimer <= 8000)
- 1316  2                      {
- 1317  3                              temp_pwm = (MCTimer - 1000)/4 ;
- 1318  3                      }
- 1319  2                      else if(MCTimer <= 15000)
- 1320  2                      {
- 1321  3                              temp_pwm = 1750 - ((MCTimer - 8000)/4) ;
- 1322  3                      }
- 1323  2                      else
- 1324  2                      {
- 1325  3                              MCTimer = 0;
- 1326  3                      }
+ 1309  1              
+ 1310  1              return cylinderObjLocation;
+ 1311  1      }
+ 1312         
+ 1313         
+ 1314         /***********************************************************************
+ 1315         *  Name        : Booster_CalculateBrakeTorque
+ 1316         *  Description : According to main cylinder location to calculate brake torque.
+ 1317         *  Parameter   : None
+ 1318         *  Returns     : brakeTorque
+ 1319         ***********************************************************************/
+ 1320         static INT16S Booster_CalculateBrakeTorque(INT16U objLoc)
+ 1321         {
+ 1322  1              INT16S brakeTorque = 0;
+ 1323  1              
+ 1324  1              if (objLoc < 100)
+ 1325  1              {
+ 1326  2                      brakeTorque = 0;
  1327  2              }
- 1328  1              
- 1329  1              // pwm limit
- 1330  1              if (temp_pwm > 1600)
- 1331  1              {       temp_pwm = 1600;        }
- 1332  1              if (temp_pwm < 0)
- 1333  1              {       temp_pwm = 0;   }
- 1334  1              
- 1335  1              // pwm control
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 23  
+ 1328  1              else if(objLoc < 200)
+ 1329  1              {
+ 1330  2                      brakeTorque = -objLoc + 100;
+*** WARNING C115 IN LINE 1330 OF src\app\alogrithm\booster.c: '-' applied to unsigned type, result still unsigned
+ 1331  2              }
+ 1332  1              else if(objLoc < 400)
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 23  
 
- 1336  1              Pwm_Control(temp_pwm);
- 1337  1              MCTimer++;
- 1338  1              
- 1339  1              
- 1340  1      /*      // for µç¶¯¸×ÅÅÆø
- 1341  1      //      if(MCTimer <= 1000)
- 1342  1      //      {
- 1343  1      //              MCTimer++;
- 1344  1      //              Pwm_Control(0);
- 1345  1      //      }
- 1346  1      //      else if(MCTimer <= 2500)
- 1347  1      //      {
- 1348  1      //              MCTimer++;
- 1349  1      //              Pwm_Control(1300);
- 1350  1      //      }
- 1351  1      //      else if(MCTimer <= 3000)
- 1352  1      //      {
- 1353  1      //              MCTimer++;
- 1354  1      //              Pwm_Control(0);
- 1355  1      //      }
- 1356  1      //      else
- 1357  1      //      {
- 1358  1      //              MCTimer = 0;
- 1359  1      //      }
- 1360  1      */      
- 1361  1              
- 1362  1      
- 1363  1      
- 1364  1      ////    // for motor auto move - current
- 1365  1      ////    if (ptr_adc->environmentTemperature >= TEMPERATURE_PROTECT_TRIGGER)
- 1366  1      ////    {
- 1367  1      ////            MCTimer = 0;
- 1368  1      ////    }
- 1369  1      ////    else
- 1370  1      ////    {
- 1371  1      ////            if(MCTimer <= 1000)
- 1372  1      ////            {
- 1373  1      ////                    tempObjCurrent = 0;
- 1374  1      ////            }
- 1375  1      ////            else if(MCTimer <= 3500)
- 1376  1      ////            {
- 1377  1      ////                    // scale: *0.01A
- 1378  1      ////                    tempObjCurrent = (MCTimer-1000)*2; 
- 1379  1      ////            }
- 1380  1      ////            else if(MCTimer <= 6000)
- 1381  1      ////            {
- 1382  1      ////                    // scale: *0.01A
- 1383  1      ////                    tempObjCurrent = (2500-(MCTimer-3500))*2; 
- 1384  1      ////            }
- 1385  1      ////            else
- 1386  1      ////            {
- 1387  1      ////                    tempObjCurrent = 0;
- 1388  1      ////                    MCTimer = 0;
- 1389  1      ////            }
- 1390  1      ////            
- 1391  1      ////            // current limit
- 1392  1      ////            if (tempObjCurrent > 4600)
- 1393  1      ////            {       tempObjCurrent = 4600;  }
- 1394  1      ////            if (tempObjCurrent < 0)
- 1395  1      ////            {       tempObjCurrent = 0;     }
- 1396  1      ////    }
- 1397  1      ////    MCTimer++;
-C166 COMPILER V7.57.0, BOOSTER                                                             11/13/2020 15:09:24 PAGE 24  
+ 1333  1              {
+ 1334  2                      brakeTorque = -2 * objLoc + 300;
+ 1335  2              }
+ 1336  1              else if(objLoc < 700)
+ 1337  1              {
+ 1338  2                      brakeTorque = -2.3333 * objLoc + 433.33;
+ 1339  2              }
+ 1340  1              else if(objLoc < 1000)
+ 1341  1              {
+ 1342  2                      brakeTorque = -1.3333 * objLoc - 266.67;
+ 1343  2              }
+ 1344  1              else if(objLoc < 1200)
+ 1345  1              {
+ 1346  2                      brakeTorque = -1600;
+ 1347  2              }
+ 1348  1      /*
+ 1349  1              else if(objLoc < 1600)
+ 1350  1              {
+ 1351  1                      brakeTorque = 0.5 * objLoc - 2200;
+ 1352  1              }
+ 1353  1              else if(objLoc < 1800)
+ 1354  1              {
+ 1355  1                      brakeTorque = 7 * objLoc - 12600;
+ 1356  1              }
+ 1357  1      */      
+ 1358  1              else
+ 1359  1              {
+ 1360  2                      brakeTorque = -1600;
+ 1361  2              }
+ 1362  1              
+ 1363  1              if (brakeTorque > 0)
+ 1364  1              {
+ 1365  2                      brakeTorque = 0;
+ 1366  2              }
+ 1367  1      
+ 1368  1              return brakeTorque;
+ 1369  1      }
+ 1370         
+ 1371         
+ 1372         
+ 1373         
+ 1374         /***********************************************************************
+ 1375         *  Name        : Booster_RegenerationBrakeQuitSpeed
+ 1376         *  Description : regenerative brake quit speed.
+ 1377         *  Parameter   : None
+ 1378         *  Returns     : quitSpeed
+ 1379         ***********************************************************************/
+ 1380         static INT16U Booster_RegenerationBrakeQuitSpeed(INT16S torque)
+ 1381         {
+ 1382  1              INT16S tempTorque = 0; 
+ 1383  1              INT16U quitSpeed = 0;
+ 1384  1      
+ 1385  1              tempTorque = torque;
+ 1386  1      
+ 1387  1              quitSpeed = 1000 - tempTorque * 3 - tempTorque / 8;
+ 1388  1      
+ 1389  1              if (quitSpeed > RB_QUIT_SPEED1)
+ 1390  1              {
+ 1391  2                      quitSpeed = RB_QUIT_SPEED1;
+ 1392  2              }
+ 1393  1              else
+ 1394  1              {
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 24  
 
- 1398  1      ////    tBooster.brakeMotorObjCurrent = tempObjCurrent;
- 1399  1      ////    Pid_CurrentClosedLoopControl(tBooster.brakeMotorObjCurrent); //added for motor auto run - current
- 1400  1      }
-*** WARNING C174 IN LINE 589 OF src\app\alogrithm\booster.c: 'Booster_BrakeStatusMashine': unreferenced 'static' functio
-             -n
-*** WARNING C174 IN LINE 1229 OF src\app\alogrithm\booster.c: 'Booster_cylinderExhaust': unreferenced 'static' function
-*** WARNING C174 IN LINE 388 OF src\app\alogrithm\booster.c: 'Booster_CalculateMixBrakeCylinderLocationFromTorque': unre
-             -ferenced 'static' function
-*** WARNING C174 IN LINE 130 OF src\app\alogrithm\booster.c: 'Booster_LocationAndCurrentLoop': unreferenced 'static' fun
+ 1395  2                      if (quitSpeed < RB_QUIT_SPEED2)
+ 1396  2                      {
+ 1397  3                              quitSpeed = RB_QUIT_SPEED2;
+ 1398  3                      }
+ 1399  2              }       
+ 1400  1              return quitSpeed;
+ 1401  1      }
+ 1402         
+ 1403         /***********************************************************************
+ 1404         *  Name        : Booster_PedalLocationPredict
+ 1405         *  Description : 
+ 1406         *  Parameter   : None
+ 1407         *  Returns     : None
+ 1408         ***********************************************************************/
+ 1409         static void Booster_PedalLocationPredict(void)
+ 1410         {
+ 1411  1              const T_ADC *adcPtr = Adc_SampleData();
+ 1412  1              static INT16S pedalRateFiltered = 0u;
+ 1413  1              INT16U pedalTravelAdc = 0u;
+ 1414  1              INT16U tempPedalRate = 0u;
+ 1415  1      
+ 1416  1              if(adcPtr->brakePedalTrip_Adc[0] < gRTE_pedalInitValue[0])
+ 1417  1              {
+ 1418  2                      pedalTravelAdc = gRTE_pedalInitValue[0];
+ 1419  2              }
+ 1420  1              else
+ 1421  1              {
+ 1422  2                      pedalTravelAdc = adcPtr->brakePedalTrip_Adc[0] - gRTE_pedalInitValue[0];
+ 1423  2              }
+ 1424  1              
+ 1425  1              if(tBooster.pedalRate < pedalRateFiltered)
+ 1426  1              {
+ 1427  2                      tempPedalRate = pedalRateFiltered - tBooster.pedalRate + 8;
+ 1428  2                      tempPedalRate = tempPedalRate >> 4;
+ 1429  2                      pedalRateFiltered = pedalRateFiltered - tempPedalRate;
+ 1430  2              }
+ 1431  1              else
+ 1432  1              {
+ 1433  2                      tempPedalRate = tBooster.pedalRate - pedalRateFiltered + 8;
+ 1434  2                      tempPedalRate = tempPedalRate >> 4;
+ 1435  2                      pedalRateFiltered = pedalRateFiltered + tempPedalRate;
+ 1436  2              }
+ 1437  1              
+ 1438  1              if(pedalRateFiltered < 0)
+ 1439  1              {
+ 1440  2                      tempPedalRate = -pedalRateFiltered;
+ 1441  2                      tempPedalRate = tempPedalRate << 3;
+ 1442  2                      if(pedalTravelAdc < tempPedalRate)
+ 1443  2                      {
+ 1444  3                              tBooster.pedalPredictedLocation = 0u;
+ 1445  3                      }
+ 1446  2                      else
+ 1447  2                      {
+ 1448  3                              tBooster.pedalPredictedLocation = pedalTravelAdc - tempPedalRate;
+ 1449  3                      }
+ 1450  2              }
+ 1451  1              else
+ 1452  1              {
+ 1453  2                      tempPedalRate = tempPedalRate << 3;
+ 1454  2                      tBooster.pedalPredictedLocation = pedalTravelAdc + tempPedalRate;
+ 1455  2              }
+ 1456  1      }
+C166 COMPILER V7.57.0, BOOSTER                                                             12/25/2020 20:36:02 PAGE 25  
+
+ 1457         
+ 1458         
+ 1459         
+ 1460         
+ 1461         
+ 1462         /***********************************************************************
+ 1463         *  Name        : Booster_AlogrithmData
+ 1464         *  Description : Brake booster control alogrithm data
+ 1465         *  Parameter   : None
+ 1466         *  Returns     : Brake booster control alogrithm data structure access address
+ 1467         ***********************************************************************/
+ 1468         const T_BOOSTER* Booster_AlogrithmData(void)
+ 1469         {
+ 1470  1              return (&tBooster);
+ 1471  1      }
+ 1472         
+ 1473         /* _END_OF_BOOSTER_ */
+*** WARNING C174 IN LINE 1285 OF src\app\alogrithm\booster.c: 'Booster_CalculateMixBrakeCylinderLocationFromTorque': unr
+             -eferenced 'static' function
+*** WARNING C174 IN LINE 313 OF src\app\alogrithm\booster.c: 'Booster_LocationAndCurrentLoop': unreferenced 'static' fun
              -ction
-*** WARNING C174 IN LINE 1184 OF src\app\alogrithm\booster.c: 'Booster_ClosedLoopControl': unreferenced 'static' functio
-             -n
-*** WARNING C174 IN LINE 786 OF src\app\alogrithm\booster.c: 'Booster_BrakeForceDistribution': unreferenced 'static' fun
-             -ction
-*** WARNING C174 IN LINE 557 OF src\app\alogrithm\booster.c: 'Booster_JudgeEnergyRecoveryCondition': unreferenced 'stati
-             -c' function
-*** WARNING C174 IN LINE 948 OF src\app\alogrithm\booster.c: 'Booster_PedalLocationPredict': unreferenced 'static' funct
-             -ion
-*** WARNING C174 IN LINE 153 OF src\app\alogrithm\booster.c: 'Booster_OnlyLocationLoop': unreferenced 'static' function
-*** WARNING C174 IN LINE 856 OF src\app\alogrithm\booster.c: 'Booster_CylinderMinLocationCheck': unreferenced 'static' f
-             -unction
-*** WARNING C174 IN LINE 169 OF src\app\alogrithm\booster.c: 'Booster_OnlyCurrentLoop': unreferenced 'static' function
-*** WARNING C174 IN LINE 1004 OF src\app\alogrithm\booster.c: 'Booster_PedalLocationRateCalculation': unreferenced 'stat
-             -ic' function
-*** WARNING C174 IN LINE 253 OF src\app\alogrithm\booster.c: 'Booster_TimeOutProtectCoef': unreferenced 'static' functio
-             -n
+*** WARNING C174 IN LINE 376 OF src\app\alogrithm\booster.c: 'Booster_OnlyLocationLoop': unreferenced 'static' function
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        1702     --------
+  CODE SIZE        =        3958     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =          20     --------
-  FAR-DATA SIZE    =          50     --------
+  NEAR-DATA SIZE   =          35     --------
+  FAR-DATA SIZE    =         224     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =         136     --------
+  INIT'L SIZE      =         392     --------
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  24 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  8 WARNING(S),  0 ERROR(S)

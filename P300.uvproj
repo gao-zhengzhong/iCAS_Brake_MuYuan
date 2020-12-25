@@ -391,6 +391,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\app\alogrithm\wire_control.c</FilePath>
             </File>
+            <File>
+              <FileName>booster_Cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\app\alogrithm\booster_Cfg.h</FilePath>
+            </File>
+            <File>
+              <FileName>wireControl_Cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\app\alogrithm\wireControl_Cfg.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -420,11 +430,6 @@
               <FileName>rte.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\app\rte\rte.c</FilePath>
-            </File>
-            <File>
-              <FileName>EEPROM_Cfg.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\src\interaction\EEPROM_Cfg.h</FilePath>
             </File>
             <File>
               <FileName>adc_sample.h</FileName>
@@ -460,6 +465,11 @@
               <FileName>pwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\interaction\pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>EEPROM_Cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\interaction\EEPROM_Cfg.h</FilePath>
             </File>
           </Files>
         </Group>

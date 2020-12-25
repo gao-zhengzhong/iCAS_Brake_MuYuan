@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 1   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE EEPROM
@@ -41,7 +41,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
    29         // *Beta        : this version has no serious errors, but some defects
    30         // *RC          : there are almost no bugs causing errors in this release
    31         // *Release     : this Release is for final delivery
-   32         static INT8U SoftwareVersion[28] = "HW03.2.6.00.20200410_alpha";
+   32         
    33         
    34         
    35         //****************************************************************************
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
    50         //----------------------------------------------------------------------------
    51         // @Parameters    adr
    52         //
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 2   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 2   
 
    53         //----------------------------------------------------------------------------
    54         // @Date          2013-6-25
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
   112         //
   113         //----------------------------------------------------------------------------
   114         // @Returnvalue    uword
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 3   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 3   
 
   115         //
   116         //----------------------------------------------------------------------------
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
   174         INT16U EepRom_ProgramPage (INT32U page_adr, void *buf) 
   175         {
   176  1              INT16U cnt, uwTmp;
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 4   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 4   
 
   177  1              // Enter Page Mode
   178  1              (*((INT16U far *) (base |0x00AA))) = 0x50;       // 1st cycle: write 50h to xx'00AAh
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
   236  2                      //Overwrite the data to be written
   237  2                      for(i = 0; i < Len; i++)
   238  2                      {
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 5   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 5   
 
   239  3                              WrBuf[DestAdr - pageStartAddress + i] = Source[i];
   240  3                      }
@@ -318,43 +318,39 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\eepRom.c MODV2
   298  2              }
   299  1      }
   300         
-C166 COMPILER V7.57.0, EEPROM                                                              11/13/2020 15:09:28 PAGE 6   
+C166 COMPILER V7.57.0, EEPROM                                                              12/25/2020 20:36:09 PAGE 6   
 
   301         
   302         void SaveData_v_g(void)
   303         {
-  304  1              CopyString_v_g(descDataIdentifier.YEMA_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH, 1);
+  304  1              CopyString_v_g(descDataIdentifier.OEM_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH, 1);
   305  1              CopyString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH, 1);
   306  1      }
   307         
   308         
   309         void ReadData_v_g(void)
   310         {
-  311  1              ReadString_v_g(descDataIdentifier.YEMA_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH);
-  312  1              ReadString_v_g(descDataIdentifier.pedalCylinderInitValue, PEDAL_CYLINDER_INIT_LOCATION_VALUE_ADDRESS, PED
-             -AL_CYLINDER_INIT_LOCATION_VALUE_LENGTH);
-  313  1              ReadString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH);
-*** WARNING C98 IN LINE 313 OF src\interaction\eepRom.c: parameter 1: pointer to different objects
-  314  1      }
-  315         
+  311  1              ReadString_v_g(descDataIdentifier.OEM_VIN, VIN_VALUE_ADDRESS, VIN_VALUE_LENGTH);
+  312  1      }
+  313         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        1358     --------
+  CODE SIZE        =        1314     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =           4     --------
-  FAR-DATA SIZE    =         168     --------
+  NEAR-DATA SIZE   =          59     --------
+  FAR-DATA SIZE    =         404     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          34     --------
+  INIT'L SIZE      =    --------     --------
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 1   
+C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE PWM
@@ -35,146 +35,206 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\pwm.c MODV2 LA
    23         #include <string.h>
    24         
    25         #include "pwm.h"
-   26         #include "rte.h"
-   27         #include "booster.h"
-   28         
-   29         /**** Definition of variables ****/
-   30         PWM_STAT T_PWM tPwm = {0u};
-   31         
-   32         /**** Declaration of functions ****/
-   33         PWM_STAT void Pwm_LimitAmplitude(INT16S pwmValue);
-   34         PWM_STAT void Pwm_ControlOutput(void);
-   35         
-   36         /***********************************************************************
-   37         *  Name        : Pwm_Init
-   38         *  Description : After power on, initiliaze PWM sample variable
-   39         *  Parameter   : None
-   40         *  Returns     : None
-   41         ***********************************************************************/
-   42         void Pwm_Init(void)
-   43         {
-   44  1              tPwm.motorCtrl = PWM_AMPLITUDE_DEFAULT;
-   45  1              tPwm.channelDutyA = 1000u;
-   46  1              tPwm.channelDutyB = 1000u;
-   47  1              return;
-   48  1      }
-   49         
-   50         /***********************************************************************
-   51         *  Name        : Pwm_DeInit
-   52         *  Description : During running, need initilize PWM sample variable
-C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 2   
+   26         #include "pid.h"
+   27         #include "rte.h"
+   28         #include "booster.h"
+   29         #include "FLTD.h"
+   30         
+   31         /**** Definition of variables ****/
+   32         static T_PWM tPwm = {0u};
+   33         
+   34         /**** Declaration of functions ****/
+   35         static void Pwm_OutputLimit(INT16S pwmValue);
+   36         static void Pwm_ControlOutput(void);
+   37         static void Pwm_pwmOutFilter(INT16S* pwmInputValue);
+   38         
+   39         /***********************************************************************
+   40         *  Name        : Pwm_Init
+   41         *  Description : After power on, initiliaze PWM sample variable
+   42         *  Parameter   : None
+   43         *  Returns     : None
+   44         ***********************************************************************/
+   45         void Pwm_Init(void)
+   46         {
+   47  1              tPwm.motorCtrl = PWM_AMPLITUDE_DEFAULT;
+   48  1              tPwm.channelDutyA = 1000u;
+   49  1              tPwm.channelDutyB = 1000u;
+   50  1              return;
+   51  1      }
+   52         
+C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 2   
 
-   53         *  Parameter   : None
-   54         *  Returns     : None
-   55         ***********************************************************************/
-   56         void Pwm_DeInit(void)
-   57         {
-   58  1              return;
-   59  1      }
-   60         
-   61         /***********************************************************************
-   62         *  Name        : Pwm_Control
-   63         *  Description : PWM control function
-   64         *  Parameter   : pwm control value
-   65         *  Returns     : None
-   66         ***********************************************************************/
-   67         void Pwm_Control(INT16S pwmValue)
-   68         {
-   69  1              Pwm_LimitAmplitude(pwmValue);
-   70  1              Pwm_ControlOutput();
-   71  1              return;
-   72  1      }
-   73         
-   74         /***********************************************************************
-   75         *  Name        : Pwm_LimitAmplitude
-   76         *  Description : PWM amolitude limiting processing
-   77         *  Parameter   : None
-   78         *  Returns     : None
-   79         ***********************************************************************/
-   80         PWM_STAT void Pwm_LimitAmplitude(INT16S pwmValue)
-   81         {
-   82  1              INT16S motorDuty = 0; 
-   83  1              
-   84  1              if (abs(pwmValue) <= 10u)
-   85  1              {
-   86  2                      motorDuty = PWM_AMPLITUDE_DEFAULT;
-   87  2              }
-   88  1              else
-   89  1              {
-   90  2                      motorDuty = pwmValue + PWM_AMPLITUDE_DEFAULT;
-   91  2      
-   92  2                      if (motorDuty <= PWM_AMPLITUDE_LOWER)
-   93  2                      {
-   94  3                              motorDuty = PWM_AMPLITUDE_LOWER;
-   95  3                      }
-   96  2                      else if (motorDuty >= PWM_AMPLITUDE_UPPER)
-   97  2                      {
-   98  3                              motorDuty = PWM_AMPLITUDE_UPPER;
-   99  3                      }
-  100  2                      else
-  101  2                      {
-  102  3                              /* NOP */
-  103  3                      }
-  104  2              }
-  105  1              
-  106  1              tPwm.motorCtrl = motorDuty;
-  107  1              return;
-  108  1      }
-  109         
-  110         /***********************************************************************
-  111         *  Name        : Pwm_ControlOutput
-  112         *  Description : 
-  113         *  Parameter   : None
-  114         *  Returns     : None
-C166 COMPILER V7.57.0, PWM                                                                 11/13/2020 15:09:28 PAGE 3   
+   53         /***********************************************************************
+   54         *  Name        : Pwm_DeInit
+   55         *  Description : During running, need initilize PWM sample variable
+   56         *  Parameter   : None
+   57         *  Returns     : None
+   58         ***********************************************************************/
+   59         void Pwm_DeInit(void)
+   60         {
+   61  1              return;
+   62  1      }
+   63         
+   64         /***********************************************************************
+   65         *  Name        : Pwm_Control
+   66         *  Description : PWM control function
+   67         *  Parameter   : pwm control value
+   68         *  Returns     : None
+   69         ***********************************************************************/
+   70         void Pwm_Control(INT16S pwmValue)
+   71         {
+   72  1              Pwm_OutputLimit(pwmValue);
+   73  1              Pwm_ControlOutput();
+   74  1              return;
+   75  1      }
+   76         
+   77         
+   78         /***********************************************************************
+   79         *  Name        : Pwm_OutputLimit
+   80         *  Description : PWM amolitude limiting processing
+   81         *  Parameter   : None
+   82         *  Returns     : None
+   83         ***********************************************************************/
+   84         static void Pwm_OutputLimit(INT16S pwmValue)
+   85         {
+   86  1              INT16S motorDuty = PWM_AMPLITUDE_DEFAULT; 
+   87  1              
+   88  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
+   89  1              const FLTD_faultActType* FLTDAct_ptr = FLTD_FltActFlgData();
+   90  1              T_PID* ptr_Pid = Pid_AlogrithmData();
+   91  1      
+   92  1      #if 1
+   93  1              if((TRUE != g_pvTestFlag)
+   94  1                      && (TRUE != FLTDAct_ptr->fixedDecelerationFlg)
+   95  1                      && (((BoosterBrakeMode == BrakeSysMode) && (ptr_Booster->pedalRate <= 0) && (ptr_Booster->brakePedalLoca
+             -tion < 100))
+   96  1                              || ((WireCtrlBrakeMode == BrakeSysMode) && (0 == g_wireControlObjPressure)))
+   97  1                      && ((ptr_Booster->mainCylinderLocation <= 200) && (ptr_Booster->cylinderRate <= 0)))
+   98  1              {
+   99  2                      motorDuty = PWM_AMPLITUDE_DEFAULT;
+  100  2      
+  101  2                      ptr_Pid->current.integral = 0;  
+  102  2                      ptr_Pid->onlyLocation.integral = 0;             
+  103  2              }
+  104  1              else
+  105  1      #endif
+  106  1              {
+  107  2                      Pwm_pwmOutFilter(&pwmValue);
+  108  2                      
+  109  2                      if (abs(pwmValue) <= 10)
+  110  2                      {
+  111  3                              motorDuty = PWM_AMPLITUDE_DEFAULT;
+  112  3                      }
+  113  2                      else
+C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 3   
 
-  115         ***********************************************************************/
-  116         PWM_STAT void Pwm_ControlOutput(void)
-  117         {
-  118  1              INT32U temp;
-  119  1              
-  120  1              temp = ((INT32U)tPwm.motorCtrl * 2000u) >> 12u;
-  121  1              
-  122  1      #if (0 == HARDWARE_VERSION)
+  114  2                      {
+  115  3                              motorDuty = pwmValue + PWM_AMPLITUDE_DEFAULT;
+  116  3      
+  117  3                              if (motorDuty <= PWM_AMPLITUDE_LOWER)
+  118  3                              {
+  119  4                                      motorDuty = PWM_AMPLITUDE_LOWER;
+  120  4                              }
+  121  3                              else if (motorDuty >= PWM_AMPLITUDE_UPPER)
+  122  3                              {
+  123  4                                      motorDuty = PWM_AMPLITUDE_UPPER;
+  124  4                              }
+  125  3                              else
+  126  3                              {
+  127  4                                      /* NOP */
+  128  4                              }
+  129  3                      }
+  130  2              }
+  131  1              
+  132  1              tPwm.motorCtrl = motorDuty;
+  133  1      }
+  134         
+  135         
+  136         /***********************************************************************
+  137         *  Name        : Pwm_ControlOutput
+  138         *  Description : 
+  139         *  Parameter   : None
+  140         *  Returns     : None
+  141         ***********************************************************************/
+  142         static void Pwm_ControlOutput(void)
+  143         {
+  144  1              INT32U temp = 0;
+  145  1              
+  146  1              temp = ((INT32U)tPwm.motorCtrl * 2000u) >> 12u;
+  147  1              
+  148  1      #if (0 == HARDWARE_VERSION)
                       tPwm.channelDutyA = (INT16U)temp;
                       tPwm.channelDutyB = 2000u - tPwm.channelDutyA;
               #else
-  126  1              tPwm.channelDutyB = (INT16U)temp;
-  127  1              tPwm.channelDutyA = 2000u - tPwm.channelDutyB;
-  128  1      #endif
-  129  1      
-  130  1              return;
-  131  1      }
-  132         
-  133         /***********************************************************************
-  134         *  Name        : Pwm_ControlData
-  135         *  Description : PWM module interface
-  136         *  Parameter   : None
-  137         *  Returns     : PWM data structure access address
-  138         ***********************************************************************/
-  139         const T_PWM* Pwm_ControlData(void)
-  140         {
-  141  1              return (&tPwm);
-  142  1      }
-  143         
-  144         /* _END_OF_PWM_IF_ */
+  152  1              tPwm.channelDutyB = (INT16U)temp;
+  153  1              tPwm.channelDutyA = 2000u - tPwm.channelDutyB;
+  154  1      #endif
+  155  1      
+  156  1              return;
+  157  1      }
+  158         
+  159         /***********************************************************************
+  160         *  Name        : FunctionPWMOutFilter
+  161         *  Description : PWM OUT value Filter.
+  162         *  Parameter   : NONE
+  163         *  Returns     : NONE
+  164         ***********************************************************************/
+  165         static void Pwm_pwmOutFilter(INT16S* pwmInputValue)
+  166         {       
+  167  1              INT8U PwmIndex = 0;
+  168  1              INT16S PwmFilterArraySum = 0;
+  169  1              
+  170  1              static INT16S PwmFilterArray[8] = {0};
+  171  1      
+  172  1              PwmFilterArray[0] = PwmFilterArray[1];
+  173  1              PwmFilterArray[1] = PwmFilterArray[2];
+  174  1              PwmFilterArray[2] = PwmFilterArray[3];
+  175  1              PwmFilterArray[3] = PwmFilterArray[4];
+C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 4   
+
+  176  1              PwmFilterArray[4] = PwmFilterArray[5];
+  177  1              PwmFilterArray[5] = PwmFilterArray[6];  
+  178  1              PwmFilterArray[6] = PwmFilterArray[7];
+  179  1              PwmFilterArray[7] = *pwmInputValue;     
+  180  1                      
+  181  1              for(PwmIndex = 0; PwmIndex < 7; PwmIndex++)
+  182  1              {
+  183  2                      PwmFilterArray[PwmIndex] = PwmFilterArray[PwmIndex + 1];
+  184  2                      PwmFilterArraySum = PwmFilterArraySum + PwmFilterArray[PwmIndex];
+  185  2              }       
+  186  1              
+  187  1          *pwmInputValue = PwmFilterArraySum / 8;             
+  188  1      }
+  189         
+  190         /***********************************************************************
+  191         *  Name        : Pwm_ControlData
+  192         *  Description : PWM module interface
+  193         *  Parameter   : None
+  194         *  Returns     : PWM data structure access address
+  195         ***********************************************************************/
+  196         const T_PWM* Pwm_ControlData(void)
+  197         {
+  198  1              return (&tPwm);
+  199  1      }
+  200         
+  201         /* _END_OF_PWM_IF_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         154     --------
+  CODE SIZE        =         452     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
   NEAR-DATA SIZE   =           6     --------
-  FAR-DATA SIZE    =    --------     --------
+  FAR-DATA SIZE    =          16     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          10     --------
+  INIT'L SIZE      =          32     --------
 END OF MODULE INFORMATION.
 
 

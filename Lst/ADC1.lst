@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 1   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE ADC1
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
    50         
    51         // USER CODE END
    52         
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 2   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 2   
 
    53         
    54         //****************************************************************************
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   112         //                RCRx     - Result Control Register x
   113         //                KSCFG    - Module configuration Register
   114         //                INPCR    - Input class Registers
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 3   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 3   
 
   115         //                CHINPRx  - Channel Interrupt register
   116         //                EVINPRx  - Event Interrupt register
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   174  1        ADC1_RSPR0     =  0x0302;      // load Priority and Arbitration register
   175  1      
   176  1        ///  -----------------------------------------------------------------------
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 4   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 4   
 
   177  1        ///  Configuration of Channel Control Registers:
   178  1        ///  -----------------------------------------------------------------------
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   236  1        ///  - the FIFO functionality is disabled
   237  1      
   238  1        ADC1_RCR1      =  0x0000;      // load result control register 1
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 5   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 5   
 
   239  1      
   240  1        ///  Configuration of Result Control Register 2
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   298  1      
   299  1        ADC1_CHINPR4   =  0x0000;      // load channel interrupt node pointer 
   300  1                                       // register
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 6   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 6   
 
   301  1      
   302  1        ///  -----------------------------------------------------------------------
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   360  1      
   361  1        ///  -----------------------------------------------------------------------
   362  1        ///  Configuration of Conversion Queue Mode Register:Sequential Source 0
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 7   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 7   
 
   363  1        ///  -----------------------------------------------------------------------
   364  1        ///  - the gating line is permanently Enabled
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   422         //
   423         //----------------------------------------------------------------------------
   424         // @Parameters    ubExtTrg: 
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 8   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 8   
 
   425         //                External Trigger : defines external trigger.
   426         // @Parameters    ubEnIntr: 
@@ -510,7 +510,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   484         //                Refill : defines the refill
   485         // @Parameters    ubChannelNum: 
   486         //                Channel number : Name of the Request Channel Number (0 - 
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 9   
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 9   
 
   487         //                7)- see macros defined in the header file
   488         //
@@ -574,7 +574,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\ADC1.c MODV2 LARGE 
   545  2            }
   546  1            else if(ubAliasChNum == 1) 
   547  1            {
-C166 COMPILER V7.57.0, ADC1                                                                11/13/2020 15:09:20 PAGE 10  
+C166 COMPILER V7.57.0, ADC1                                                                12/25/2020 20:35:54 PAGE 10  
 
   548  2               ADC1_ALR0 = (ADC1_ALR0 & (0x00ff)) | ((uword)ubReqChNum << 8); // updates requested channel to AL
              -IAS 1 bit field 

@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 1   
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE RTE
@@ -37,340 +37,839 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\rte\rte.c MODV2 LARGE 
    25         #include "MAIN.h"
    26         #include "can_if.h"
    27         #include "rte.h"
-   28         #include "adc_sample.h"
-   29         
-   30         /**** Definition of variables ****/
-   31         static INT8S TimeBaseCounter;    /* 时序计数变量*/
-   32         #define TAB_N 256                //定义查表的点数
-   33         #define PI 3.1416                //定义圆周率值
-   34         
-   35         FP32 temperatureAdTabble[50] =
-   36         {
-   37                 1002.5793, 987.5587, 964.3300, 930.5421, 884.4136, 856.3534, 824.9348, 790.2895, 752.7188, 712.6531,
-   38                 670.7021, 627.5324, 583.8639, 540.4084, 497.8097, 456.6134, 417.2502, 380.0265, 345.1465, 312.7312,
-   39                 282.8052, 255.3540, 230.3063, 207.5516, 186.9913, 183.1306, 179.3513, 175.6530, 172.0337, 168.4915,
-   40                 165.0270, 161.6379, 158.3247, 155.0832, 151.9153, 148.8197, 145.7935, 142.8366, 139.9474, 137.1258,
-   41                 134.3701, 131.6782, 129.0516, 126.4864, 123.9822, 121.5402, 119.1564, 116.8317, 114.5638, 112.3519 
-   42         };
-   43         
-   44         INT8U temperatureValueTable[50] =
-   45         {
-   46                 -40,-30,-20,-10,0,      5,      10,     15,     20,     25,
-   47                 30,     35,     40,     45,     50,     55,     60,     65,     70,     75,
-   48                 80,     85,     90,     95,     100,101,102,103,104,105,
-   49                 106,107,108,109,110,111,112,113,114,115,
-   50                 116,117,118,119,120,121,122,123,124,125
-   51         };
-   52         
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 2   
+   28         #include "eepRom.h"
+   29         #include "EEPROM_Cfg.h"
+   30         #include "pid.h"
+   31         #include "pwm.h"
+   32         #include "booster.h"
+   33         #include "adc_sample.h"
+   34         #include "FLTD.h"
+   35         
+   36         /**** Definition of variables ****/
+   37         
+   38         FP32 temperatureAdTabble[50] =
+   39         {
+   40                 1002.5793, 987.5587, 964.3300, 930.5421, 884.4136, 856.3534, 824.9348, 790.2895, 752.7188, 712.6531,
+   41                 670.7021, 627.5324, 583.8639, 540.4084, 497.8097, 456.6134, 417.2502, 380.0265, 345.1465, 312.7312,
+   42                 282.8052, 255.3540, 230.3063, 207.5516, 186.9913, 183.1306, 179.3513, 175.6530, 172.0337, 168.4915,
+   43                 165.0270, 161.6379, 158.3247, 155.0832, 151.9153, 148.8197, 145.7935, 142.8366, 139.9474, 137.1258,
+   44                 134.3701, 131.6782, 129.0516, 126.4864, 123.9822, 121.5402, 119.1564, 116.8317, 114.5638, 112.3519 
+   45         };
+   46         
+   47         INT8U temperatureValueTable[50] =
+   48         {
+   49                 -40,-30,-20,-10,0,      5,      10,     15,     20,     25,
+   50                 30,     35,     40,     45,     50,     55,     60,     65,     70,     75,
+   51                 80,     85,     90,     95,     100,101,102,103,104,105,
+   52                 106,107,108,109,110,111,112,113,114,115,
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 2   
 
-   53         /**** Declaration of functions ****/
-   54         FP32 SIN_TAB[TAB_N / 4 + 1] = {                                  //初始化1/4的sin表(256点)
-   55             0.0000,0.0245,0.0491,0.0735,0.0980,0.1224,0.1467,0.1710,
-   56             0.1951,0.2191,0.2430,0.2667,0.2903,0.3137,0.3369,0.3599,
-   57             0.3827,0.4052,0.4276,0.4496,0.4714,0.4929,0.5141,0.5350,
-   58             0.5556,0.5758,0.5957,0.6152,0.6344,0.6532,0.6716,0.6895,
-   59             0.7071,0.7242,0.7410,0.7572,0.7730,0.7883,0.8032,0.8176,
-   60             0.8315,0.8449,0.8577,0.8701,0.8819,0.8932,0.9040,0.9142,
-   61             0.9239,0.9330,0.9415,0.9495,0.9569,0.9638,0.9700,0.9757,
-   62             0.9808,0.9853,0.9892,0.9925,0.9952,0.9973,0.9988,0.9997,
-   63             1.0000
-   64         };
-   65         
-   66         /***********************************************************************
-   67         *  Name        : Rte_Init
-   68         *  Description : initialization of variable and Enable CAN.
-   69         *  Parameter   : None
-   70         *  Returns     : None
-   71         ***********************************************************************/
-   72         void Rte_Init(void)
-   73         {
-   74  1              SystemMode_u8_Sig = 0;        /* 系统模式 */
-   75  1              PDTFinish_u8_Sig = 0;         /* PowerDown模式结束标志位 */
-   76  1              PUTFinish_u8_Sig = 0;         /* PowerUpTest模式结束标志位 */
-   77  1              PDFinish_u8_Sig = 0;          /* PowerDownTest模式结束标志位*/
-   78  1              NormalFinish_u8_Sig = 0;      /* Normal模式结束标志位 */
-   79  1              PDTtoPUTflag_u8_Sig = 0;      /* PowerDown到PowerUpTest模式标志位*/
-   80  1              MaintenStatus_u8_Sig = 0;     /* 维护模式标志位  */
-   81  1              IGNStatus_u8_Sig = 0;         /* 点火信号状态*/
-   82  1              MaintenLevel_u8_Sig = 0;      /* 维护信号状态*/
-   83  1              FaultLevel_u8_Sig = 0;        /* 目前所发生故障的等级*/
-   84  1              VehicleStatus_u8_Sig = 0;     /* 车辆状态 是否为停止状态 */
-   85  1              VehSpeedFault_u8_Sig = 0;     /* 车速故障标识位*/
-   86  1              TimeBaseCounter = -1;         /*时序计数器初始化赋值*/
-   87  1      
-   88  1              MCTimer = 0;
-   89  1              g_cylinderExhaustEnFlag = FALSE;
-   90  1              g_cylinderExhaustInformFlag = FALSE;
-   91  1              g_ecuResetFlag = FALSE;
-   92  1              g_pvTestFlag = FALSE;
-   93  1              CanEnbale_v_g();            /*CAN0、CAN1 transfer使能*/
-   94  1      }
-   95         
-   96         
-   97         /***********************************************************************
-   98         *  Name        : Rte_ReadSignalSts
-   99         *  Description : Get IO state.
-  100         *  Parameter   : None
-  101         *  Returns     : None
-  102         ***********************************************************************/
-  103         void Rte_ReadSignalSts(void)
-  104         {
-  105  1              const T_ADC *ptr_Adc = Adc_SampleData();
-  106  1              
-  107  1              if(FALSE == g_adcSimulateDataFlag)
-  108  1              {
-  109  2                      g_inHwBrakeSwSts = IO_ubReadPin(IO_P4_0); /* read brake switch signal */
-  110  2                      
-  111  2      #if(1 == EXHAUST_MODE)
-                              if(0 == g_inHwBrakeSwSts)
-                              {
-                                      g_cylinderExhaustEnFlag = TRUE;
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 3   
+   53                 116,117,118,119,120,121,122,123,124,125
+   54         };
+   55         
+   56         /**** Declaration of functions ****/
+   57         
+   58         
+   59         
+   60         /***********************************************************************
+   61         *  Name        : Rte_Init
+   62         *  Description : initialization of variable and Enable CAN.
+   63         *  Parameter   : None
+   64         *  Returns     : None
+   65         ***********************************************************************/
+   66         void Rte_Init(void)
+   67         {
+   68  1              SystemMode_u8_Sig = 0;        /* 系统模式 */
+   69  1              PDTFinish_u8_Sig = 0;         /* PowerDown模式结束标志位 */
+   70  1              PUTFinish_u8_Sig = 0;         /* PowerUpTest模式结束标志位 */
+   71  1              PDFinish_u8_Sig = 0;          /* PowerDownTest模式结束标志位*/
+   72  1              NormalFinish_u8_Sig = 0;      /* Normal模式结束标志位 */
+   73  1              PDTtoPUTflag_u8_Sig = 0;      /* PowerDown到PowerUpTest模式标志位*/
+   74  1              MaintenStatus_u8_Sig = 0;     /* 维护模式标志位  */
+   75  1              IGNStatus_u8_Sig = 0;         /* 点火信号状态*/
+   76  1              MaintenLevel_u8_Sig = 0;      /* 维护信号状态*/
+   77  1              FaultLevel_u8_Sig = 0;        /* 目前所发生故障的等级*/
+   78  1              VehicleStatus_u8_Sig = 0;     /* 车辆状态 是否为停止状态 */
+   79  1              VehSpeedFault_u8_Sig = 0;     /* 车速故障标识位*/
+   80  1              
+   81  1              MCTimer = 0;
+   82  1              gRTE_pidTypeSw = 0;
+   83  1              g_pedalInterveneFlag = FALSE;
+   84  1              gRTE_wireControlPressureLoopFlag = FALSE;
+   85  1              g_calibrationParaChangeMask = 0;
+   86  1              g_wireControlEnFlag = FALSE;
+   87  1              g_cylinderExhaustEnFlag = FALSE;
+   88  1              g_cylinderExhaustInformFlag = FALSE;
+   89  1              g_ecuResetFlag = FALSE;
+   90  1              g_pvTestFlag = FALSE;
+   91  1              CanEnbale_v_g();            /*CAN0、CAN1 transfer使能*/
+   92  1      }
+   93         
+   94         /***********************************************************************
+   95         *  Name        : Rte_ReadSignalSts
+   96         *  Description : Get IO state.
+   97         *  Parameter   : None
+   98         *  Returns     : None
+   99         ***********************************************************************/
+  100         void Rte_ReadSignalSts(void)
+  101         {
+  102  1              if(FALSE == g_adcSimulateDataFlag)
+  103  1              {
+  104  2                      g_inHwBrakeSwSts = IO_ubReadPin(IO_P4_0); /* read brake switch signal */
+  105  2              }
+  106  1              else
+  107  1              {
+  108  2                      if(14 == g_adcSimulateDataIndex)
+  109  2                      {
+  110  3                              if(0 == g_adcSimulateData)
+  111  3                              {
+  112  4                                      g_inBrakeSwValidSts = FALSE;
+  113  4                              }
+  114  3                              else
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 3   
 
-                                      g_cylinderInitLocationValue = ptr_Adc->mainCylinderTrip_Adc[0] + 10;
-                                      g_brakePedalInitLocationValue = ptr_Adc->brakePedalTrip_Adc[0] + 10;
-                              }
-                              
-                              if(ptr_Adc->brakePedalTrip_Adc[0] > g_brakePedalInitLocationValue)
-                              {
-                                      g_exhaustObjPressure = (ptr_Adc->brakePedalTrip_Adc[0] - g_brakePedalInitLocationValue) / 2;
-                              
-                                      if(g_exhaustObjPressure > 100)
+  115  3                              {
+  116  4                                      g_inBrakeSwValidSts = TRUE;
+  117  4                              }
+  118  3                      }
+  119  2              }
+  120  1              
+  121  1              g_inIGNSts = IO_ubReadPin(IO_P7_3); /* read IGN signal */
+  122  1              g_inPreDriverErrorSts = IO_ubReadPin(IO_P6_0); /* read pre driver error status */
+  123  1              g_inWatchDogSts = IO_ubReadPin(IO_P4_3); /* read watch dog status */
+  124  1              
+  125  1              g_PedalPowerSts = IO_ubReadPin(IO_P7_4); /* read pedal power status */
+  126  1              g_CylinderPowerSts = IO_ubReadPin(IO_P7_1); /* read cylinder power status */
+  127  1              g_MainRelaySts = IO_ubReadPin(IO_P10_4); /* read main relay status */
+  128  1              g_PredriverEnableSts = IO_ubReadPin(IO_P0_7); /* read pre driver enable status */
+  129  1              
+  130  1      #if(2 == BRAKE_SIGNAL_SOURCE)
+                      g_inBrakeSwValidSts = (g_inHwBrakeSwSts == 0 ? TRUE : FALSE); /* The brake switch signal comes from the h
+             -ardware */
+              #elif(3 == BRAKE_SIGNAL_SOURCE)
+                      g_inBrakeSwValidSts = VCU_BrakePedalSts; /* The brake switch signal comes from CAN network */
+              #else
+  135  1              g_inBrakeSwValidSts = FALSE;
+  136  1      #endif
+  137  1      }
+  138         
+  139         
+  140         /***********************************************************************
+  141         *  Name        : Rte_Runable
+  142         *  Description : Determines whether the application data has changed and writes the changes synchronously 
+             -to EEPROM.
+  143         *  Parameter   : None
+  144         *  Returns     : None
+  145         ***********************************************************************/
+  146         void Rte_Runable(void)
+  147         {
+  148  1              static INT8U u8_periodCnt = 0;
+  149  1              static INT8U initValueTemp[5] = {0};
+  150  1              
+  151  1              switch(u8_periodCnt)
+  152  1              {
+  153  2                      case 0:
+  154  2                      {
+  155  3                              //Control damping protection
+  156  3                              if(FALSE == Std_DataCompare(&gRTE_pwmProtectThreshold, gEEP_pwmProtectThreshold, PWM_PROTECT_FAULT_VALU
+             -E_LENGTH - 1))
+  157  3                              {
+  158  4                                      Std_DataCopy(&gRTE_pwmProtectThreshold, gEEP_pwmProtectThreshold, PWM_PROTECT_FAULT_VALUE_LENGTH - 1);
+  159  4                                      Rte_WriteEepromData(gEEP_pwmProtectThreshold, PWM_PROTECT_FAULT_VALUE_ADDRESS, PWM_PROTECT_FAULT_VALUE
+             -_LENGTH);
+  160  4                              }
+  161  3                              if(FALSE == Std_DataCompare(&gRTE_controlMaxCurrent, gEEP_controlMaxCurrent, MAX_OBJ_CURRENT_VALUE_LENG
+             -TH - 1))
+  162  3                              {
+  163  4                                      Std_DataCopy(&gRTE_controlMaxCurrent, gEEP_controlMaxCurrent, MAX_OBJ_CURRENT_VALUE_LENGTH - 1);
+  164  4                                      Rte_WriteEepromData(gEEP_controlMaxCurrent, MAX_OBJ_CURRENT_VALUE_ADDRESS, MAX_OBJ_CURRENT_VALUE_LENGT
+             -H);
+  165  4                              }
+  166  3                              if(FALSE == Std_DataCompare(&gRTE_dampMinCylinder, gEEP_dampMinCylinder, DAMP_MIN_CYLINDER_VALUE_LENGTH
+             - - 1))
+  167  3                              {
+  168  4                                      Std_DataCopy(&gRTE_dampMinCylinder, gEEP_dampMinCylinder, DAMP_MIN_CYLINDER_VALUE_LENGTH - 1);
+  169  4                                      Rte_WriteEepromData(gEEP_dampMinCylinder, DAMP_MIN_CYLINDER_VALUE_ADDRESS, DAMP_MIN_CYLINDER_VALUE_LEN
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 4   
+
+             -GTH);
+  170  4                              }
+  171  3                              if(FALSE == Std_DataCompare(&gRTE_dampMinCurrent, gEEP_dampMinCurrent, DAMP_MIN_CURRENT_VALUE_LENGTH - 
+             -1))
+  172  3                              {
+  173  4                                      Std_DataCopy(&gRTE_dampMinCurrent, gEEP_dampMinCurrent, DAMP_MIN_CURRENT_VALUE_LENGTH - 1);
+  174  4                                      Rte_WriteEepromData(gEEP_dampMinCurrent, DAMP_MIN_CURRENT_VALUE_ADDRESS, DAMP_MIN_CURRENT_VALUE_LENGTH
+             -);
+  175  4                              }
+  176  3                              if(FALSE == Std_DataCompare(&gRTE_dampMinPressure, gEEP_dampMinPressure, DAMP_MIN_PRESSURE_VALUE_LENGTH
+             - - 1))
+  177  3                              {
+  178  4                                      Std_DataCopy(&gRTE_dampMinPressure, gEEP_dampMinPressure, DAMP_MIN_PRESSURE_VALUE_LENGTH - 1);
+  179  4                                      Rte_WriteEepromData(gEEP_dampMinPressure, DAMP_MIN_PRESSURE_VALUE_ADDRESS, DAMP_MIN_PRESSURE_VALUE_LEN
+             -GTH);
+  180  4                              }
+  181  3              
+  182  3                              u8_periodCnt = 1;
+  183  3                              break;
+  184  3                      }
+  185  2                      
+  186  2                      case 1:
+  187  2                      {
+  188  3                              if(((INT8U)gRTE_pedalInitValue[0] != gEEP_pedalLocationInit[0])
+  189  3                                      || ((INT8U)gRTE_pedalInitValue[1] != gEEP_pedalLocationInit[1])
+  190  3                                      || ((INT8U)gRTE_cylinderInitValue[0] != gEEP_cylinderLocationInit[0])
+  191  3                                      || ((INT8U)gRTE_cylinderInitValue[1] != gEEP_cylinderLocationInit[1]))
+  192  3                              {
+  193  4                                      initValueTemp[0] = (INT8U)gRTE_pedalInitValue[0];
+  194  4                                      initValueTemp[1] = (INT8U)gRTE_pedalInitValue[1];
+  195  4                                      initValueTemp[2] = (INT8U)gRTE_cylinderInitValue[0];
+  196  4                                      initValueTemp[3] = (INT8U)gRTE_cylinderInitValue[1];
+  197  4                                      initValueTemp[4] = 10;
+  198  4                                      
+  199  4                                      CopyString_v_g(initValueTemp, PEDAL_INIT_LOCATION_VALUE_ADDRESS, 5, 1);
+  200  4                              }
+  201  3                              
+  202  3      #if 0
+                                      //ICAS System pedal/cylinder init AD value parameters   
+                                      if(FALSE == Std_DataCompare(gRTE_pedalInitValue, gEEP_pedalLocationInit, PEDAL_INIT_LOCATION_VALUE_LENG
+             -TH - 1))
                                       {
-                                              g_exhaustObjPressure = 100;
+                                              Std_DataCopy(gRTE_pedalInitValue, gEEP_pedalLocationInit, PEDAL_INIT_LOCATION_VALUE_LENGTH - 1);
+                                              Rte_WriteEepromData(gEEP_pedalLocationInit, PEDAL_INIT_LOCATION_VALUE_ADDRESS, PEDAL_INIT_LOCATION_VAL
+             -UE_LENGTH);
                                       }
-                              }
-                              else
-                              {
-                                      g_exhaustObjPressure = 0;
-                              }
+                                      if(FALSE == Std_DataCompare(gRTE_cylinderInitValue, gEEP_cylinderLocationInit, CYLINDER_INIT_LOCATION_V
+             -ALUE_LENGTH - 1))
+                                      {
+                                              Std_DataCopy(gRTE_cylinderInitValue, gEEP_cylinderLocationInit, CYLINDER_INIT_LOCATION_VALUE_LENGTH - 
+             -1);
+                                              Rte_WriteEepromData(gEEP_cylinderLocationInit, CYLINDER_INIT_LOCATION_VALUE_ADDRESS, CYLINDER_INIT_LOC
+             -ATION_VALUE_LENGTH);
+                                      }
               #endif
-  133  2              }
-  134  1              else
-  135  1              {
-  136  2                      if(14 == g_adcSimulateDataIndex)
-  137  2                      {
-  138  3                              if(0 == g_adcSimulateData)
-  139  3                              {
-  140  4                                      g_inBrakeSwValidSts = FALSE;
-  141  4                              }
-  142  3                              else
-  143  3                              {
-  144  4                                      g_inBrakeSwValidSts = TRUE;
-  145  4                              }
-  146  3                      }
-  147  2              }
-  148  1              
-  149  1              g_inIGNSts = IO_ubReadPin(IO_P7_3); /* read IGN signal */
-  150  1              g_inPreDriverSts = IO_ubReadPin(IO_P6_0); /* read pre driver status */
-  151  1              g_inWatchDogSts = IO_ubReadPin(IO_P4_3); /* read watch dog status */
-  152  1              
-  153  1              g_PedalPowerSts = IO_ubReadPin(IO_P7_4); /* read pedal power status */
-  154  1              g_CylinderPowerSts = IO_ubReadPin(IO_P7_1); /* read cylinder power status */
-  155  1              g_MainRelaySts = IO_ubReadPin(IO_P10_4); /* read main relay status */
-  156  1              g_PredriverSts = IO_ubReadPin(IO_P0_7); /* read pre driver status */
-  157  1              
-  158  1              
-  159  1              //g_inBrakeSwValidSts = (g_inHwBrakeSwSts == 0 ? TRUE : FALSE); /* The brake switch signal comes from the
-             - hardware */
-  160  1              g_inBrakeSwValidSts = VCU_BrakePedalSts; /* The brake switch signal comes from CAN network */
-  161  1      }
-  162         
-  163         
-  164         /***********************************************************************
-  165         *  Name        : Rte_binarySearch
-  166         *  Description : Binary search algorithm to find the value position in a descending table.
-  167         *  Parameter   : None
-  168         *  Returns     : None
-  169         ***********************************************************************/
-  170         static INT8U Rte_binarySearch(FP32 *array, INT8U tabLength, INT16U data)//表中数据从大到小
-  171         {
-  172  1              INT8U start, end, middle = 0;
-  173  1              INT8U i;
-  174  1      
-  175  1          start = 0;
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 4   
+  215  3                              u8_periodCnt = 2;
+  216  3                              break;
+  217  3                      }
+  218  2                      
+  219  2                      case 2:
+  220  2                      {
+  221  3                              //Position loop PID, KP, KI, KD term parameters
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 5   
 
-  176  1          end = tabLength - 1;
-  177  1          i = 0;
-  178  1      
-  179  1          if (data >= array[start]) return start;
-  180  1          else if (data <= array[end]) return end;
-  181  1      
-  182  1          while (start < end)
-  183  1          {
-  184  2              middle = (start + end) / 2;
-*** WARNING C192 IN LINE 184 OF src\app\rte\rte.c: '=': value truncated
-  185  2      
-  186  2              if (data == array[middle]) 
-  187  2                              break;
-  188  2              if (data < array[middle] && data > array[middle + 1]) 
-  189  2                              break;
-  190  2      
-  191  2              if (data > array[middle]) 
-  192  2                              end = middle;
-  193  2              else 
-  194  2                              start = middle;
-  195  2      
-  196  2              if (i++ > tabLength) 
-  197  2                              break;
-  198  2          }
-  199  1      
-  200  1          if (start > end) 
-  201  1                      return 0;
-  202  1      
-  203  1          return middle;
-  204  1      }
-  205         
-  206         
-  207         /***********************************************************************
-  208         *  Name        : Rte_calcTemperature
-  209         *  Description : According to the adc value, look up the table to get the temperature value.
-  210         *  Parameter   : None
-  211         *  Returns     : None
-  212         ***********************************************************************/
-  213         INT8S Rte_calcTemperature(INT16U data)
-  214         {
-  215  1              FP32 temp = 0;
-  216  1              INT8U temploc = 0;
-  217  1      
-  218  1          temploc = Rte_binarySearch(temperatureAdTabble, 50, data);
-  219  1      
-  220  1          temp = (temperatureAdTabble[temploc] - data) / \
-  221  1                      (temperatureAdTabble[temploc] - temperatureAdTabble[temploc + 1]) * \
-  222  1                      (temperatureValueTable[temploc + 1] - temperatureValueTable[temploc]) + \
-  223  1                      temperatureValueTable[temploc];
-  224  1      
-  225  1          return (INT8S)temp;
-  226  1      }
-  227         /***********************************************************************
-  228         *  Name        : Sin_Tap
-  229         *  Description : None.
-  230         *  Parameter   : None
-  231         *  Returns     : None
-  232         ***********************************************************************/
-  233         FP32 Sin_Tap(FP32 pi)
-  234         {
-  235  1              INT16S n;
-  236  1          FP32 a;
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 5   
+  222  3                              if(FALSE == Std_DataCompare(&gRTE_locationKp, gEEP_locationKp, PID_PARA_LENGTH - 1))
+  223  3                              {
+  224  4                                      Std_DataCopy(&gRTE_locationKp, gEEP_locationKp, PID_PARA_LENGTH - 1);
+  225  4                                      Rte_WriteEepromData(gEEP_locationKp, LOCATION_LOOP_KP_ADDRESS, PID_PARA_LENGTH);
+  226  4                              }
+  227  3                              if(FALSE == Std_DataCompare(&gRTE_locationKi, gEEP_locationKi, PID_PARA_LENGTH - 1))
+  228  3                              {
+  229  4                                      Std_DataCopy(&gRTE_locationKi, gEEP_locationKi, PID_PARA_LENGTH - 1);
+  230  4                                      Rte_WriteEepromData(gEEP_locationKi, LOCATION_LOOP_KI_ADDRESS, PID_PARA_LENGTH);
+  231  4                              }
+  232  3                              if(FALSE == Std_DataCompare(&gRTE_locationKd, gEEP_locationKd, PID_PARA_LENGTH - 1))
+  233  3                              {
+  234  4                                      Std_DataCopy(&gRTE_locationKd, gEEP_locationKd, PID_PARA_LENGTH - 1);
+  235  4                                      Rte_WriteEepromData(gEEP_locationKd, LOCATION_LOOP_KD_ADDRESS, PID_PARA_LENGTH);
+  236  4                              }
+  237  3      
+  238  3                              //Current loop PID, KP, KI, KD term parameters
+  239  3                              if(FALSE == Std_DataCompare(&gRTE_currentKp, gEEP_currentKp, PID_PARA_LENGTH - 1))
+  240  3                              {
+  241  4                                      Std_DataCopy(&gRTE_currentKp, gEEP_currentKp, PID_PARA_LENGTH - 1);
+  242  4                                      Rte_WriteEepromData(gEEP_currentKp, CURRENT_LOOP_KP_ADDRESS, PID_PARA_LENGTH);
+  243  4                              }
+  244  3                              if(FALSE == Std_DataCompare(&gRTE_currentKi, gEEP_currentKi, PID_PARA_LENGTH - 1))
+  245  3                              {
+  246  4                                      Std_DataCopy(&gRTE_currentKi, gEEP_currentKi, PID_PARA_LENGTH - 1);
+  247  4                                      Rte_WriteEepromData(gEEP_currentKi, CURRENT_LOOP_KI_ADDRESS, PID_PARA_LENGTH);
+  248  4                              }
+  249  3                              if(FALSE == Std_DataCompare(&gRTE_currentKd, gEEP_currentKd, PID_PARA_LENGTH - 1))
+  250  3                              {
+  251  4                                      Std_DataCopy(&gRTE_currentKd, gEEP_currentKd, PID_PARA_LENGTH - 1);
+  252  4                                      Rte_WriteEepromData(gEEP_currentKd, CURRENT_LOOP_KD_ADDRESS, PID_PARA_LENGTH);
+  253  4                              }
+  254  3              
+  255  3                              u8_periodCnt = 3;
+  256  3                              break;
+  257  3                      }
+  258  2                      
+  259  2                      case 3:
+  260  2                      {
+  261  3                              //only position loop PID, KP, KI, KD term parameters
+  262  3                              if(FALSE == Std_DataCompare(&gRTE_onlyPositionKp, gEEP_onlyPositionKp, PID_PARA_LENGTH - 1))
+  263  3                              {
+  264  4                                      Std_DataCopy(&gRTE_onlyPositionKp, gEEP_onlyPositionKp, PID_PARA_LENGTH - 1);
+  265  4                                      Rte_WriteEepromData(gEEP_onlyPositionKp, ONLYLOCATION_LOOP_KP_ADDRESS, PID_PARA_LENGTH);
+  266  4                              }
+  267  3                              if(FALSE == Std_DataCompare(&gRTE_onlyPositionKi, gEEP_onlyPositionKi, PID_PARA_LENGTH - 1))
+  268  3                              {
+  269  4                                      Std_DataCopy(&gRTE_onlyPositionKi, gEEP_onlyPositionKi, PID_PARA_LENGTH - 1);
+  270  4                                      Rte_WriteEepromData(gEEP_onlyPositionKi, ONLYLOCATION_LOOP_KI_ADDRESS, PID_PARA_LENGTH);
+  271  4                              }
+  272  3                              if(FALSE == Std_DataCompare(&gRTE_onlyPositionKd, gEEP_onlyPositionKd, PID_PARA_LENGTH - 1))
+  273  3                              {
+  274  4                                      Std_DataCopy(&gRTE_onlyPositionKd, gEEP_onlyPositionKd, PID_PARA_LENGTH - 1);
+  275  4                                      Rte_WriteEepromData(gEEP_onlyPositionKd, ONLYLOCATION_LOOP_KD_ADDRESS, PID_PARA_LENGTH);
+  276  4                              }               
+  277  3                              
+  278  3                              //pressure loop PID, KP, KI, KD term parameters
+  279  3                              if(FALSE == Std_DataCompare(&gRTE_pressureKp, gEEP_pressureKp, PID_PARA_LENGTH - 1))
+  280  3                              {
+  281  4                                      Std_DataCopy(&gRTE_pressureKp, gEEP_pressureKp, PID_PARA_LENGTH - 1);
+  282  4                                      Rte_WriteEepromData(gEEP_pressureKp, PRESSURE_LOOP_KP_ADDRESS, PID_PARA_LENGTH);
+  283  4                              }
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 6   
 
-  237  1      
-  238  1          n=(INT16S)(pi * TAB_N / 2 / PI);             // SIN_TAB[i] = sin(2*PI*i/TAB_N);
-  239  1              
-  240  1          if(n >= 0 && n <= TAB_N / 4 )                // 0 ~ PI/2
-  241  1          {
-  242  2              a = SIN_TAB[n];
-  243  2          }
-  244  1          else if(n > TAB_N / 4 && n <= TAB_N / 2)    // PI ~ 3/4*PI
-  245  1          {
-  246  2              n = TAB_N/2 - n;
-  247  2              a = SIN_TAB[n];
-  248  2          }
-  249  1          else if( n > TAB_N / 2 && n <= TAB_N * 3 / 4)
-  250  1              {
-  251  2                  n = n - TAB_N / 2;
-  252  2                      a = SIN_TAB[n] * (-1);
-  253  2              }
-  254  1              else
-  255  1              {
-  256  2                      n = TAB_N - n;
-  257  2                      a = SIN_TAB[n] * (-1);
-  258  2              }
-  259  1          return a;   
-  260  1      }
-  261         
-  262         INT8U Rte_PreDriverOpenDelay(void)
-  263         {
-  264  1              static INT8U u8PreDriverOpenCnt = 0;
-  265  1              
-  266  1              if(u8PreDriverOpenCnt >= 40)
-  267  1              {
-  268  2                      IO_vSetPin(IO_P0_7); /* open pre driver */
-  269  2              
-  270  2                      return 1;
-  271  2              }
-  272  1              else
-  273  1              {
-  274  2                      u8PreDriverOpenCnt++;
-  275  2                      
-  276  2                      IO_vResetPin(IO_P0_7); /* close pre driver */
-  277  2                      return 0;
-  278  2              }
-  279  1      }
-  280         
-  281         void Rte_WaitDriverRampDown(void)
-  282         {
-  283  1              static INT16U u16PreDriverRampDownCnt = 0;
-  284  1              
-  285  1          if(0 == IGNStatus_u8_Sig)
-  286  1          {
-  287  2              if(u16PreDriverRampDownCnt >= 40)
-  288  2              {
-  289  3                  NormalFinish_u8_Sig = 1;
-  290  3              } 
-  291  2                      else
-  292  2                      {
-  293  3                              u16PreDriverRampDownCnt++;
-  294  3              }
-  295  2          } 
-  296  1              else
-  297  1              {
-  298  2              u16PreDriverRampDownCnt = 0;
-C166 COMPILER V7.57.0, RTE                                                                 11/13/2020 15:09:26 PAGE 6   
+  284  3                              if(FALSE == Std_DataCompare(&gRTE_pressureKi, gEEP_pressureKi, PID_PARA_LENGTH - 1))
+  285  3                              {
+  286  4                                      Std_DataCopy(&gRTE_pressureKi, gEEP_pressureKi, PID_PARA_LENGTH - 1);
+  287  4                                      Rte_WriteEepromData(gEEP_pressureKi, PRESSURE_LOOP_KI_ADDRESS, PID_PARA_LENGTH);
+  288  4                              }
+  289  3                              if(FALSE == Std_DataCompare(&gRTE_pressureKd, gEEP_pressureKd, PID_PARA_LENGTH - 1))
+  290  3                              {
+  291  4                                      Std_DataCopy(&gRTE_pressureKd, gEEP_pressureKd, PID_PARA_LENGTH - 1);
+  292  4                                      Rte_WriteEepromData(gEEP_pressureKd, PRESSURE_LOOP_KD_ADDRESS, PID_PARA_LENGTH);
+  293  4                              }       
+  294  3              
+  295  3                              u8_periodCnt = 4;
+  296  3                              break;
+  297  3                      }
+  298  2                      
+  299  2                      case 4:
+  300  2                      {
+  301  3                              //booster
+  302  3                              if(FALSE == Std_DataCompare(pedal_To_cylinder, gEEP_pedal_To_cylinder, PEDAL_TO_CYLINDER_LENGTH - 1))
+  303  3                              {
+  304  4                                      Std_DataCopy(pedal_To_cylinder, gEEP_pedal_To_cylinder, PEDAL_TO_CYLINDER_LENGTH - 1);
+  305  4                                      Rte_WriteEepromData(gEEP_pedal_To_cylinder, PEDAL_TO_CYLINDER_ADDRESS, PEDAL_TO_CYLINDER_LENGTH);
+  306  4                              }
+  307  3                              if(FALSE == Std_DataCompare(cylinder_To_current, gEEP_cylinder_To_current, CYLINDER_TO_CURRENT_LENGTH -
+             - 1))
+  308  3                              {
+  309  4                                      Std_DataCopy(cylinder_To_current, gEEP_cylinder_To_current, CYLINDER_TO_CURRENT_LENGTH - 1);
+  310  4                                      Rte_WriteEepromData(gEEP_cylinder_To_current, CYLINDER_TO_CURRENT_ADDRESS, CYLINDER_TO_CURRENT_LENGTH)
+             -;
+  311  4                              }
+  312  3                              if(FALSE == Std_DataCompare(current_To_pwm, gEEP_current_To_pwm, CURRENT_TO_PWM_LENGTH - 1))
+  313  3                              {
+  314  4                                      Std_DataCopy(current_To_pwm, gEEP_current_To_pwm, CURRENT_TO_PWM_LENGTH - 1);
+  315  4                                      Rte_WriteEepromData(gEEP_current_To_pwm, CURRENT_TO_PWM_ADDRESS, CURRENT_TO_PWM_LENGTH);
+  316  4                              }
+  317  3                              if(FALSE == Std_DataCompare(pedal_To_current, gEEP_pedal_To_current, PEDAL_TO_CURRENT_LENGTH - 1))
+  318  3                              {
+  319  4                                      Std_DataCopy(pedal_To_current, gEEP_pedal_To_current, PEDAL_TO_CURRENT_LENGTH - 1);
+  320  4                                      Rte_WriteEepromData(gEEP_pedal_To_current, PEDAL_TO_CURRENT_ADDRESS, PEDAL_TO_CURRENT_LENGTH);
+  321  4                              }
+  322  3                              
+  323  3                              u8_periodCnt = 5;
+  324  3                              break;
+  325  3                      }
+  326  2                      
+  327  2                      case 5:
+  328  2                      {
+  329  3                              //wireControl
+  330  3                              if(FALSE == Std_DataCompare(pressure_To_cylinder, gEEP_pressure_To_cylinder, PRESSURE_TO_CYLINDER_LENGT
+             -H - 1))
+  331  3                              {
+  332  4                                      Std_DataCopy(pressure_To_cylinder, gEEP_pressure_To_cylinder, PRESSURE_TO_CYLINDER_LENGTH - 1);
+  333  4                                      Rte_WriteEepromData(gEEP_pressure_To_cylinder, PRESSURE_TO_CYLINDER_ADDRESS, PRESSURE_TO_CYLINDER_LENG
+             -TH);
+  334  4                              }
+  335  3                              if(FALSE == Std_DataCompare(cylinder_To_pressure, gEEP_cylinder_To_pressure, CYLINDER_TO_PRESSURE_LENGT
+             -H - 1))
+  336  3                              {
+  337  4                                      Std_DataCopy(cylinder_To_pressure, gEEP_cylinder_To_pressure, CYLINDER_TO_PRESSURE_LENGTH - 1);
+  338  4                                      Rte_WriteEepromData(gEEP_cylinder_To_pressure, CYLINDER_TO_PRESSURE_ADDRESS, CYLINDER_TO_PRESSURE_LENG
+             -TH);
+  339  4                              }
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 7   
 
-  299  2          }
-  300  1      }
-  301         
-  302         
-  303         INT8U Rte_IGNStatusHandle(void)
-  304         {
-  305  1              static INT8U u8IgOffTimeCnt = 0;
-  306  1              static INT8U u8IgOnTimeCnt = 0;
-  307  1      
-  308  1              if(0 == g_inIGNSts)
-  309  1              {
-  310  2                      u8IgOnTimeCnt = 0;
-  311  2                      u8IgOffTimeCnt++;
-  312  2                      if(u8IgOffTimeCnt >= IG_OFF_DURATION)
-  313  2                      {
-  314  3                              u8IgOffTimeCnt = IG_OFF_DURATION;
-  315  3                              return IG_OFF;
-  316  3                      }
-  317  2              }
-  318  1              else
-  319  1              {
-  320  2                      u8IgOffTimeCnt = 0;
-  321  2                      u8IgOnTimeCnt++;
-  322  2                      if(u8IgOnTimeCnt >= IG_ON_DURATION)
-  323  2                      {
-  324  3                              u8IgOnTimeCnt = IG_ON_DURATION;
-  325  3                              return IG_ON;
-  326  3                      }
-  327  2              }
-  328  1      
-  329  1              return IG_ON;
-  330  1      }
-  331         
+  340  3                              if(FALSE == Std_DataCompare(current_To_pressure, gEEP_current_To_pressure, CURRENT_TO_PRESSURE_LENGTH -
+             - 1))
+  341  3                              {
+  342  4                                      Std_DataCopy(current_To_pressure, gEEP_current_To_pressure, CURRENT_TO_PRESSURE_LENGTH - 1);
+  343  4                                      Rte_WriteEepromData(gEEP_current_To_pressure, CURRENT_TO_PRESSURE_ADDRESS, CURRENT_TO_PRESSURE_LENGTH)
+             -;
+  344  4                              }
+  345  3                              if(FALSE == Std_DataCompare(pressure_To_current, gEEP_pressure_To_current, PRESSURE_TO_CURRENT_LENGTH -
+             - 1))
+  346  3                              {
+  347  4                                      Std_DataCopy(pressure_To_current, gEEP_pressure_To_current, PRESSURE_TO_CURRENT_LENGTH - 1);
+  348  4                                      Rte_WriteEepromData(gEEP_pressure_To_current, PRESSURE_TO_CURRENT_ADDRESS, PRESSURE_TO_CURRENT_LENGTH)
+             -;
+  349  4                              }
+  350  3                              u8_periodCnt = 0;
+  351  3                              break;
+  352  3                      }
+  353  2              }
+  354  1      }
+  355         
+  356         
+  357         /***********************************************************************
+  358         *  Name        : Rte_sensorInitValueUpdate
+  359         *  Description : Dynamically determine whether the initial value of the sensor needs to be updated.
+  360         *  Parameter   : None
+  361         *  Returns     : None
+  362         ***********************************************************************/
+  363         void Rte_selfCalibrationInitValue(void)
+  364         {
+  365  1              static INT16U pedalSensorTimeCnt = 0;
+  366  1              static INT16U cylinderSensorTimeCnt = 0;
+  367  1              static INT16U pedalAdcMinValue[2] = {0xFFFF, 0xFFFF};
+  368  1              static INT16U cylinderAdcMinValue[2] = {0xFFFF, 0xFFFF};
+  369  1              
+  370  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
+  371  1              const T_BOOSTER* ptr_Booster = Booster_AlogrithmData();
+  372  1              const T_ADC* ptr_Adc = Adc_SampleData();
+  373  1                      
+  374  1              /* When the brake switch is invalid and the motor has no control output.
+  375  1                      Determine if the sensor initial value needs to be updated */
+  376  1              if((FALSE == g_inBrakeSwValidSts)
+  377  1                      && (PWM_AMPLITUDE_DEFAULT == ptr_Pwm->motorCtrl))
+  378  1              {
+  379  2                      /* pedal sensor Self-calibration */
+  380  2                      if((ABS(ptr_Booster->pedalRate) <= 20)
+  381  2                              && (FLTD_VOL_NORMAL == FLTD_GetAdcRangeType(FLTD_ADC_PEDAL_SENSOR_SIG1)))
+  382  2                      {                       
+  383  3                              /* Pedal signal stabilization time */
+  384  3                              if(pedalSensorTimeCnt < 500)
+  385  3                              {
+  386  4                                      pedalSensorTimeCnt++;
+  387  4                                      
+  388  4                                      if(ptr_Adc->brakePedalTrip_Adc[0] < pedalAdcMinValue[0])
+  389  4                                      {
+  390  5                                              pedalAdcMinValue[0] = ptr_Adc->brakePedalTrip_Adc[0];
+  391  5                                      }
+  392  4                                      if(ptr_Adc->brakePedalTrip_Adc[1] < pedalAdcMinValue[1])
+  393  4                                      {
+  394  5                                              pedalAdcMinValue[1] = ptr_Adc->brakePedalTrip_Adc[1];
+  395  5                                      }
+  396  4                              }
+  397  3                              else
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 8   
+
+  398  3                              {
+  399  4                                      if(ABSOLUTE(pedalAdcMinValue[0], gRTE_pedalInitValue[0]) > 20)
+  400  4                                      {
+  401  5                                              gRTE_pedalInitValue[0] = pedalAdcMinValue[0] + 10;
+  402  5                                      }
+  403  4                                      if(ABSOLUTE(pedalAdcMinValue[1], gRTE_pedalInitValue[1]) > 15)
+  404  4                                      {
+  405  5                                              gRTE_pedalInitValue[1] = pedalAdcMinValue[1] + 7;
+  406  5                                      }
+  407  4                              }
+  408  3                      }
+  409  2                      else
+  410  2                      {
+  411  3                              pedalSensorTimeCnt = 0;
+  412  3                              pedalAdcMinValue[0] = 0xFFFF;
+  413  3                              pedalAdcMinValue[1] = 0xFFFF;
+  414  3                      }
+  415  2                      
+  416  2                      /* cylinder sensor Self-calibration */
+  417  2                      if((ABS(ptr_Booster->cylinderRate) <= 20)
+  418  2                              && (FLTD_VOL_NORMAL == FLTD_GetAdcRangeType(FLTD_ADC_MAIN_CYLINDER_SIG1)))
+  419  2                      {
+  420  3                              /* Cylinder signal stabilization time */
+  421  3                              if(cylinderSensorTimeCnt < 500)
+  422  3                              {
+  423  4                                      cylinderSensorTimeCnt++;
+  424  4                                      
+  425  4                                      if(ptr_Adc->mainCylinderTrip_Adc[0] < cylinderAdcMinValue[0])
+  426  4                                      {
+  427  5                                              cylinderAdcMinValue[0] = ptr_Adc->mainCylinderTrip_Adc[0];
+  428  5                                      }
+  429  4                                      if(ptr_Adc->mainCylinderTrip_Adc[1] < cylinderAdcMinValue[1])
+  430  4                                      {
+  431  5                                              cylinderAdcMinValue[1] = ptr_Adc->mainCylinderTrip_Adc[1];
+  432  5                                      }
+  433  4                              }
+  434  3                              else
+  435  3                              {
+  436  4                                      if(ABSOLUTE(cylinderAdcMinValue[0], gRTE_cylinderInitValue[0]) > 20)
+  437  4                                      {
+  438  5                                              gRTE_cylinderInitValue[0] = cylinderAdcMinValue[0] + 10;
+  439  5                                      }
+  440  4                                      if(ABSOLUTE(cylinderAdcMinValue[1], gRTE_cylinderInitValue[1]) > 15)
+  441  4                                      {
+  442  5                                              gRTE_cylinderInitValue[1] = cylinderAdcMinValue[1] + 7;
+  443  5                                      }
+  444  4                              }
+  445  3                      }
+  446  2                      else
+  447  2                      {
+  448  3                              cylinderSensorTimeCnt = 0;
+  449  3                              cylinderAdcMinValue[0] = 0xFFFF;
+  450  3                              cylinderAdcMinValue[1] = 0xFFFF;
+  451  3                      }
+  452  2              }
+  453  1              else
+  454  1              {
+  455  2                      pedalSensorTimeCnt = 0;
+  456  2                      cylinderSensorTimeCnt = 0;
+  457  2                      pedalAdcMinValue[0] = 0xFFFF;
+  458  2                      pedalAdcMinValue[1] = 0xFFFF;
+  459  2                      cylinderAdcMinValue[0] = 0xFFFF;
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 9   
+
+  460  2                      cylinderAdcMinValue[1] = 0xFFFF;
+  461  2              }
+  462  1      }
+  463         
+  464         
+  465         /***********************************************************************
+  466         *  Name        : Rte_ReadEepromData
+  467         *  Description : Read EEPROM data.The temporary Buffer is read first, 
+  468                 and the CRC is calculated and updated to the application data after passing.
+  469         *  Parameter   : None
+  470         *  Returns     : None
+  471         ***********************************************************************/
+  472         BOOLEAN Rte_ReadEepromData(INT8U *DestAdr, INT32U SourceAdr, INT16U Len)
+  473         {
+  474  1              INT8U tempBuffer[128] = {0};
+  475  1              INT8U tempCrc = 0, i = 0;
+  476  1              BOOLEAN rtn_val = FALSE;
+  477  1              
+  478  1              if(Len > sizeof(tempBuffer))
+  479  1              {
+  480  2                      return rtn_val;
+  481  2              }
+  482  1              
+  483  1              /* There is data and CRC in EEPROM, which is read into the cache for verification */
+  484  1              ReadString_v_g(tempBuffer, SourceAdr, Len); //
+  485  1              
+  486  1              tempCrc = Rte_CRC8(tempBuffer, Len - 1);
+  487  1              
+  488  1              /* Check value is consistent, indicate data is valid, update data */
+  489  1              if(tempCrc == tempBuffer[Len - 1])
+  490  1              {
+  491  2                      for(i = 0; i < Len; i++)
+  492  2                      {
+  493  3                              DestAdr[i] = tempBuffer[i];
+  494  3                      }
+  495  2                      
+  496  2                      rtn_val = TRUE;
+  497  2              }
+  498  1              else
+  499  1              {
+  500  2                      rtn_val = FALSE;
+  501  2              }
+  502  1              
+  503  1              return rtn_val;
+  504  1      }
+  505         
+  506         /***********************************************************************
+  507         *  Name        : Rte_WriteEepromData
+  508         *  Description : CRC is calculated by applying the data and written to EEPROM.
+  509         *  Parameter   : None
+  510         *  Returns     : None
+  511         ***********************************************************************/
+  512         void Rte_WriteEepromData(void *SourceAdr, INT32U DestAdr, INT16U Len)
+  513         {
+  514  1              INT8U tempBuffer[128] = {0};
+  515  1              INT8U tempCrc = 0, i = 0;
+  516  1              INT8U *writeBuffer;
+  517  1              
+  518  1              if(Len > sizeof(tempBuffer))
+  519  1              {
+  520  2                      return;
+  521  2              }
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 10  
+
+  522  1              
+  523  1              writeBuffer = SourceAdr;
+  524  1              
+  525  1              for(i = 0; i < Len - 1; i++)
+  526  1              {
+  527  2                      tempBuffer[i] = writeBuffer[i];
+  528  2              }
+  529  1              tempCrc = Rte_CRC8(tempBuffer, Len - 1);
+  530  1              tempBuffer[Len - 1] = tempCrc;
+  531  1              
+  532  1              CopyString_v_g(tempBuffer, DestAdr, Len, 1);
+  533  1      }
+  534         
+  535         static INT8U Rte_CRC8(INT8U *num_buf, INT8U len)
+  536         {
+  537  1              INT8U i = 0, j = 0;
+  538  1              INT8U CRC = 0x4B;
+  539  1              INT8U genPoly = 0xC4;
+  540  1              
+  541  1          for (i = 0; i < len; i++)
+  542  1          {
+  543  2              CRC ^= *(num_buf + i);
+  544  2          
+  545  2              for(j = 0; j < 8; j++)
+  546  2              {
+  547  3                  if(CRC & 0x80 )
+  548  3                      CRC = (CRC << 1) ^ genPoly;
+  549  3                  else
+  550  3                      CRC <<= 1;
+  551  3              }
+  552  2          }
+  553  1          return (INT8U)(CRC & 0xff);
+  554  1      }
+  555         
+  556         
+  557         
+  558         /***********************************************************************
+  559         *  Name        : Rte_binarySearch
+  560         *  Description : Binary search algorithm to find the value position in a descending table.
+  561         *  Parameter   : None
+  562         *  Returns     : None
+  563         ***********************************************************************/
+  564         static INT8U Rte_binarySearch(FP32 *array, INT8U tabLength, INT16U data)//表中数据从大到小
+  565         {
+  566  1              INT8U start, end, middle = 0;
+  567  1              INT8U i;
+  568  1      
+  569  1          start = 0;
+  570  1          end = tabLength - 1;
+  571  1          i = 0;
+  572  1      
+  573  1          if (data >= array[start]) return start;
+  574  1          else if (data <= array[end]) return end;
+  575  1      
+  576  1          while (start < end)
+  577  1          {
+  578  2              middle = (start + end) / 2;
+*** WARNING C192 IN LINE 578 OF src\app\rte\rte.c: '=': value truncated
+  579  2      
+  580  2              if (data == array[middle]) 
+  581  2                              break;
+  582  2              if (data < array[middle] && data > array[middle + 1]) 
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 11  
+
+  583  2                              break;
+  584  2      
+  585  2              if (data > array[middle]) 
+  586  2                              end = middle;
+  587  2              else 
+  588  2                              start = middle;
+  589  2      
+  590  2              if (i++ > tabLength) 
+  591  2                              break;
+  592  2          }
+  593  1      
+  594  1          if (start > end) 
+  595  1                      return 0;
+  596  1      
+  597  1          return middle;
+  598  1      }
+  599         
+  600         
+  601         /***********************************************************************
+  602         *  Name        : Rte_calcTemperature
+  603         *  Description : According to the adc value, look up the table to get the temperature value.
+  604         *  Parameter   : None
+  605         *  Returns     : None
+  606         ***********************************************************************/
+  607         INT8S Rte_calcTemperature(INT16U data)
+  608         {
+  609  1              FP32 temp = 0;
+  610  1              INT8U temploc = 0;
+  611  1      
+  612  1          temploc = Rte_binarySearch(temperatureAdTabble, 50, data);
+  613  1      
+  614  1          temp = (temperatureAdTabble[temploc] - data) / \
+  615  1                      (temperatureAdTabble[temploc] - temperatureAdTabble[temploc + 1]) * \
+  616  1                      (temperatureValueTable[temploc + 1] - temperatureValueTable[temploc]) + \
+  617  1                      temperatureValueTable[temploc];
+  618  1      
+  619  1          return (INT8S)temp;
+  620  1      }
+  621         
+  622         
+  623         INT8U Rte_PreDriverOpenDelay(void)
+  624         {
+  625  1              static INT8U u8PreDriverOpenCnt = 0;
+  626  1              
+  627  1              if(u8PreDriverOpenCnt >= 40)
+  628  1              {
+  629  2                      IO_vSetPin(IO_P0_7); /* open pre driver */
+  630  2              
+  631  2                      return 1;
+  632  2              }
+  633  1              else
+  634  1              {
+  635  2                      u8PreDriverOpenCnt++;
+  636  2                      
+  637  2                      IO_vResetPin(IO_P0_7); /* close pre driver */
+  638  2                      return 0;
+  639  2              }
+  640  1      }
+  641         
+  642         void Rte_WaitDriverRampDown(void)
+  643         {
+  644  1              static INT16U u16PreDriverRampDownCnt = 0;
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 12  
+
+  645  1              
+  646  1          if(0 == IGNStatus_u8_Sig)
+  647  1          {
+  648  2              if(u16PreDriverRampDownCnt >= 40)
+  649  2              {
+  650  3                  NormalFinish_u8_Sig = 1;
+  651  3              } 
+  652  2                      else
+  653  2                      {
+  654  3                              u16PreDriverRampDownCnt++;
+  655  3              }
+  656  2          } 
+  657  1              else
+  658  1              {
+  659  2              u16PreDriverRampDownCnt = 0;
+  660  2          }
+  661  1      }
+  662         
+  663         
+  664         INT8U Rte_IGNStatusHandle(void)
+  665         {
+  666  1              static INT8U u8IgOffTimeCnt = 0;
+  667  1              static INT8U u8IgOnTimeCnt = 0;
+  668  1      
+  669  1              if(0 == g_inIGNSts)
+  670  1              {
+  671  2                      u8IgOnTimeCnt = 0;
+  672  2                      u8IgOffTimeCnt++;
+  673  2                      if(u8IgOffTimeCnt >= IG_OFF_DURATION)
+  674  2                      {
+  675  3                              u8IgOffTimeCnt = IG_OFF_DURATION;
+  676  3                              return IG_OFF;
+  677  3                      }
+  678  2              }
+  679  1              else
+  680  1              {
+  681  2                      u8IgOffTimeCnt = 0;
+  682  2                      u8IgOnTimeCnt++;
+  683  2                      if(u8IgOnTimeCnt >= IG_ON_DURATION)
+  684  2                      {
+  685  3                              u8IgOnTimeCnt = IG_ON_DURATION;
+  686  3                              return IG_ON;
+  687  3                      }
+  688  2              }
+  689  1      
+  690  1              return IG_ON;
+  691  1      }
+  692         
+  693         
+  694         INT16U lookupTable_1D(INT16U lookupIn, const INT16U bp0[], const INT16U table[], INT16U maxIndex)
+  695         {
+  696  1          INT16U lookupOutput = 0;
+  697  1          INT32U frac = 0;
+  698  1          INT16U yR_0d0 = 0;
+  699  1          INT16U iRght = 0;
+  700  1          INT16U iLeft = 0;
+  701  1      
+  702  1          if (lookupIn <= bp0[0UL])
+  703  1          {
+  704  2              iLeft = 0UL;
+  705  2              frac = 0UL;
+  706  2          }
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 13  
+
+  707  1          else if (lookupIn < bp0[maxIndex])
+  708  1          {
+  709  2              /* Binary Search */
+  710  2              frac = maxIndex >> 1UL;
+  711  2              iLeft = 0UL;
+  712  2              iRght = maxIndex;
+  713  2              while (iRght - iLeft > 1UL)
+  714  2              {
+  715  3                  if (lookupIn < bp0[frac])
+  716  3                  {
+  717  4                      iRght = frac;
+*** WARNING C192 IN LINE 717 OF src\app\rte\rte.c: '=': value truncated
+  718  4                  }
+  719  3                  else
+  720  3                  {
+  721  4                      iLeft = frac;
+*** WARNING C192 IN LINE 721 OF src\app\rte\rte.c: '=': value truncated
+  722  4                  }
+  723  3      
+  724  3                  frac = (iRght + iLeft) >> 1UL;
+  725  3              }
+  726  2      
+  727  2              frac = ((INT32U)(lookupIn - bp0[iLeft]) << 16) / (bp0[iLeft + 1UL] - bp0[iLeft]);
+  728  2          }
+  729  1          else
+  730  1          {
+  731  2              iLeft = maxIndex - 1UL;
+*** WARNING C192 IN LINE 731 OF src\app\rte\rte.c: '=': value truncated
+  732  2              frac = 65536UL;
+  733  2          }
+  734  1      
+  735  1          if (table[iLeft + 1UL] >= table[iLeft])
+  736  1          {
+  737  2              lookupOutput = (INT16U)(((table[iLeft + 1UL] - table[iLeft]) * frac) >> 16) + table[iLeft];
+  738  2          }
+  739  1          else
+  740  1          {
+  741  2              lookupOutput = table[iLeft] - (INT16U)(((table[iLeft] - table[iLeft + 1UL]) * frac) >> 16);
+  742  2          }
+  743  1      
+  744  1          return lookupOutput;
+  745  1      }
+  746         
+  747         
+  748         void Std_DataCopy(const void* src, void* tgt, INT16U dataLen)
+  749         {
+  750  1          INT16U index = 0;
+  751  1              INT8U *ptr_src;
+  752  1              INT8U *ptr_tgt;
+  753  1              
+  754  1              ptr_src = src;
+  755  1              ptr_tgt = tgt;
+  756  1              
+  757  1          for (index = 0; index < dataLen; index++)
+  758  1          {
+  759  2              ptr_tgt[index] = ptr_src[index];
+  760  2          }
+  761  1      }
+  762         
+  763         
+  764         BOOLEAN Std_DataCompare(const void* src, const void* tgt, INT16U dataLen)
+  765         {
+C166 COMPILER V7.57.0, RTE                                                                 12/25/2020 20:36:07 PAGE 14  
+
+  766  1          INT16U index = 0;
+  767  1              INT8U *ptr_src;
+  768  1              INT8U *ptr_tgt;
+  769  1              INT8U rtn_val = TRUE;
+  770  1              
+  771  1              ptr_src = src;
+  772  1              ptr_tgt = tgt;
+  773  1          
+  774  1          for (index = 0; index < dataLen; index++)
+  775  1          {
+  776  2              if (ptr_src[index] != ptr_tgt[index])
+  777  2              {
+  778  3                  rtn_val = FALSE;
+  779  3                              break;
+  780  3              }
+  781  2          }
+  782  1              
+  783  1          return rtn_val;
+  784  1      }
+  785         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        1268     --------
+  CODE SIZE        =        4400     --------
   NEAR-CONST SIZE  =    --------     --------
-  FAR-CONST SIZE   =    --------     --------
+  FAR-CONST SIZE   =         256     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =         129     --------
-  FAR-DATA SIZE    =         510     --------
+  NEAR-DATA SIZE   =         153     --------
+  FAR-DATA SIZE    =         250     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =         552     --------
+  INIT'L SIZE      =         330     --------
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  4 WARNING(S),  0 ERROR(S)

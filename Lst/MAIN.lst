@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 1   
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE MAIN
@@ -45,7 +45,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
    33         #include "SCS.h"
    34         #include "can_com.h"
    35         #include "OSAPI.h"
-   36         
+   36         #include "rte.h"
    37         // USER CODE END
    38         
    39         
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
    50         // @Defines
    51         //****************************************************************************
    52         
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 2   
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 2   
 
    53         // USER CODE BEGIN (MAIN_General,4)
    54         
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   112         //----------------------------------------------------------------------------
   113         // @Parameters    None
   114         //
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 3   
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 3   
 
   115         //----------------------------------------------------------------------------
   116         // @Date          2020/5/8
@@ -144,297 +144,299 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   128  1        // USER CODE END
   129  1      
   130  1        //   globally disable interrupts
-  131  1        PSW_IEN        =  0;   
-  132  1              
-  133  1        VECSEG = 0xC1;   //Bootloader Interrupt address offset
-  134  1      
-  135  1        ///  -----------------------------------------------------------------------
-  136  1        ///  Configuration of the System Clock:
-  137  1        ///  -----------------------------------------------------------------------
-  138  1        ///  - VCO clock used, input clock is connected
-  139  1        ///  - input frequency is 8.00 MHz
-  140  1        ///  - configured system frequency is 80.00 MHz
-  141  1      
-  142  1        MAIN_vUnlockProtecReg();     // unlock write security
-  143  1      
-  144  1        MAIN_vChangeFreq();          // load PLL control register
-  145  1      
-  146  1        //   -----------------------------------------------------------------------
-  147  1        //   SCU Interrupt Disable configuration:
-  148  1        //   -----------------------------------------------------------------------
-  149  1        SCU_INTDIS     =  0xFFFF;      // SCU Interrupt Disable Register
-  150  1      
-  151  1        //   -----------------------------------------------------------------------
-  152  1        //   Initialization of the Peripherals:
-  153  1        //   -----------------------------------------------------------------------
-  154  1      
-  155  1        //   initializes the Parallel Ports
-  156  1        IO_vInit();
-  157  1      
-  158  1        //   initializes the General Purpose Timer Unit (GPT1)
-  159  1        GPT1_vInit();
-  160  1      
-  161  1        //   initializes the General Purpose Timer Unit (GPT2)
-  162  1        GPT2_vInit();
-  163  1      
-  164  1        //   initializes the Capture / Compare Unit 61 (CCU61)
-  165  1        CCU61_vInit();
-  166  1      
-  167  1        //   initializes the Analog / Digital Converter  (ADC0)
-  168  1        ADC0_vInit();
-  169  1      
-  170  1        //   initializes the Analog / Digital Converter (ADC1)
-  171  1        ADC1_vInit();
-  172  1      
-  173  1        //   initializes the Real Time Clock (RTC)
-  174  1        RTC_vInit();
-  175  1      
-  176  1        CanCom_vInit();
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 4   
+  131  1        PSW_IEN        =  0;          
+  132  1        VECSEG = 0xC1;   //Bootloader Interrupt address offset
+  133  1      
+  134  1        ///  -----------------------------------------------------------------------
+  135  1        ///  Configuration of the System Clock:
+  136  1        ///  -----------------------------------------------------------------------
+  137  1        ///  - VCO clock used, input clock is connected
+  138  1        ///  - input frequency is 8.00 MHz
+  139  1        ///  - configured system frequency is 80.00 MHz
+  140  1      
+  141  1        MAIN_vUnlockProtecReg();     // unlock write security
+  142  1      
+  143  1        MAIN_vChangeFreq();          // load PLL control register
+  144  1      
+  145  1        //   -----------------------------------------------------------------------
+  146  1        //   SCU Interrupt Disable configuration:
+  147  1        //   -----------------------------------------------------------------------
+  148  1        SCU_INTDIS     =  0xFFFF;      // SCU Interrupt Disable Register
+  149  1      
+  150  1        //   -----------------------------------------------------------------------
+  151  1        //   Initialization of the Peripherals:
+  152  1        //   -----------------------------------------------------------------------
+  153  1      
+  154  1        //   initializes the Parallel Ports
+  155  1        IO_vInit();
+  156  1      
+  157  1        //   initializes the General Purpose Timer Unit (GPT1)
+  158  1        GPT1_vInit();
+  159  1        
+  160  1      #if(1 == GPT2_TIME_MEASURE_EN)
+                //   initializes the General Purpose Timer Unit (GPT2)
+                GPT2_vInit();         
+              #endif
+  164  1      
+  165  1      
+  166  1        //   initializes the Capture / Compare Unit 61 (CCU61)
+  167  1        CCU61_vInit();
+  168  1      
+  169  1        //   initializes the Analog / Digital Converter  (ADC0)
+  170  1        ADC0_vInit();
+  171  1      
+  172  1        //   initializes the Analog / Digital Converter (ADC1)
+  173  1        ADC1_vInit();
+  174  1      
+  175  1        //   initializes the Real Time Clock (RTC)
+  176  1        RTC_vInit();
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 4   
 
-  177  1        //   initializes the MultiCAN Module (CAN)
-  178  1        CAN_vInit();
-  179  1      
-  180  1      
-  181  1        //   -----------------------------------------------------------------------
-  182  1        //   Initialization of the Bank Select registers:
+  177  1      
+  178  1        CanCom_vInit();
+  179  1        //   initializes the MultiCAN Module (CAN)
+  180  1        CAN_vInit();
+  181  1      
+  182  1      
   183  1        //   -----------------------------------------------------------------------
-  184  1      
-  185  1      
-  186  1        //   -----------------------------------------------------------------------
-  187  1        //   SCU Interrupt Source Selection configuration:
+  184  1        //   Initialization of the Bank Select registers:
+  185  1        //   -----------------------------------------------------------------------
+  186  1      
+  187  1      
   188  1        //   -----------------------------------------------------------------------
-  189  1        SCU_ISSR       =  0x0000;      // SCU Interrupt Source Select Register
-  190  1      
-  191  1        // USER CODE BEGIN (Init,3)
+  189  1        //   SCU Interrupt Source Selection configuration:
+  190  1        //   -----------------------------------------------------------------------
+  191  1        SCU_ISSR       =  0x0000;      // SCU Interrupt Source Select Register
   192  1      
-  193  1        // USER CODE END
+  193  1        // USER CODE BEGIN (Init,3)
   194  1      
-  195  1        MAIN_vLockProtecReg();       // lock write security
+  195  1        // USER CODE END
   196  1      
-  197  1        //   globally enable interrupts
-  198  1        PSW_IEN        =  1;  
-  199  1      
-  200  1      
-  201  1      } //  End of function MAIN_vInit
-  202         
-  203         
-  204         //****************************************************************************
-  205         // @Function      void MAIN_vUnlockProtecReg(void) 
-  206         //
-  207         //----------------------------------------------------------------------------
-  208         // @Description   This function makes it possible to write one protected 
-  209         //                register.
-  210         //
-  211         //----------------------------------------------------------------------------
-  212         // @Returnvalue   None
-  213         //
-  214         //----------------------------------------------------------------------------
-  215         // @Parameters    None
-  216         //
-  217         //----------------------------------------------------------------------------
-  218         // @Date          2020/5/8
-  219         //
-  220         //****************************************************************************
-  221         
-  222         // USER CODE BEGIN (UnlockProtecReg,1)
+  197  1        MAIN_vLockProtecReg();       // lock write security
+  198  1      
+  199  1        //   globally enable interrupts
+  200  1        PSW_IEN        =  1;  
+  201  1      
+  202  1      
+  203  1      } //  End of function MAIN_vInit
+  204         
+  205         
+  206         //****************************************************************************
+  207         // @Function      void MAIN_vUnlockProtecReg(void) 
+  208         //
+  209         //----------------------------------------------------------------------------
+  210         // @Description   This function makes it possible to write one protected 
+  211         //                register.
+  212         //
+  213         //----------------------------------------------------------------------------
+  214         // @Returnvalue   None
+  215         //
+  216         //----------------------------------------------------------------------------
+  217         // @Parameters    None
+  218         //
+  219         //----------------------------------------------------------------------------
+  220         // @Date          2020/5/8
+  221         //
+  222         //****************************************************************************
   223         
-  224         // USER CODE END
+  224         // USER CODE BEGIN (UnlockProtecReg,1)
   225         
-  226         void MAIN_vUnlockProtecReg(void)
-  227         {
-  228  1        uword uwPASSWORD;
-  229  1      
-  230  1          SCU_SLC = 0xAAAA;                   // command 0
-  231  1          SCU_SLC = 0x5554;                   // command 1
-  232  1      
-  233  1          uwPASSWORD = SCU_SLS & 0x00FF;
-  234  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
-  235  1      
-  236  1          SCU_SLC = 0x9600 | uwPASSWORD;      // command 2
-  237  1          SCU_SLC = 0x0000;                   // command 3
-  238  1      
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 5   
+  226         // USER CODE END
+  227         
+  228         void MAIN_vUnlockProtecReg(void)
+  229         {
+  230  1        uword uwPASSWORD;
+  231  1      
+  232  1          SCU_SLC = 0xAAAA;                   // command 0
+  233  1          SCU_SLC = 0x5554;                   // command 1
+  234  1      
+  235  1          uwPASSWORD = SCU_SLS & 0x00FF;
+  236  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
+  237  1      
+  238  1          SCU_SLC = 0x9600 | uwPASSWORD;      // command 2
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 5   
 
-  239  1      } //  End of function MAIN_vUnlockProtecReg
-  240         
-  241         
-  242         //****************************************************************************
-  243         // @Function      void MAIN_vLockProtecReg(void) 
-  244         //
-  245         //----------------------------------------------------------------------------
-  246         // @Description   This function makes it possible to lock one protected 
-  247         //                register.
-  248         //
-  249         //----------------------------------------------------------------------------
-  250         // @Returnvalue   None
-  251         //
-  252         //----------------------------------------------------------------------------
-  253         // @Parameters    None
-  254         //
-  255         //----------------------------------------------------------------------------
-  256         // @Date          2020/5/8
-  257         //
-  258         //****************************************************************************
-  259         
-  260         // USER CODE BEGIN (LockProtecReg,1)
+  239  1          SCU_SLC = 0x0000;                   // command 3
+  240  1      
+  241  1      } //  End of function MAIN_vUnlockProtecReg
+  242         
+  243         
+  244         //****************************************************************************
+  245         // @Function      void MAIN_vLockProtecReg(void) 
+  246         //
+  247         //----------------------------------------------------------------------------
+  248         // @Description   This function makes it possible to lock one protected 
+  249         //                register.
+  250         //
+  251         //----------------------------------------------------------------------------
+  252         // @Returnvalue   None
+  253         //
+  254         //----------------------------------------------------------------------------
+  255         // @Parameters    None
+  256         //
+  257         //----------------------------------------------------------------------------
+  258         // @Date          2020/5/8
+  259         //
+  260         //****************************************************************************
   261         
-  262         // USER CODE END
+  262         // USER CODE BEGIN (LockProtecReg,1)
   263         
-  264         void MAIN_vLockProtecReg(void)
-  265         {
-  266  1        uword uwPASSWORD;
-  267  1      
-  268  1          SCU_SLC = 0xAAAA;                   // command 0
-  269  1          SCU_SLC = 0x5554;                   // command 1
-  270  1      
-  271  1          uwPASSWORD = SCU_SLS & 0x00FF;
-  272  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
-  273  1      
-  274  1          SCU_SLC = 0x9600 | uwPASSWORD;      // command 2
-  275  1          SCU_SLC = 0x1800;                   // command 3; new PASSWOR is 0x00
-  276  1      
-  277  1          uwPASSWORD = SCU_SLS & 0x00FF;
-  278  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
-  279  1          SCU_SLC = 0x8E00 | uwPASSWORD;      // command 4
-  280  1      
-  281  1      } //  End of function MAIN_vLockProtecReg
-  282         
-  283         
-  284         //****************************************************************************
-  285         // @Function      void MAIN_vChangeFreq(void) 
-  286         //
-  287         //----------------------------------------------------------------------------
-  288         // @Description   This function is used to select the external crystal and
-  289         //                configure the system frequency to 100MHz/80MHz/66MHz.
-  290         //
-  291         //----------------------------------------------------------------------------
-  292         // @Returnvalue   None
-  293         //
-  294         //----------------------------------------------------------------------------
-  295         // @Parameters    None
-  296         //
-  297         //----------------------------------------------------------------------------
-  298         // @Date          2020/5/8
-  299         //
-  300         //****************************************************************************
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 6   
+  264         // USER CODE END
+  265         
+  266         void MAIN_vLockProtecReg(void)
+  267         {
+  268  1        uword uwPASSWORD;
+  269  1      
+  270  1          SCU_SLC = 0xAAAA;                   // command 0
+  271  1          SCU_SLC = 0x5554;                   // command 1
+  272  1      
+  273  1          uwPASSWORD = SCU_SLS & 0x00FF;
+  274  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
+  275  1      
+  276  1          SCU_SLC = 0x9600 | uwPASSWORD;      // command 2
+  277  1          SCU_SLC = 0x1800;                   // command 3; new PASSWOR is 0x00
+  278  1      
+  279  1          uwPASSWORD = SCU_SLS & 0x00FF;
+  280  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
+  281  1          SCU_SLC = 0x8E00 | uwPASSWORD;      // command 4
+  282  1      
+  283  1      } //  End of function MAIN_vLockProtecReg
+  284         
+  285         
+  286         //****************************************************************************
+  287         // @Function      void MAIN_vChangeFreq(void) 
+  288         //
+  289         //----------------------------------------------------------------------------
+  290         // @Description   This function is used to select the external crystal and
+  291         //                configure the system frequency to 100MHz/80MHz/66MHz.
+  292         //
+  293         //----------------------------------------------------------------------------
+  294         // @Returnvalue   None
+  295         //
+  296         //----------------------------------------------------------------------------
+  297         // @Parameters    None
+  298         //
+  299         //----------------------------------------------------------------------------
+  300         // @Date          2020/5/8
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 6   
 
-  301         
-  302         // USER CODE BEGIN (ChangeFreq,1)
+  301         //
+  302         //****************************************************************************
   303         
-  304         // USER CODE END
+  304         // USER CODE BEGIN (ChangeFreq,1)
   305         
-  306         void MAIN_vChangeFreq(void)
-  307         {
-  308  1        Scs_ErrorType Error;
-  309  1      
-  310  1        Scs_EnableHighPrecOsc(1U);
+  306         // USER CODE END
+  307         
+  308         void MAIN_vChangeFreq(void)
+  309         {
+  310  1        Scs_ErrorType Error;
   311  1      
-  312  1        //For application and internal application resets, the complete PLL configuration could be avoided
-  313  1        //The entry from application resets and internal application reset is covered in the following different
+  312  1        Scs_EnableHighPrecOsc(1U);
+  313  1      
+  314  1        //For application and internal application resets, the complete PLL configuration could be avoided
+  315  1        //The entry from application resets and internal application reset is covered in the following different
              -iation
-  314  1        //in int/ext clock in lock/unlocked state.
-  315  1      
-  316  1        if  ((SCU_PLLSTAT & 0x0004) == 0x0004)       // fR derived from Internal clock
-  317  1        {
-  318  2          //Normal startup state during boot and the clock
-  319  2          //has to be in the next step configured on the external crystal
-  320  2          //use XTAL/VCO, count XTAL clock
-  321  2      
-  322  2          Scs_InitTimer();       // initialize CCU6 timer T13 for SCS driver
+  316  1        //in int/ext clock in lock/unlocked state.
+  317  1      
+  318  1        if  ((SCU_PLLSTAT & 0x0004) == 0x0004)       // fR derived from Internal clock
+  319  1        {
+  320  2          //Normal startup state during boot and the clock
+  321  2          //has to be in the next step configured on the external crystal
+  322  2          //use XTAL/VCO, count XTAL clock
   323  2      
-  324  2          // perform transition from base mode to normal mode, check for error
-  325  2          Error = Scs_GoFromBaseModeToNormalMode();
-  326  2          if(Error)
-  327  2          {
-  328  3            for(;;)      // this part of code should not be reached
-  329  3            {
-  330  4              NOP();
-  331  4            }
-  332  3          }
-  333  2      
-  334  2          if ((SCU_PLLSTAT & 0x1009) == 0x1009)      // fR derived from external crystal clock + VCO is locked
-  335  2          {
-  336  3            //usually after an application reset where clock need not be configured again.
-  337  3            //check K2/P/N values and decide whether these values have to be adapted based on application needs.
-  338  3            NOP();
-  339  3            //usually the PLL losss of Lock TRAP schould be enabled here.
-  340  3          }
-  341  2          else       //fR derived from external crystal clock + VCO is not locked
-  342  2          {
-  343  3                     //estimate the K1 value and the current frequency
-  344  3                     //reduce K2/P/N values in steps so that the frequency
-  345  3                     //jumps is limited to 20MHz or factor of 5 whichever is minimum
-  346  3            NOP();
-  347  3          }
-  348  2      
-  349  2      
-  350  2        }
-  351  1      
-  352  1      } //  End of function MAIN_vChangeFreq
-  353         
-  354         
-  355         //****************************************************************************
-  356         // @Function      void main(void) 
-  357         //
-  358         //----------------------------------------------------------------------------
-  359         // @Description   This is the main function.
-  360         //
-  361         //----------------------------------------------------------------------------
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 7   
+  324  2          Scs_InitTimer();       // initialize CCU6 timer T13 for SCS driver
+  325  2      
+  326  2          // perform transition from base mode to normal mode, check for error
+  327  2          Error = Scs_GoFromBaseModeToNormalMode();
+  328  2          if(Error)
+  329  2          {
+  330  3            for(;;)      // this part of code should not be reached
+  331  3            {
+  332  4              NOP();
+  333  4            }
+  334  3          }
+  335  2      
+  336  2          if ((SCU_PLLSTAT & 0x1009) == 0x1009)      // fR derived from external crystal clock + VCO is locked
+  337  2          {
+  338  3            //usually after an application reset where clock need not be configured again.
+  339  3            //check K2/P/N values and decide whether these values have to be adapted based on application needs.
+  340  3            NOP();
+  341  3            //usually the PLL losss of Lock TRAP schould be enabled here.
+  342  3          }
+  343  2          else       //fR derived from external crystal clock + VCO is not locked
+  344  2          {
+  345  3                     //estimate the K1 value and the current frequency
+  346  3                     //reduce K2/P/N values in steps so that the frequency
+  347  3                     //jumps is limited to 20MHz or factor of 5 whichever is minimum
+  348  3            NOP();
+  349  3          }
+  350  2      
+  351  2      
+  352  2        }
+  353  1      
+  354  1      } //  End of function MAIN_vChangeFreq
+  355         
+  356         
+  357         //****************************************************************************
+  358         // @Function      void main(void) 
+  359         //
+  360         //----------------------------------------------------------------------------
+  361         // @Description   This is the main function.
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 7   
 
-  362         // @Returnvalue   None
-  363         //
-  364         //----------------------------------------------------------------------------
-  365         // @Parameters    None
-  366         //
-  367         //----------------------------------------------------------------------------
-  368         // @Date          2020/5/8
-  369         //
-  370         //****************************************************************************
-  371         
-  372         // USER CODE BEGIN (Main,1)
+  362         //
+  363         //----------------------------------------------------------------------------
+  364         // @Returnvalue   None
+  365         //
+  366         //----------------------------------------------------------------------------
+  367         // @Parameters    None
+  368         //
+  369         //----------------------------------------------------------------------------
+  370         // @Date          2020/5/8
+  371         //
+  372         //****************************************************************************
   373         
-  374         // USER CODE END
+  374         // USER CODE BEGIN (Main,1)
   375         
-  376         void main(void)
-  377         {
-  378  1        // USER CODE BEGIN (Main,2)
-  379  1      
-  380  1        // USER CODE END
-  381  1              
-  382  1        MAIN_vInit();
-  383  1        OSAPI_AppTaskInit();
-  384  1              
-  385  1        GPT1_vStartTmr_GPT1_TIMER_2();        
-  386  1        CCU61_vStartTmr_CCU61_TIMER_12();
-  387  1        RTC_vRTCRun();
-  388  1      
-  389  1        while(1)
-  390  1        {
-  391  2      
-  392  2         // USER CODE BEGIN (Main,4)
-  393  2              
-  394  2                      OSAPI_AppTaskRunning();
-  395  2      
-  396  2         // USER CODE END
+  376         // USER CODE END
+  377         
+  378         void main(void)
+  379         {
+  380  1        // USER CODE BEGIN (Main,2)
+  381  1      
+  382  1        // USER CODE END
+  383  1              
+  384  1        MAIN_vInit();
+  385  1        OSAPI_AppTaskInit();
+  386  1              
+  387  1        GPT1_vStartTmr_GPT1_TIMER_2();        
+  388  1        CCU61_vStartTmr_CCU61_TIMER_12();
+  389  1        RTC_vRTCRun();
+  390  1      
+  391  1        while(1)
+  392  1        {
+  393  2      
+  394  2         // USER CODE BEGIN (Main,4)
+  395  2              
+  396  2                      OSAPI_AppTaskRunning();
   397  2      
-  398  2        }
-  399  1      
-  400  1      } //  End of function main
-  401         
-  402         
+  398  2         // USER CODE END
+  399  2      
+  400  2        }
+  401  1      
+  402  1      } //  End of function main
   403         
-  404         // USER CODE BEGIN (MAIN_General,10)
+  404         
   405         
-  406         // USER CODE END
+  406         // USER CODE BEGIN (MAIN_General,10)
   407         
-  408         
+  408         // USER CODE END
+  409         
+  410         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         326     --------
+  CODE SIZE        =         322     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -444,10 +446,10 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
+C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 8   
+
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
-C166 COMPILER V7.57.0, MAIN                                                                11/13/2020 15:09:22 PAGE 8   
-
   BIT SIZE         =    --------     --------
   INIT'L SIZE      =    --------     --------
 END OF MODULE INFORMATION.
