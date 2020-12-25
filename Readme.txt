@@ -2,7 +2,7 @@ Project: MUYUAN_ICAS_BRAKE4.1
 JWD Automotive Co., Ltd. 
 
 MUYUAN_ICAS_BRAKE4.1
-git@github.com:gao-zhengzhong/MuYuan.git
+git@github.com:gao-zhengzhong/iCAS_Brake_MuYuan.git
 
 软件版本号规则：
 <硬件版本号>_<项目><日期><版本>
