@@ -10,7 +10,7 @@ git@github.com:gao-zhengzhong/iCAS_Brake_MuYuan.git
 
 2020.12.25
 版本信息：
-HW05_MuYuan201225V1.3
+HW05_MuYuan20201225V1.3
 版本说明：
 1)增加CCP标定
 2)实现压力闭环控制
