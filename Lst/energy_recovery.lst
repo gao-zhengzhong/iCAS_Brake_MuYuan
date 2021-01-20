@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 1   
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE ENERGY_RECOVERY
@@ -48,10 +48,10 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
    36         
    37         /**** Declaration of functions ****/
    38         #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-   39         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorMaxiumTorque(void);
-   40         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorActualTorque(void);
-   41         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorObjTorqueRateOfChange(void);
-   42         #endif
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorMaxiumTorque(void);
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorActualTorque(void);
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorObjTorqueRateOfChange(void);
+              #endif
    43         
    44         /***********************************************************************
    45         *  Name        : EnergyRecovery_Init
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
    50         void EnergyRecovery_Init(void)
    51         {
    52  1              memset(&tEnergyRecovery, 0, sizeof(tEnergyRecovery));
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 2   
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 2   
 
    53  1              return;
    54  1      }
@@ -88,74 +88,74 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
    74         void EnergyRecovery_Algorithm(void)
    75         {
    76  1      #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-   77  1              EnergyRecovery_McuMotorMaxiumTorque();
-   78  1              EnergyRecovery_McuMotorActualTorque();
-   79  1              EnergyRecovery_McuMotorObjTorqueRateOfChange();
-   80  1      #else
-                      EnergyRecovery_DeInit();
-              #endif
+                      EnergyRecovery_McuMotorMaxiumTorque();
+                      EnergyRecovery_McuMotorActualTorque();
+                      EnergyRecovery_McuMotorObjTorqueRateOfChange();
+              #else
+   81  1              EnergyRecovery_DeInit();
+   82  1      #endif
    83  1              return;
    84  1      }
    85         
    86         
    87         #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-   88         /***********************************************************************
-   89         *  Name        : EnergyRecovery_McuMotorMaxiumTorque
-   90         *  Description : Get vehicle mcu motor maxium brake torque
-   91         *  Parameter   : None
-   92         *  Returns     : None
-   93         ***********************************************************************/
-   94         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorMaxiumTorque(void)
-   95         {
-   96  1              tEnergyRecovery.mcuMotorMaxiumTorque = MCU_MotToqLmt * 0.5 - 4000;
-   97  1      }
-   98         #endif
+              /***********************************************************************
+              *  Name        : EnergyRecovery_McuMotorMaxiumTorque
+              *  Description : Get vehicle mcu motor maxium brake torque
+              *  Parameter   : None
+              *  Returns     : None
+              ***********************************************************************/
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorMaxiumTorque(void)
+              {
+                      tEnergyRecovery.mcuMotorMaxiumTorque = MCU_MotToqLmt * 0.5 - 4000;
+              }
+              #endif
    99         
   100         
   101         #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-  102         /***********************************************************************
-  103         *  Name        : EnergyRecovery_McuMotorActualTorque
-  104         *  Description : Get vehicle mcu motor actual apply brake torque
-  105         *  Parameter   : None
-  106         *  Returns     : None
-  107         ***********************************************************************/
-  108         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorActualTorque(void)
-  109         {
-  110  1              tEnergyRecovery.mcuMotorActualTorque = MCU_MotActuToq * 0.5 - 4000;
-  111  1      }
-  112         #endif
+              /***********************************************************************
+              *  Name        : EnergyRecovery_McuMotorActualTorque
+              *  Description : Get vehicle mcu motor actual apply brake torque
+              *  Parameter   : None
+              *  Returns     : None
+              ***********************************************************************/
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorActualTorque(void)
+              {
+                      tEnergyRecovery.mcuMotorActualTorque = MCU_MotActuToq * 0.5 - 4000;
+              }
+              #endif
   113         
   114         
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 3   
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 3   
 
   115         #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-  116         /***********************************************************************
-  117         *  Name        : EnergyRecovery_McuMotorObjTorqueRateOfChange
-  118         *  Description : Request mcu motor object torque rate of change
-  119         *  Parameter   : None
-  120         *  Returns     : None
-  121         ***********************************************************************/
-  122         ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorObjTorqueRateOfChange(void)
-  123         {
-  124  1              INT8U i;
-  125  1              ENERGY_RECOVERY_STAT INT16U objTorque[7] = {0u};
-  126  1      
-  127  1              /* Calculate the change rate of braking torque value of the requested motor. */
-  128  1              tEnergyRecovery.mcuMotorObjTorqueRateOfChange = 
-  129  1                        7 * abs(tEnergyRecovery.mcuMotorObjTorque - objTorque[0])
-  130  1                      + 5 * abs(objTorque[6] - objTorque[1])
-  131  1                      + 3 * abs(objTorque[5] - objTorque[2])
-  132  1                      +     abs(objTorque[4] - objTorque[3]);
-  133  1      
-  134  1              for (i=0; i<sizeof(objTorque)-1; i++)
-  135  1              {
-  136  2                      objTorque[i] = objTorque[i+1];
-  137  2              }
-  138  1      
-  139  1              objTorque[6] = tEnergyRecovery.mcuMotorObjTorque;
-  140  1              return;
-  141  1      }
-  142         #endif
+              /***********************************************************************
+              *  Name        : EnergyRecovery_McuMotorObjTorqueRateOfChange
+              *  Description : Request mcu motor object torque rate of change
+              *  Parameter   : None
+              *  Returns     : None
+              ***********************************************************************/
+              ENERGY_RECOVERY_STAT void EnergyRecovery_McuMotorObjTorqueRateOfChange(void)
+              {
+                      INT8U i;
+                      ENERGY_RECOVERY_STAT INT16U objTorque[7] = {0u};
+              
+                      /* Calculate the change rate of braking torque value of the requested motor. */
+                      tEnergyRecovery.mcuMotorObjTorqueRateOfChange = 
+                                7 * abs(tEnergyRecovery.mcuMotorObjTorque - objTorque[0])
+                              + 5 * abs(objTorque[6] - objTorque[1])
+                              + 3 * abs(objTorque[5] - objTorque[2])
+                              +     abs(objTorque[4] - objTorque[3]);
+              
+                      for (i=0; i<=5; i++) // polyspace test by gzz 2020.12.30
+                      {
+                              objTorque[i] = objTorque[i+1];
+                      }
+              
+                      objTorque[6] = tEnergyRecovery.mcuMotorObjTorque;
+                      return;
+              }
+              #endif
   143         
   144         /***********************************************************************
   145         *  Name        : Booster_BrakeTorqueReduction
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
   174         *  Description : Judge brake torque reduction value.
   175         *  Parameter   : torque, coef
   176         *  Returns     : tempTorque
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 4   
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 4   
 
   177         ***********************************************************************/
   178         INT16S EnergyRecovery_BrakeTorqueReduction(INT16S torque, FP32 coef)
@@ -229,37 +229,37 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
   211         
   212         
   213         #if (ENABLE == FUNC_BRAKE_ENERGY_RECOVERY)
-  214         /***********************************************************************
-  215         *  Name        : EnergyRecovery_CalculateFrictionObjTorque
-  216         *  Description : Calculate friction brake object torque.
-  217         *  Parameter   : None
-  218         *  Returns     : None
-  219         ***********************************************************************/
-  220         ENERGY_RECOVERY_EXT INT16S EnergyRecovery_CalculateFrictionObjTorque(void)
-  221         {
-  222  1              INT16S frictionBrakeObjTorque = 0;
-  223  1              FP32 rb_target_mot_objtorque = 0;
-  224  1              const T_BOOSTER *ptr_booster = Booster_AlogrithmData();
-  225  1              
-  226  1              ENERGY_RECOVERY_STAT INT16U frictionBrakeObjTorqueIncrement = 0;
-  227  1              ENERGY_RECOVERY_STAT INT8U hybridBrakeRelaseCnt = 0;
-  228  1              ENERGY_RECOVERY_STAT INT16S mcuMotorObjTorqueRateOfChangeLast = 0;
-  229  1      
-  230  1              switch (ptr_booster->brakeStatus)
-  231  1              {
-  232  2                      case STATUS_INIT_BRAKE:
-  233  2                              frictionBrakeObjTorque = 0u;
-  234  2                              frictionBrakeObjTorqueIncrement = 0;
-  235  2                              tEnergyRecovery.mcuMotorObjTorque = 0;                  
-  236  2                              break;
-  237  2      
-  238  2                      case STATUS_FRICTION_BRAKE:
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 5   
+              /***********************************************************************
+              *  Name        : EnergyRecovery_CalculateFrictionObjTorque
+              *  Description : Calculate friction brake object torque.
+              *  Parameter   : None
+              *  Returns     : None
+              ***********************************************************************/
+              ENERGY_RECOVERY_EXT INT16S EnergyRecovery_CalculateFrictionObjTorque(void)
+              {
+                      INT16S frictionBrakeObjTorque = 0;
+                      FP32 rb_target_mot_objtorque = 0;
+                      const T_BOOSTER *ptr_booster = Booster_AlogrithmData();
+                      
+                      ENERGY_RECOVERY_STAT INT16U frictionBrakeObjTorqueIncrement = 0;
+                      ENERGY_RECOVERY_STAT INT8U hybridBrakeRelaseCnt = 0;
+                      ENERGY_RECOVERY_STAT INT16S mcuMotorObjTorqueRateOfChangeLast = 0;
+              
+                      switch (ptr_booster->brakeStatus)
+                      {
+                              case STATUS_INIT_BRAKE:
+                                      frictionBrakeObjTorque = 0u;
+                                      frictionBrakeObjTorqueIncrement = 0;
+                                      tEnergyRecovery.mcuMotorObjTorque = 0;                  
+                                      break;
+              
+                              case STATUS_FRICTION_BRAKE:
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 5   
 
-  239  2                      case STATUS_TRANSIENT:
-  240  2                              /* Judge VCU motor torque facutal value cannot apply brake force requirement. 
-  241  2                               * Not request VCU motor torque agian. */
-  242  2      #if 0
+                              case STATUS_TRANSIENT:
+                                      /* Judge VCU motor torque facutal value cannot apply brake force requirement. 
+                                       * Not request VCU motor torque agian. */
+              #if 0
                                       if (ptr_booster->totalTorqueRequest < tEnergyRecovery.mcuMotorMaxiumTorque)
                                       {
                                               tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
@@ -271,85 +271,85 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
                                               frictionBrakeObjTorque = ptr_booster->totalTorqueRequest - tEnergyRecovery.mcuMotorActualTorque;
                                       }       
               #endif                  
-  254  2                              tEnergyRecovery.mcuMotorObjTorque = 0;
-  255  2                              break;
-  256  2      
-  257  2                      case STATUS_HYBRID_BRAKE:
-  258  2                              tEnergyRecovery.mcuMotorObjTorque = ptr_booster->totalTorqueRequest - ptr_booster->frictionBrakeObjTorq
+                                      tEnergyRecovery.mcuMotorObjTorque = 0;
+                                      break;
+              
+                              case STATUS_HYBRID_BRAKE:
+                                      tEnergyRecovery.mcuMotorObjTorque = ptr_booster->totalTorqueRequest - ptr_booster->frictionBrakeObjTorq
              -ue;
-  259  2                              /* Judge VCU motor torque capacity value cannot apply brake force requirement. */
-  260  2                              if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
-  261  2                              {
-  262  3                                      tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
-  263  3                              }
-  264  2                              break;
-  265  2      
-  266  2                      case STATUS_RELASE_HYBRID_BRAKE:
-  267  2                              /* Energy recovery brake torque reduction */
-  268  2                              tEnergyRecovery.mcuMotorObjTorque = EnergyRecovery_BrakeTorqueReduction(ptr_booster->totalTorqueRequest
+                                      /* Judge VCU motor torque capacity value cannot apply brake force requirement. */
+                                      if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
+                                      {
+                                              tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
+                                      }
+                                      break;
+              
+                              case STATUS_RELASE_HYBRID_BRAKE:
+                                      /* Energy recovery brake torque reduction */
+                                      tEnergyRecovery.mcuMotorObjTorque = EnergyRecovery_BrakeTorqueReduction(ptr_booster->totalTorqueRequest
              -, ptr_booster->State4coef);
-  269  2                          
-  270  2                          if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
-  271  2                              {
-  272  3                                      tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
-  273  3                              }
-  274  2      
-  275  2                              frictionBrakeObjTorque = tEnergyRecovery.mcuMotorActualTorque - ptr_booster->totalTorqueRequest;
-  276  2                              
-  277  2                              if(tEnergyRecovery.mcuMotorObjTorque > tEnergyRecovery.mcuMotorActualTorque)
-  278  2                              {
-  279  3                                      frictionBrakeObjTorque = frictionBrakeObjTorque + (tEnergyRecovery.mcuMotorObjTorque - tEnergyRecovery
-             -.mcuMotorActualTorque) >> 1;
-  280  3                              }
-  281  2                              
-  282  2                              if((tEnergyRecovery.mcuMotorObjTorqueRateOfChange > 300) 
-  283  2                                      && (mcuMotorObjTorqueRateOfChangeLast <= 300)
-  284  2                                      && (0 == hybridBrakeRelaseCnt))
-  285  2                              {
-  286  3                                      hybridBrakeRelaseCnt = 80;
-  287  3                                      frictionBrakeObjTorqueIncrement = (MCU_MOTOR_TORQUE_DEFAULT - tEnergyRecovery.mcuMotorActualTorque) >>
+                                  
+                                  if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
+                                      {
+                                              tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
+                                      }
+              
+                                      frictionBrakeObjTorque = tEnergyRecovery.mcuMotorActualTorque - ptr_booster->totalTorqueRequest;
+                                      
+                                      if(tEnergyRecovery.mcuMotorObjTorque > tEnergyRecovery.mcuMotorActualTorque)
+                                      {
+                                              frictionBrakeObjTorque = frictionBrakeObjTorque + ((tEnergyRecovery.mcuMotorObjTorque - tEnergyRecover
+             -y.mcuMotorActualTorque) >> 1U); // polyspace test by gzz 2020.12.30
+                                      }
+                                      
+                                      if((tEnergyRecovery.mcuMotorObjTorqueRateOfChange > 300) 
+                                              && (mcuMotorObjTorqueRateOfChangeLast <= 300)
+                                              && (0 == hybridBrakeRelaseCnt))
+                                      {
+                                              hybridBrakeRelaseCnt = 80;
+                                              frictionBrakeObjTorqueIncrement = (MCU_MOTOR_TORQUE_DEFAULT - tEnergyRecovery.mcuMotorActualTorque) >>
              - 1;
-  288  3                                      
-  289  3                              }
-  290  2                              else if(hybridBrakeRelaseCnt > 0)
-  291  2                              {
-  292  3                                      if(hybridBrakeRelaseCnt < 20)
-  293  3                                      {
-  294  4                                              frictionBrakeObjTorqueIncrement = frictionBrakeObjTorqueIncrement * hybridBrakeRelaseCnt / 20;
-  295  4                                      }
-  296  3                                      else if(hybridBrakeRelaseCnt > 60)
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 6   
+                                              
+                                      }
+                                      else if(hybridBrakeRelaseCnt > 0)
+                                      {
+                                              if(hybridBrakeRelaseCnt < 20)
+                                              {
+                                                      frictionBrakeObjTorqueIncrement = frictionBrakeObjTorqueIncrement * hybridBrakeRelaseCnt / 20;
+                                              }
+                                              else if(hybridBrakeRelaseCnt > 60)
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 6   
 
-  297  3                                      {
-  298  4                                              frictionBrakeObjTorqueIncrement = frictionBrakeObjTorqueIncrement * (80 - hybridBrakeRelaseCnt) / 20;
-  299  4                                      }
-  300  3                                      
-  301  3                                      frictionBrakeObjTorque = frictionBrakeObjTorque + frictionBrakeObjTorqueIncrement;
-  302  3                                      hybridBrakeRelaseCnt--;
-  303  3                              }
-  304  2                              
-  305  2                              mcuMotorObjTorqueRateOfChangeLast = tEnergyRecovery.mcuMotorObjTorqueRateOfChange;
-  306  2                              break;
-  307  2      
-  308  2                      default:
-  309  2                              frictionBrakeObjTorque = 0u;    
-  310  2                              tEnergyRecovery.mcuMotorObjTorque = 0;                  
-  311  2                              break;
-  312  2              }
-  313  1      
-  314  1              /* VCU motor brake torque requirement value limiting range. */
-  315  1              if (tEnergyRecovery.mcuMotorObjTorque > 0)
-  316  1              {
-  317  2                      tEnergyRecovery.mcuMotorObjTorque = 0;
-  318  2              }
-  319  1              else if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
-  320  1              {
-  321  2                      tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
-  322  2              }
-  323  1              
-  324  1              return frictionBrakeObjTorque;
-  325  1      }
-  326         #endif
+                                              {
+                                                      frictionBrakeObjTorqueIncrement = frictionBrakeObjTorqueIncrement * (80 - hybridBrakeRelaseCnt) / 20;
+                                              }
+                                              
+                                              frictionBrakeObjTorque = frictionBrakeObjTorque + frictionBrakeObjTorqueIncrement;
+                                              hybridBrakeRelaseCnt--;
+                                      }
+                                      
+                                      mcuMotorObjTorqueRateOfChangeLast = tEnergyRecovery.mcuMotorObjTorqueRateOfChange;
+                                      break;
+              
+                              default:
+                                      frictionBrakeObjTorque = 0u;    
+                                      tEnergyRecovery.mcuMotorObjTorque = 0;                  
+                                      break;
+                      }
+              
+                      /* VCU motor brake torque requirement value limiting range. */
+                      if (tEnergyRecovery.mcuMotorObjTorque > 0)
+                      {
+                              tEnergyRecovery.mcuMotorObjTorque = 0;
+                      }
+                      else if (tEnergyRecovery.mcuMotorObjTorque < tEnergyRecovery.mcuMotorMaxiumTorque)
+                      {
+                              tEnergyRecovery.mcuMotorObjTorque = tEnergyRecovery.mcuMotorMaxiumTorque;
+                      }
+                      
+                      return frictionBrakeObjTorque;
+              }
+              #endif
   327         
   328         /***********************************************************************
   329         *  Name        : EnergyRecovery_AlogrithmData
@@ -366,23 +366,23 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\energy_recov
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         890     --------
+  CODE SIZE        =         256     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
-  NEAR-DATA SIZE   =           5     --------
-  FAR-DATA SIZE    =          22     --------
+  NEAR-DATA SIZE   =    --------     --------
+  FAR-DATA SIZE    =           8     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          52     --------
+  INIT'L SIZE      =          14     --------
 END OF MODULE INFORMATION.
 
-C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     12/25/2020 20:36:02 PAGE 7   
+C166 COMPILER V7.57.0, ENERGY_RECOVERY                                                     01/20/2021 09:50:44 PAGE 7   
 
 
 C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

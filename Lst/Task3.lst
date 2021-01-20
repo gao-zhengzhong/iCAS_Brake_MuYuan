@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 1   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK3
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
    50         *       @Data       2019-3-12
    51         ****************************************************************************************/
    52         
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 2   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 2   
 
    53         void task3(void)
    54         {
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   112  2                              if(10 == initValueBuffer[4])
   113  2                              {
   114  3                                      g_calibrationParaChangeMask |= (0x00000001 << 5);
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 3   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 3   
 
   115  3                                      
   116  3                                      gEEP_pedalLocationInit[0] = initValueBuffer[0];
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   169  3                              }
   170  2                              if(TRUE == Rte_ReadEepromData(gEEP_controlMaxCurrent, MAX_OBJ_CURRENT_VALUE_ADDRESS, MAX_OBJ_CURRENT_VA
              -LUE_LENGTH))
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 4   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 4   
 
   171  2                              {
   172  3                                      Std_DataCopy(gEEP_controlMaxCurrent, &gRTE_controlMaxCurrent, MAX_OBJ_CURRENT_VALUE_LENGTH - 1);
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   227  2                              
   228  2                              if(TRUE == Rte_ReadEepromData(gEEP_locationKi, LOCATION_LOOP_KI_ADDRESS, PID_PARA_LENGTH))
   229  2                              {
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 5   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 5   
 
   230  3                                      Std_DataCopy(gEEP_locationKi, &gRTE_locationKi, PID_PARA_LENGTH - 1);
   231  3                                      g_calibrationParaChangeMask |= (0x00000001 << 8);
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   289  2                              {
   290  3                                      gRTE_onlyPositionKp = PID_PARA_ONLYLOCATION_Kp;
   291  3                                      Std_DataCopy(&gRTE_onlyPositionKp, gEEP_onlyPositionKp, PID_PARA_LENGTH - 1);
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 6   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 6   
 
   292  3                              }
   293  2                              if(TRUE == Rte_ReadEepromData(gEEP_onlyPositionKi, ONLYLOCATION_LOOP_KI_ADDRESS, PID_PARA_LENGTH))
@@ -378,11 +378,11 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   347  2                      break;
   348  2      
   349  2                      case EcmWait3:
-  350  2                              ReadString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH);
-*** WARNING C98 IN LINE 350 OF src\app\task\Task3.c: parameter 1: pointer to different objects
+  350  2                              ReadString_v_g((INT8U *)&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH); // polys
+             -pace test by gzz 2020.12.30
   351  2                      
   352  2                              //read booster parameter
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 7   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 7   
 
   353  2                              if(TRUE == Rte_ReadEepromData(gEEP_pedal_To_cylinder, PEDAL_TO_CYLINDER_ADDRESS, PEDAL_TO_CYLINDER_LENG
              -TH))
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   407  3                                      Std_DataCopy(cylinder_To_pressure, gEEP_cylinder_To_pressure, CYLINDER_TO_PRESSURE_LENGTH - 1);
   408  3                              }
   409  2                              if(TRUE == Rte_ReadEepromData(gEEP_current_To_pressure, CURRENT_TO_PRESSURE_ADDRESS, CURRENT_TO_PRESSUR
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 8   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 8   
 
              -E_LENGTH))
   410  2                              {
@@ -504,13 +504,13 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   461  2                              PUTFinish_u8_Sig = 1;                   //上电测试模式结束
   462  2                              PowerUpTestState = EcmStart;    //重新转换到初始状态
   463  2      #if(1 == GPT2_TIME_MEASURE_EN)
-                                      TimeMeasure_StartTimer(); /* start GPT2 Timer5 used for task time measure */
-              #endif
+  464  2                              TimeMeasure_StartTimer(); /* start GPT2 Timer5 used for task time measure */
+  465  2      #endif
   466  2                      break;
   467  2      
   468  2                      default:
   469  2                      break;
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 9   
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 9   
 
   470  2              }
   471  1      }
@@ -574,7 +574,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   529  1      
   530  1          /* --- 等待100ms的驱动 ramp down 结束后置位正常模式结束 --- */
   531  1              Rte_WaitDriverRampDown();
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 10  
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 10  
 
   532  1      
   533  1      }
@@ -638,7 +638,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
   591         *       @param[in]      void
   592         *       @return     void
   593         *       @note       在Task3的task3()函数中
-C166 COMPILER V7.57.0, TASK3                                                               12/25/2020 20:36:12 PAGE 11  
+C166 COMPILER V7.57.0, TASK3                                                               01/20/2021 09:50:52 PAGE 11  
 
   594         *       @Data       2019-3-12
   595         ****************************************************************************************/
@@ -673,7 +673,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task3.c MODV2 LAR
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        2902     --------
+  CODE SIZE        =        2906     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -690,4 +690,4 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

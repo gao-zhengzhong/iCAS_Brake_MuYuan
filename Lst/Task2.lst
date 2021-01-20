@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 1   
+C166 COMPILER V7.57.0, TASK2                                                               01/20/2021 09:50:52 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK2
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task2.c MODV2 LAR
    50  2                      default:
    51  2                      break;
    52  2              }
-C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 2   
+C166 COMPILER V7.57.0, TASK2                                                               01/20/2021 09:50:52 PAGE 2   
 
    53  1      }
    54         
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task2.c MODV2 LAR
   112         *       @fn             void task2PowerDown_v_s(void)
   113         *       @brief           任务2下电模式函数
   114         *       @author     Matt Zhang
-C166 COMPILER V7.57.0, TASK2                                                               12/25/2020 20:36:11 PAGE 3   
+C166 COMPILER V7.57.0, TASK2                                                               01/20/2021 09:50:52 PAGE 3   
 
   115         *       @param[in]      void
   116         *       @return     void

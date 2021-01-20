@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, WIRE_CONTROL                                                        12/25/2020 20:36:04 PAGE 1   
+C166 COMPILER V7.57.0, WIRE_CONTROL                                                        01/20/2021 09:50:45 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE WIRE_CONTROL
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\wire_control
    50         void WireControl_Init(void)
    51         {
    52  1              memset(&tWireControl, 0, sizeof(tWireControl));
-C166 COMPILER V7.57.0, WIRE_CONTROL                                                        12/25/2020 20:36:04 PAGE 2   
+C166 COMPILER V7.57.0, WIRE_CONTROL                                                        01/20/2021 09:50:45 PAGE 2   
 
    53  1              
    54  1              tWireControl.cylinderToPressureArrayLength = sizeof(cylinder_To_pressure[0]) / sizeof(INT16U);
@@ -91,156 +91,145 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\wire_control
    77         void WireControl_Algorithm(void)
    78         {
    79  1              static INT16U ProCounter = 0;
-   80  1              static INT8U increaseFlag = FALSE;
+   80  1              static INT8U writeFlag = FALSE;
    81  1      
-   82  1              // ObjPressure get; // 20200906
-   83  1              if((TRUE == g_wireControlEnFlag) || (TRUE == g_cylinderExhaustEnFlag))
-   84  1              {
-   85  2                      if(g_wireControlObjPressure >= 60)      // pressure decreasing protect: motor life
-   86  2                      {               
-   87  3                              ProCounter++;                           
-   88  3                              if(ProCounter > 4000)
-   89  3                              {
-   90  4                                      ProCounter = 4000;                                      
-   91  4                                      /* The request pressure is over 6MPa and over 12s */
-   92  4                                      if(FALSE == increaseFlag)
-   93  4                                      {
-   94  5                                              increaseFlag = TRUE;
-   95  5                                              g_longTimeBrakeCnt++;
-   96  5                                              CopyString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH, 1);
-   97  5                                      }
-   98  4                              }
-   99  3                      }
-  100  2                      else if(g_wireControlObjPressure <= 55)
-  101  2                      {
-  102  3                              increaseFlag = FALSE;
-  103  3                              ProCounter = 0;
-  104  3                      }
-  105  2                      else
-  106  2                      {
-  107  3                              ProCounter++;
-  108  3                              if(ProCounter > 4000)
-  109  3                              {       
-  110  4                                      ProCounter = 4000;      
-  111  4                              }
-  112  3                      }
-  113  2              }
-  114  1              else
-C166 COMPILER V7.57.0, WIRE_CONTROL                                                        12/25/2020 20:36:04 PAGE 3   
+   82  1              if((FALSE == g_brakeReleaseFlag)
+   83  1                      && ((TRUE == g_wireControlEnFlag) || (TRUE == g_cylinderExhaustEnFlag))
+   84  1                      && (g_wireControlObjPressure >= 50))
+   85  1                      {               
+   86  2                      if(ProCounter > 3300)
+   87  2                      {
+   88  3                              ProCounter = 0;                                 
+   89  3                              /* The request pressure is over 5MPa and over 10s */
+   90  3                              g_longTimeBrakeCnt++;   
+   91  3                              writeFlag = TRUE;
+   92  3                      }
+   93  2                      else
+   94  2                      {
+   95  3                              ProCounter++;
+   96  3                      }
+   97  2              }
+   98  1              else // polyspace test by gzz 2020.12.30
+   99  1              {
+  100  2                      ProCounter = 0;
+  101  2              }
+  102  1              
+  103  1              if((TRUE == writeFlag) && (0 == (g_longTimeBrakeCnt % 30))) //Record every 5 minutes
+  104  1              {
+  105  2                      CopyString_v_g(&g_longTimeBrakeCnt, LONG_TIME_BRAKE_ADDRESS, LONG_TIME_BRAKE_LENGTH, 1);
+  106  2                      writeFlag = FALSE;
+  107  2              }
+  108  1      
+  109  1              tWireControl.cylinderObjPressure = (INT16U)g_wireControlObjPressure * 100; //0.1MPa->1KPa
+  110  1              
+  111  1              // ObjPrs maximum limit
+  112  1              if(tWireControl.cylinderObjPressure > 9000)
+  113  1              {       
+  114  2                      tWireControl.cylinderObjPressure = 9000;        
+C166 COMPILER V7.57.0, WIRE_CONTROL                                                        01/20/2021 09:50:45 PAGE 3   
 
-  115  1              {
-  116  2                      increaseFlag = FALSE;
-  117  2                      ProCounter = 0;
-  118  2                      tWireControl.cylinderObjPressure = 0;
-  119  2              }
-  120  1      
-  121  1              tWireControl.cylinderObjPressure = (INT16U)g_wireControlObjPressure * 100; //0.1MPa->1KPa
-  122  1              // ObjPrs maximum limit
-  123  1              if(tWireControl.cylinderObjPressure > 10000)
-  124  1              {       
-  125  2                      tWireControl.cylinderObjPressure = 10000;       
-  126  2              }
-  127  1      
-  128  1      }
-  129         
-  130         
-  131         /***********************************************************************
-  132         *  Name        : WireControl_PressureToCylinder
-  133         *  Description : Pressure to CAN date, transform objcylinder
-  134         *  Parameter   : None
-  135         *  Returns     : None
-  136         ***********************************************************************/
-  137         INT16U WireControl_PressureToCylinder(INT16U objPrs)
-  138         {
-  139  1              INT16U objCylinderLocation = 0;
-  140  1      
-  141  1              objCylinderLocation = lookupTable_1D(objPrs, pressure_To_cylinder[0], pressure_To_cylinder[1], tWireContr
+  115  2              }
+  116  1      
+  117  1      }
+  118         
+  119         
+  120         /***********************************************************************
+  121         *  Name        : WireControl_PressureToCylinder
+  122         *  Description : Pressure to CAN date, transform objcylinder
+  123         *  Parameter   : None
+  124         *  Returns     : None
+  125         ***********************************************************************/
+  126         INT16U WireControl_PressureToCylinder(INT16U objPrs)
+  127         {
+  128  1              INT16U objCylinderLocation = 0;
+  129  1      
+  130  1              objCylinderLocation = lookupTable_1D(objPrs, pressure_To_cylinder[0], pressure_To_cylinder[1], tWireContr
              -ol.pressureToCylinderArrayLength - 1);
-  142  1              
-  143  1              return objCylinderLocation;
-  144  1      
-  145  1      }
-  146         
-  147         /***********************************************************************
-  148         *  Name        : WireControl_PressureToCurrent
-  149         *  Description : Pressure to CAN date, transform objcurrent
-  150         *  Parameter   : None
-  151         *  Returns     : None
-  152         ***********************************************************************/
-  153         INT16S WireControl_PressureToCurrent(INT16U objPrs)
-  154         {
-  155  1              INT16U objCurrent = 0;
-  156  1      
-  157  1              objCurrent = lookupTable_1D(objPrs, pressure_To_current[0], pressure_To_current[1], tWireControl.pressure
+  131  1              
+  132  1              return objCylinderLocation;
+  133  1      
+  134  1      }
+  135         
+  136         /***********************************************************************
+  137         *  Name        : WireControl_PressureToCurrent
+  138         *  Description : Pressure to CAN date, transform objcurrent
+  139         *  Parameter   : None
+  140         *  Returns     : None
+  141         ***********************************************************************/
+  142         INT16S WireControl_PressureToCurrent(INT16U objPrs)
+  143         {
+  144  1              INT16U objCurrent = 0;
+  145  1      
+  146  1              objCurrent = lookupTable_1D(objPrs, pressure_To_current[0], pressure_To_current[1], tWireControl.pressure
              -ToCurrentArrayLength - 1);
-  158  1      
-  159  1              return (INT16S)objCurrent;
-  160  1      }
-  161         
-  162         /***********************************************************************
-  163         *  Name        : WireControl_CylinderToPressure
-  164         *  Description : Pressure to CAN date, transform objcylinder
-  165         *  Parameter   : None
-  166         *  Returns     : None
-  167         ***********************************************************************/
-  168         void WireControl_CylinderToPressure(void)
-  169         {       
-  170  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
-  171  1      
-  172  1              INT16U cylinderPressure = 0;
-  173  1      
-  174  1              cylinderPressure = lookupTable_1D(ptr_adc->mainCylinderLocation1, cylinder_To_pressure[0], cylinder_To_pr
-C166 COMPILER V7.57.0, WIRE_CONTROL                                                        12/25/2020 20:36:04 PAGE 4   
-
+  147  1      
+  148  1              return (INT16S)objCurrent;
+  149  1      }
+  150         
+  151         /***********************************************************************
+  152         *  Name        : WireControl_CylinderToPressure
+  153         *  Description : Pressure to CAN date, transform objcylinder
+  154         *  Parameter   : None
+  155         *  Returns     : None
+  156         ***********************************************************************/
+  157         void WireControl_CylinderToPressure(void)
+  158         {       
+  159  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+  160  1      
+  161  1              INT16U cylinderPressure = 0;
+  162  1      
+  163  1              cylinderPressure = lookupTable_1D(ptr_adc->mainCylinderLocation1, cylinder_To_pressure[0], cylinder_To_pr
              -essure[1], tWireControl.cylinderToPressureArrayLength - 1);
-  175  1      
-  176  1              CylinderToPressure = cylinderPressure / 100;
-  177  1      }
-  178         
-  179         /***********************************************************************
-  180         *  Name        : WireControl_CylinderToPressure
-  181         *  Description : Pressure to CAN date, transform objcylinder
-  182         *  Parameter   : None
-  183         *  Returns     : None
-  184         ***********************************************************************/
-  185         void WireControl_CurrentToPressure(void)
-  186         {       
-  187  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+  164  1      
+  165  1              CylinderToPressure = cylinderPressure / 100;
+  166  1      }
+  167         
+  168         /***********************************************************************
+  169         *  Name        : WireControl_CylinderToPressure
+  170         *  Description : Pressure to CAN date, transform objcylinder
+  171         *  Parameter   : None
+  172         *  Returns     : None
+  173         ***********************************************************************/
+C166 COMPILER V7.57.0, WIRE_CONTROL                                                        01/20/2021 09:50:45 PAGE 4   
+
+  174         void WireControl_CurrentToPressure(void)
+  175         {       
+  176  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData(); 
+  177  1      
+  178  1              INT16U cylinderPressure = 0;
+  179  1              INT16U tempMotorCurrent = 0;
+  180  1              if(ptr_adc->brakeMotorCurrent <= 0)
+  181  1              {
+  182  2                      tempMotorCurrent = 0;
+  183  2              }
+  184  1              else
+  185  1              {
+  186  2                      tempMotorCurrent = ptr_adc->brakeMotorCurrent;
+  187  2              }
   188  1      
-  189  1              INT16U cylinderPressure = 0;
-  190  1              INT16U tempMotorCurrent = 0;
-  191  1              if(ptr_adc->brakeMotorCurrent <= 0)
-  192  1              {
-  193  2                      tempMotorCurrent = 0;
-  194  2              }
-  195  1              else
-  196  1              {
-  197  2                      tempMotorCurrent = ptr_adc->brakeMotorCurrent;
-  198  2              }
-  199  1      
-  200  1              cylinderPressure = lookupTable_1D(tempMotorCurrent, current_To_pressure[0], current_To_pressure[1], tWire
+  189  1              cylinderPressure = lookupTable_1D(tempMotorCurrent, current_To_pressure[0], current_To_pressure[1], tWire
              -Control.currentToPressureArrayLength - 1);
-  201  1      
-  202  1              CylinderToPressure = cylinderPressure / 100;
-  203  1      }
-  204         
+  190  1      
+  191  1              CylinderToPressure = cylinderPressure / 100;
+  192  1      }
+  193         
+  194         
+  195         /***********************************************************************
+  196         *  Name        : WireControl_AlogrithmData
+  197         *  Description : Wire Control brake control alogrithm data
+  198         *  Parameter   : None
+  199         *  Returns     : APA brake control alogrithm data structure access address
+  200         ***********************************************************************/
+  201         const T_WIRE_CONTROL* WireControl_AlogrithmData(void)
+  202         {
+  203  1              return (&tWireControl);
+  204  1      }       
   205         
-  206         /***********************************************************************
-  207         *  Name        : WireControl_AlogrithmData
-  208         *  Description : Wire Control brake control alogrithm data
-  209         *  Parameter   : None
-  210         *  Returns     : APA brake control alogrithm data structure access address
-  211         ***********************************************************************/
-  212         const T_WIRE_CONTROL* WireControl_AlogrithmData(void)
-  213         {
-  214  1              return (&tWireControl);
-  215  1      }       
-  216         
-  217         /* _END_OF_WIRE_CONTROL_ */
+  206         /* _END_OF_WIRE_CONTROL_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         522     --------
+  CODE SIZE        =         498     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -254,8 +243,6 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
   INIT'L SIZE      =         166     --------
-C166 COMPILER V7.57.0, WIRE_CONTROL                                                        12/25/2020 20:36:04 PAGE 5   
-
 END OF MODULE INFORMATION.
 
 

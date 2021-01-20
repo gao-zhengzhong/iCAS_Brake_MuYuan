@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 1   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE CAN_DIAG
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
    50         
    51         // USER CODE END
    52         
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 2   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 2   
 
    53         
    54         //****************************************************************************
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   112         CAN_DIAG_STAT void CanDiag_DTC_MCU_0x202MsgLost(void);
   113         CAN_DIAG_STAT void CanDiag_DTC_MCU_0x206MsgLost(void);
   114         CAN_DIAG_STAT void CanDiag_DTC_ABS_0x454MsgLost(void);
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 3   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 3   
 
   115         CAN_DIAG_STAT void CanDiag_DTC_ElectricalFaultCheck(void);
   116         
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   174  3                      {
   175  4                                      DescMgr_DtcStatusDataReport(DTC_CAN_NODE_VCU_LOST_ERR, DTC_TEST_PASSED);
   176  4                      }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 4   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 4   
 
   177  3                      }
   178  2              }
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   236         //----------------------------------------------------------------------------
   237         // @Returnvalue   None
   238         //
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 5   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 5   
 
   239         //----------------------------------------------------------------------------
   240         // @Parameters    None 
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   298  3                              if ((TRUE == DescMgr_CanDiagDtcRecordNmEnableCheck())&&(FALSE == t_canMsgLostFlag.b0x202MsgLostErr))
   299  3                      {
   300  4                                      DescMgr_DtcStatusDataReport(DTC_CAN_NODE_MCU_LOST_ERR, DTC_TEST_PASSED);
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 6   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 6   
 
   301  4                      }
   302  3                      }
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   360         //----------------------------------------------------------------------------
   361         // @Description   This function check 0x454 message lost.
   362         //                                0x454 cycle time: 100ms
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 7   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 7   
 
   363         //----------------------------------------------------------------------------
   364         // @Returnvalue   None
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   422  1              else
   423  1                      DescMgr_DtcStatusDataReport(DTC_PEDAL_SENSOR_POWER_SHORT_CIRCUIT, DTC_TEST_PASSED);
   424  1      
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 8   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 8   
 
   425  1              /*pedal travel sensor power open circuit or fault*/
   426  1              if((ptr_FltFlg->pedalSensor1OpenFlg)||(ptr_FltFlg->pedalSensor2OpenFlg))
@@ -510,7 +510,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   484  1      
   485  1              /*cylinder travel sensor signal check error*/
   486  1              if(ptr_FltFlg->cylinderSensorCheckErrorFlg)
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 9   
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 9   
 
   487  1                      DescMgr_DtcStatusDataReport(DTC_CYLINDER_SENSOR_SIGNAL_CHECK_ERR, DTC_TEST_FAILED);
   488  1              else
@@ -574,7 +574,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
   546         
   547         #if 0
               //****************************************************************************
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 10  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 10  
 
               // @Function      void CanDiag_DTC_VCU_0x118MsgRollingCount()
               //
@@ -638,7 +638,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                               if (FALSE == t_canDtcErr.b0x118MsgRollingCntErr)
                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 11  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 11  
 
                                       if (uRollingContinuity < 10u)
                                       {
@@ -702,7 +702,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                 // USER CODE END
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 12  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 12  
 
               } //  End of function CanDiag_DTC_VCU_0x118MsgRollingCount
               
@@ -766,7 +766,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       bFristMsgFlag = FALSE;
                                       uRollingContinuity = 0u;
                               }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 13  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 13  
 
               
                               if (FALSE == t_canDtcErr.b0x119MsgRollingCntErr)
@@ -830,7 +830,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       return FALSE;   
                               }
                       }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 14  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 14  
 
               
                 // USER CODE END
@@ -894,7 +894,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               }
                               else
                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 15  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 15  
 
                                       bFristMsgFlag = FALSE;
                                       uRollingContinuity = 0u;
@@ -958,7 +958,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               }
                               else
                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 16  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 16  
 
                                       return FALSE;   
                               }
@@ -1022,7 +1022,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               if (uPreRollingValue == uCurRollingValue)
                               {
                                       uRollingContinuity++;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 17  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 17  
 
                               }
                               else
@@ -1086,7 +1086,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               {
                                       uRollingContinuity = 10u;
                                       return TRUE;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 18  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 18  
 
                               }
                               else
@@ -1150,7 +1150,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       uPreRollingValue = 0u;
                               }
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 19  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 19  
 
                               if (uPreRollingValue == uCurRollingValue)
                               {
@@ -1214,7 +1214,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               }
               
                               if (uRollingContinuity >= 10u)
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 20  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 20  
 
                               {
                                       uRollingContinuity = 10u;
@@ -1278,7 +1278,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               uPreRollingValue++;
                               if (15u == uPreRollingValue)
                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 21  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 21  
 
                                       uPreRollingValue = 0u;
                               }
@@ -1342,7 +1342,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                               u0x140MsgRollingRecoverCnt = 0u;
                                               t_canDtcErr.b0x140MsgRollingCntErr = TRUE;                              
                                       }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 22  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 22  
 
                               }
               
@@ -1406,7 +1406,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                       }
                       else
                       {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 23  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 23  
 
                               uPreRollingValue++;
                               if (15u == uPreRollingValue)
@@ -1470,7 +1470,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       else
                                       {
                                               u0x148MsgRollingTimeoutCnt = 0u;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 24  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 24  
 
                                               u0x148MsgRollingRecoverCnt = 0u;
                                               t_canDtcErr.b0x148MsgRollingCntErr = TRUE;                              
@@ -1534,7 +1534,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               uPreRollingValue = uCurRollingValue;
               
                               return FALSE;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 25  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 25  
 
                       }
                       else
@@ -1598,7 +1598,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                                       }
                                               }
                                       }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 26  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 26  
 
                                       else
                                       {
@@ -1662,7 +1662,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                       {
                               bFristMsgFlag = TRUE;
                               uRollingContinuity = 0u;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 27  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 27  
 
                               uPreRollingValue = uCurRollingValue;
               
@@ -1726,7 +1726,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                                       if (TRUE == DescMgr_CanDiagDtcRecordBodyEnableCheck())
                                                       {
                                                               DescMgr_DtcStatusDataReport(DTC_CAN_0x16E_CHECKSUM_ROLLING_ERR, DTC_TEST_PASSED);
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 28  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 28  
 
                                                       }
                                               }
@@ -1790,7 +1790,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                       INT8U uCurRollingValue = (INT8U)((rcvObject[7] & 0xF0) >> 4u);  
                       
                       if (FALSE == bFristMsgFlag)
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 29  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 29  
 
                       {
                               bFristMsgFlag = TRUE;
@@ -1854,7 +1854,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                                       u0x16fMsgRollingRecoverCnt = MESSAGE_RECOVER_CYCLE;
                                                       t_canDtcErr.b0x16fMsgRollingCntErr = FALSE;
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 30  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 30  
 
                                                       if (TRUE == DescMgr_CanDiagDtcRecordBodyEnableCheck())
                                                       {
@@ -1918,7 +1918,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                   CAN_DIAG_STAT INT8U uRollingContinuity = 0u;
                       CAN_DIAG_STAT BOOLEAN bFristMsgFlag = FALSE;
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 31  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 31  
 
                       INT8U uCurRollingValue = (INT8U)((rcvObject[6] & 0x0F) >> 4u);  
                       
@@ -1982,7 +1982,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                               u0x278MsgRollingRecoverCnt++;
                                               if (u0x278MsgRollingRecoverCnt >= MESSAGE_RECOVER_CYCLE)
                                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 32  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 32  
 
                                                       u0x278MsgRollingRecoverCnt = MESSAGE_RECOVER_CYCLE;
                                                       t_canDtcErr.b0x278MsgRollingCntErr = FALSE;
@@ -2046,7 +2046,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                 // USER CODE BEGIN (If_TxConfirmation,2)
               
                       INT8U i;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 33  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 33  
 
                       INT8U uChecksumValue = 0u;
               
@@ -2110,7 +2110,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                       {
                               return TRUE;
                       }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 34  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 34  
 
                       else
                       {
@@ -2174,7 +2174,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                               {
                                                       DescMgr_DtcStatusDataReport(DTC_CAN_0x119_CHECKSUM_ROLLING_ERR, DTC_TEST_FAILED);
                                               }
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 35  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 35  
 
                                       }
                               }
@@ -2238,7 +2238,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               //
               //----------------------------------------------------------------------------
               // @Date          2020-03-04
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 36  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 36  
 
               //
               //****************************************************************************
@@ -2302,7 +2302,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                                               if (TRUE == DescMgr_CanDiagDtcRecordBodyEnableCheck())
                                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 37  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 37  
 
                                                       DescMgr_DtcStatusDataReport(DTC_CAN_0x126_CHECKSUM_ROLLING_ERR, DTC_TEST_PASSED);
                                               }                               
@@ -2366,7 +2366,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               uChecksumValue ^= rcvObject[i]; 
                       }
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 38  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 38  
 
                       if (FALSE == t_canDtcErr.b0x130MsgChecksumErr)
                       {
@@ -2430,7 +2430,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                 // USER CODE END
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 39  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 39  
 
               } //  End of function CanDiag_DTC_MCU_0x130MsgChecksum
               
@@ -2494,7 +2494,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       u0x132MsgChecksumTimeoutCnt = 0u;
                                       u0x132MsgChecksumRecoverCnt = 0u;
                                       t_canDtcErr.b0x132MsgChecksumErr = FALSE;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 40  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 40  
 
                               }
                       }
@@ -2558,7 +2558,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
               CAN_DIAG_STAT INT8U u0x140MsgChecksumTimeoutCnt = 0u;
               CAN_DIAG_STAT INT8U u0x140MsgChecksumRecoverCnt = 0u;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 41  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 41  
 
               
               // USER CODE END
@@ -2622,7 +2622,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               else
                               {
                                       u0x140MsgChecksumTimeoutCnt = 0u;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 42  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 42  
 
                                       u0x140MsgChecksumRecoverCnt = 0u;
                                       t_canDtcErr.b0x140MsgChecksumErr = TRUE;                        
@@ -2686,7 +2686,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                       u0x148MsgChecksumRecoverCnt = 0u;
               
                                       u0x148MsgChecksumTimeoutCnt++;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 43  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 43  
 
                                       if (u0x148MsgChecksumTimeoutCnt >= MESSAGE_TIMEOUT_CYCLE)
                                       {
@@ -2750,7 +2750,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               //
               //----------------------------------------------------------------------------
               // @Description   This function check 0x155 message checksum.
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 44  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 44  
 
               //
               //----------------------------------------------------------------------------
@@ -2814,7 +2814,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                               if (uChecksumValue == (INT8U)(rcvObject[7] & 0x0F))
                               {
                                       u0x155MsgChecksumTimeoutCnt = 0u;
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 45  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 45  
 
               
                                       u0x155MsgChecksumRecoverCnt++;
@@ -2878,7 +2878,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               {
               
                 // USER CODE BEGIN (If_TxConfirmation,2)
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 46  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 46  
 
               
                       INT8U i;
@@ -2942,7 +2942,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                       if (uChecksumValue == (INT8U)(rcvObject[7] & 0x0F))
                       {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 47  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 47  
 
                               return TRUE;
                       }
@@ -3006,7 +3006,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               
                                               if (TRUE == DescMgr_CanDiagDtcRecordBodyEnableCheck())
                                               {
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 48  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 48  
 
                                                       DescMgr_DtcStatusDataReport(DTC_CAN_0x16F_CHECKSUM_ROLLING_ERR, DTC_TEST_FAILED);
                                               }
@@ -3070,7 +3070,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
               //----------------------------------------------------------------------------
               // @Parameters    None 
               //
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 49  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 49  
 
               //----------------------------------------------------------------------------
               // @Date          2020-03-04
@@ -3134,7 +3134,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
                                               u0x278MsgChecksumRecoverCnt = MESSAGE_RECOVER_CYCLE;
                                               t_canDtcErr.b0x278MsgChecksumErr = FALSE;
               
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 50  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 50  
 
                                               if (TRUE == DescMgr_CanDiagDtcRecordBodyEnableCheck())
                                               {
@@ -3198,7 +3198,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
  3088  2                      uCanBusOffRecoverCnt = 0u;
  3089  2      
  3090  2                      if (BUSOFF_SHUTDOWN_ERR == CanNm_GetBusoffStatus())
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 51  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 51  
 
  3091  2                      {
  3092  3                              uCanBusOffTimeoutCnt++;
@@ -3262,7 +3262,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
  3150         //----------------------------------------------------------------------------
  3151         // @Parameters    None 
  3152         //
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 52  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 52  
 
  3153         //----------------------------------------------------------------------------
  3154         // @Date          2020-03-04
@@ -3326,7 +3326,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
  3210  5                                              uCanVoltageAbnormalRecoverCnt = DIAG_ERR_RECOVER_CYCLE;
  3211  5                                              t_canDtcErr.bCanVoltageErr = FALSE;
  3212  5                              
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 53  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 53  
 
  3213  5                                              Can_SetControllerMode(CAN_CONTROLLER0, CAN_T_START);
  3214  5                                              Can_SetControllerMode(CAN_CONTROLLER1, CAN_T_START);                                    
@@ -3390,7 +3390,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\can\can_diag.c MODV2 L
  3272  2                      uCanCircuitAbnormalRecoverCnt = 0u;
  3273  2      
  3274  2                      if ((FALSE == bCan0GetErrorTransferDirection) && (FALSE == bCan0GetErrorIncrement))
-C166 COMPILER V7.57.0, CAN_DIAG                                                            12/25/2020 20:36:14 PAGE 54  
+C166 COMPILER V7.57.0, CAN_DIAG                                                            01/20/2021 09:50:54 PAGE 54  
 
  3275  2                      {
  3276  3                              uCanCircuitAbnormalTimeoutCnt++;

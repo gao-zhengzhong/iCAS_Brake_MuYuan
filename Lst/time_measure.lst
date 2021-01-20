@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TIME_MEASURE                                                        12/25/2020 20:36:18 PAGE 1   
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        01/20/2021 09:50:58 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TIME_MEASURE
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\time measure\time_meas
    50  2                      tTimeMeasure[i].u16taskExecuteTimeMin = 0xFFFFu;
    51  2                      tTimeMeasure[i].u16taskExecuteTimeMax = 0;
    52  2      
-C166 COMPILER V7.57.0, TIME_MEASURE                                                        12/25/2020 20:36:18 PAGE 2   
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        01/20/2021 09:50:58 PAGE 2   
 
    53  2                      tTimeMeasure[i].u16taskPeriodTime = 0;
    54  2                      tTimeMeasure[i].u16taskPeriodTimeMin = 0xFFFFu;
@@ -111,47 +111,46 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\time measure\time_meas
    97  1              static INT16U u16taskStartTimeLast[TIME_MESSAGE_NUMBER] = {0u, 0u, 0u, 0u};
    98  1              
    99  1      #if (1 == GPT2_TIME_MEASURE_EN)
-                  if (TRUE == bTimMeasureEnable)
-                  {
-                              tTimeMeasure[taskId].u16taskStartTime = GPT2_uwReadTmr_GPT2_TIMER_5();
-                              
-                              btaskExecuteMeasureCondition[taskId] = TRUE;
-                              
-                              if(TRUE == btaskPeriodMeasureCondition[taskId])
-                              {
-                                      if(tTimeMeasure[taskId].u16taskStartTime > u16taskStartTimeLast[taskId])
-                                      {
-                                              tTimeMeasure[taskId].u16taskPeriodTime = tTimeMeasure[taskId].u16taskStartTime - u16taskStartTimeLast[
+  100  1          if (TRUE == bTimMeasureEnable)
+  101  1          {
+  102  2                      tTimeMeasure[taskId].u16taskStartTime = GPT2_uwReadTmr_GPT2_TIMER_5();
+  103  2                      
+  104  2                      btaskExecuteMeasureCondition[taskId] = TRUE;
+  105  2                      
+  106  2                      if(TRUE == btaskPeriodMeasureCondition[taskId])
+  107  2                      {
+  108  3                              if(tTimeMeasure[taskId].u16taskStartTime > u16taskStartTimeLast[taskId])
+  109  3                              {
+  110  4                                      tTimeMeasure[taskId].u16taskPeriodTime = tTimeMeasure[taskId].u16taskStartTime - u16taskStartTimeLast[
              -taskId];
-                                      }
-                                      else
-                                      {
-C166 COMPILER V7.57.0, TIME_MEASURE                                                        12/25/2020 20:36:18 PAGE 3   
+  111  4                              }
+  112  3                              else
+  113  3                              {
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        01/20/2021 09:50:58 PAGE 3   
 
-                                              tTimeMeasure[taskId].u16taskPeriodTime = 0xFFFFu - u16taskStartTimeLast[taskId] + tTimeMeasure[taskId]
+  114  4                                      tTimeMeasure[taskId].u16taskPeriodTime = 0xFFFFu - u16taskStartTimeLast[taskId] + tTimeMeasure[taskId]
              -.u16taskStartTime;
-                                      }
-                                      
-                                      if(tTimeMeasure[taskId].u16taskPeriodTime < tTimeMeasure[taskId].u16taskPeriodTimeMin)
-                                      {
-                                              tTimeMeasure[taskId].u16taskPeriodTimeMin = tTimeMeasure[taskId].u16taskPeriodTime;
-                                      }
-                                      if(tTimeMeasure[taskId].u16taskPeriodTime > tTimeMeasure[taskId].u16taskPeriodTimeMax)
-                                      {
-                                              tTimeMeasure[taskId].u16taskPeriodTimeMax = tTimeMeasure[taskId].u16taskPeriodTime;
-                                      }
-                              }
-                              else
-                              {
-                                      btaskPeriodMeasureCondition[taskId] = TRUE;
-                              }
-              
-                              u16taskStartTimeLast[taskId] = tTimeMeasure[taskId].u16taskStartTime;
-                  }
-              #endif
+  115  4                              }
+  116  3                              
+  117  3                              if(tTimeMeasure[taskId].u16taskPeriodTime < tTimeMeasure[taskId].u16taskPeriodTimeMin)
+  118  3                              {
+  119  4                                      tTimeMeasure[taskId].u16taskPeriodTimeMin = tTimeMeasure[taskId].u16taskPeriodTime;
+  120  4                              }
+  121  3                              if(tTimeMeasure[taskId].u16taskPeriodTime > tTimeMeasure[taskId].u16taskPeriodTimeMax)
+  122  3                              {
+  123  4                                      tTimeMeasure[taskId].u16taskPeriodTimeMax = tTimeMeasure[taskId].u16taskPeriodTime;
+  124  4                              }
+  125  3                      }
+  126  2                      else
+  127  2                      {
+  128  3                              btaskPeriodMeasureCondition[taskId] = TRUE;
+  129  3                      }
+  130  2      
+  131  2                      u16taskStartTimeLast[taskId] = tTimeMeasure[taskId].u16taskStartTime;
+  132  2          }
+  133  1      #endif
   134  1              
   135  1      }
-*** WARNING C47 IN LINE 95 OF src\app\time measure\time_measure.c: 'taskId': unreferenced parameter
   136         
   137         
   138         /***********************************************************************
@@ -164,48 +163,47 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\time measure\time_meas
   145         void TimeMeasure_End(INT8U taskId)
   146         {
   147  1      #if (1 == GPT2_TIME_MEASURE_EN)
-                  if (TRUE == bTimMeasureEnable)
-                  {
-                              tTimeMeasure[taskId].u16taskEndTime = GPT2_uwReadTmr_GPT2_TIMER_5();
-                    
-                              if(TRUE == btaskExecuteMeasureCondition[taskId])
-                              {
-                                      if(tTimeMeasure[taskId].u16taskEndTime > tTimeMeasure[taskId].u16taskStartTime)
-                                      {
-                                              tTimeMeasure[taskId].u16taskExecuteTime = tTimeMeasure[taskId].u16taskEndTime - tTimeMeasure[taskId].u
+  148  1          if (TRUE == bTimMeasureEnable)
+  149  1          {
+  150  2                      tTimeMeasure[taskId].u16taskEndTime = GPT2_uwReadTmr_GPT2_TIMER_5();
+  151  2            
+  152  2                      if(TRUE == btaskExecuteMeasureCondition[taskId])
+  153  2                      {
+  154  3                              if(tTimeMeasure[taskId].u16taskEndTime > tTimeMeasure[taskId].u16taskStartTime)
+  155  3                              {
+  156  4                                      tTimeMeasure[taskId].u16taskExecuteTime = tTimeMeasure[taskId].u16taskEndTime - tTimeMeasure[taskId].u
              -16taskStartTime;
-                                      }
-                                      else
-                                      {
-                                              tTimeMeasure[taskId].u16taskExecuteTime = 0xFFFFu - tTimeMeasure[taskId].u16taskStartTime + tTimeMeasu
+  157  4                              }
+  158  3                              else
+  159  3                              {
+  160  4                                      tTimeMeasure[taskId].u16taskExecuteTime = 0xFFFFu - tTimeMeasure[taskId].u16taskStartTime + tTimeMeasu
              -re[taskId].u16taskEndTime;
-                                      }
-                                      
-                                      if(tTimeMeasure[taskId].u16taskExecuteTime < tTimeMeasure[taskId].u16taskExecuteTimeMin)
-                                      {
-                                              tTimeMeasure[taskId].u16taskExecuteTimeMin = tTimeMeasure[taskId].u16taskExecuteTime;
-                                      }
-                                      if(tTimeMeasure[taskId].u16taskExecuteTime > tTimeMeasure[taskId].u16taskExecuteTimeMax)
-                                      {
-                                              tTimeMeasure[taskId].u16taskExecuteTimeMax = tTimeMeasure[taskId].u16taskExecuteTime;
-                                      }
-                              }
-C166 COMPILER V7.57.0, TIME_MEASURE                                                        12/25/2020 20:36:18 PAGE 4   
+  161  4                              }
+  162  3                              
+  163  3                              if(tTimeMeasure[taskId].u16taskExecuteTime < tTimeMeasure[taskId].u16taskExecuteTimeMin)
+  164  3                              {
+  165  4                                      tTimeMeasure[taskId].u16taskExecuteTimeMin = tTimeMeasure[taskId].u16taskExecuteTime;
+  166  4                              }
+  167  3                              if(tTimeMeasure[taskId].u16taskExecuteTime > tTimeMeasure[taskId].u16taskExecuteTimeMax)
+  168  3                              {
+  169  4                                      tTimeMeasure[taskId].u16taskExecuteTimeMax = tTimeMeasure[taskId].u16taskExecuteTime;
+  170  4                              }
+  171  3                      }
+  172  2                      else
+C166 COMPILER V7.57.0, TIME_MEASURE                                                        01/20/2021 09:50:58 PAGE 4   
 
-                              else
-                              {
-                                      btaskExecuteMeasureCondition[taskId] = FALSE;
-                              }
-                  }
-              #endif
+  173  2                      {
+  174  3                              btaskExecuteMeasureCondition[taskId] = FALSE;
+  175  3                      }
+  176  2          }
+  177  1      #endif
   178  1              
   179  1      }
-*** WARNING C47 IN LINE 145 OF src\app\time measure\time_measure.c: 'taskId': unreferenced parameter
   180         
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         116     --------
+  CODE SIZE        =         414     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -222,4 +220,4 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

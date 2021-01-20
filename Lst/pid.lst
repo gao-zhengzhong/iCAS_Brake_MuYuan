@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 1   
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE PID
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\pid.c MODV2 
    50         {
    51  1              memset(&tPid, 0, sizeof(tPid));
    52  1              
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 2   
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 2   
 
    53  1              return;
    54  1      }
@@ -119,497 +119,582 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\alogrithm\pid.c MODV2 
   105  1              ********************************************************************************/
   106  1              if(tPid.location.integral < 0)
   107  1              {
-  108  2                  u = 32 - tPid.location.integral; 
-  109  2                  u = (u >> 6);
-  110  2                  tPid.location.integral = tPid.location.integral + u;
-  111  2              }
-  112  1              else
-  113  1              {
-  114  2                  u = 32 + tPid.location.integral;
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 3   
+  108  2                  tPid.location.integral += (32 - tPid.location.integral) >> 6U; // polyspace test by gzz 2020.12.30
+  109  2              }
+  110  1              else
+  111  1              {
+  112  2                  u = 32 + tPid.location.integral;
+  113  2                  u = (u >> 6);
+  114  2                  tPid.location.integral = tPid.location.integral - u;
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 3   
 
-  115  2                  u = (u >> 6);
-  116  2                  tPid.location.integral = tPid.location.integral - u;
-  117  2              }
-  118  1              
-  119  1              tPid.location.integral = tPid.location.integral + tPid.location.error;
-  120  1              tPid.location.integral = Pid_LimitingAmplitude(tPid.location.integral, 30000);
-  121  1              
-  122  1              /* PID */
-  123  1              if(tPid.location.error < 0)
-  124  1              {
-  125  2                      u = -tPid.location.error;
-  126  2                      u = u * (INT32U)gRTE_locationKp / 100;
-*** WARNING C192 IN LINE 126 OF src\app\alogrithm\pid.c: '=': value truncated
-  127  2                      tPid.location.term_Kp = -u;
-*** WARNING C115 IN LINE 127 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-  128  2              }
-  129  1              else
-  130  1              {
-  131  2                      u = tPid.location.error;
-  132  2                      tPid.location.term_Kp = u * (INT32U)gRTE_locationKp / 100;
-*** WARNING C192 IN LINE 132 OF src\app\alogrithm\pid.c: '=': value truncated
-  133  2              }
-  134  1              
-  135  1      
-  136  1              if(tPid.location.integral < 0)
-  137  1              {
-  138  2                  u = -tPid.location.integral;
-  139  2                  u = u * (INT32U)gRTE_locationKi / 100;
-*** WARNING C192 IN LINE 139 OF src\app\alogrithm\pid.c: '=': value truncated
-  140  2                  tPid.location.term_Ki = -u;
-*** WARNING C115 IN LINE 140 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-  141  2              }
-  142  1              else
-  143  1              {
-  144  2                  u = tPid.location.integral;
-  145  2                  u = u * (INT32U)gRTE_locationKi / 100;
-*** WARNING C192 IN LINE 145 OF src\app\alogrithm\pid.c: '=': value truncated
-  146  2                  tPid.location.term_Ki = u;
-  147  2              }
-  148  1              
-  149  1              v = tPid.location.error - tPid.location.errorPre;
-  150  1              if(v < 0)
-  151  1              {
-  152  2                  u = -v;
-  153  2                  u = u * (INT32U)gRTE_locationKd / 100;
-*** WARNING C192 IN LINE 153 OF src\app\alogrithm\pid.c: '=': value truncated
-  154  2                  tPid.location.term_Kd = -u;
-*** WARNING C115 IN LINE 154 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-  155  2              }
-  156  1              else
-  157  1              {
-  158  2                  tPid.location.term_Kd = v * (INT32U)gRTE_locationKd / 100;
-*** WARNING C192 IN LINE 158 OF src\app\alogrithm\pid.c: '=': value truncated
-  159  2              }
-  160  1      
-  161  1              /* PID term limit amplitude */
-  162  1              tPid.location.term_Kp = Pid_LimitingAmplitude(tPid.location.term_Kp, 3000u);
-  163  1              tPid.location.term_Ki = Pid_LimitingAmplitude(tPid.location.term_Ki, 3000u);
-  164  1              tPid.location.term_Kd = Pid_LimitingAmplitude(tPid.location.term_Kd, 500u);
-  165  1      
-  166  1              
-  167  1              /* Update diviation value. */   
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 4   
+  115  2              }
+  116  1              
+  117  1              tPid.location.integral = tPid.location.integral + tPid.location.error;
+  118  1              tPid.location.integral = Pid_LimitingAmplitude(tPid.location.integral, 30000);
+  119  1              
+  120  1              /* PID */
+  121  1              if(tPid.location.error < 0)
+  122  1              {
+  123  2                      u = -tPid.location.error;
+  124  2                      u = u * (INT32U)gRTE_locationKp / 100;
+*** WARNING C192 IN LINE 124 OF src\app\alogrithm\pid.c: '=': value truncated
+  125  2                      tPid.location.term_Kp = -u;
+*** WARNING C115 IN LINE 125 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  126  2              }
+  127  1              else
+  128  1              {
+  129  2                      u = tPid.location.error;
+  130  2                      tPid.location.term_Kp = u * (INT32U)gRTE_locationKp / 100;
+*** WARNING C192 IN LINE 130 OF src\app\alogrithm\pid.c: '=': value truncated
+  131  2              }
+  132  1              
+  133  1      
+  134  1              if(tPid.location.integral < 0)
+  135  1              {
+  136  2                  u = -tPid.location.integral;
+  137  2                  u = u * (INT32U)gRTE_locationKi / 100;
+*** WARNING C192 IN LINE 137 OF src\app\alogrithm\pid.c: '=': value truncated
+  138  2                  tPid.location.term_Ki = -u;
+*** WARNING C115 IN LINE 138 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  139  2              }
+  140  1              else
+  141  1              {
+  142  2                  u = tPid.location.integral;
+  143  2                  u = u * (INT32U)gRTE_locationKi / 100;
+*** WARNING C192 IN LINE 143 OF src\app\alogrithm\pid.c: '=': value truncated
+  144  2                  tPid.location.term_Ki = u;
+  145  2              }
+  146  1              
+  147  1              v = tPid.location.error - tPid.location.errorPre;
+  148  1              if(v < 0)
+  149  1              {
+  150  2                  u = -v;
+  151  2                  u = u * (INT32U)gRTE_locationKd / 100;
+*** WARNING C192 IN LINE 151 OF src\app\alogrithm\pid.c: '=': value truncated
+  152  2                  tPid.location.term_Kd = -u;
+*** WARNING C115 IN LINE 152 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  153  2              }
+  154  1              else
+  155  1              {
+  156  2                  tPid.location.term_Kd = v * (INT32U)gRTE_locationKd / 100;
+*** WARNING C192 IN LINE 156 OF src\app\alogrithm\pid.c: '=': value truncated
+  157  2              }
+  158  1      
+  159  1              /* PID term limit amplitude */
+  160  1              tPid.location.term_Kp = Pid_LimitingAmplitude(tPid.location.term_Kp, 3000u);
+  161  1              tPid.location.term_Ki = Pid_LimitingAmplitude(tPid.location.term_Ki, 3000u);
+  162  1              tPid.location.term_Kd = Pid_LimitingAmplitude(tPid.location.term_Kd, 500u);
+  163  1      
+  164  1              
+  165  1              /* Update diviation value. */   
+  166  1              tPid.location.errorPre = tPid.location.error;
+  167  1              tPid.location.incrementValue = tPid.location.term_Kp + tPid.location.term_Ki + tPid.location.term_Kd;
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 4   
 
-  168  1              tPid.location.errorPre = tPid.location.error;
-  169  1              tPid.location.incrementValue = tPid.location.term_Kp + tPid.location.term_Ki + tPid.location.term_Kd;
-  170  1              tPid.location.incrementValue = Pid_LimitingAmplitude(tPid.location.incrementValue, 4000u);
-  171  1              
-  172  1              return (tPid.location.incrementValue);
-  173  1      }
-  174         
-  175         /***********************************************************************
-  176         *  Name        : Pid_CurrentClosedLoopControl
-  177         *  Description : Brake motor current closed-loop PID control.
-  178         *  Parameter   : object current
-  179         *  Returns     : None
-  180         ***********************************************************************/
-  181         INT16S Pid_CurrentClosedLoopControl(INT16S objCurrent)
-  182         {
-  183  1              INT32U u = 0;
-  184  1              INT16S delta_error = 0;
-  185  1      
-  186  1              static INT16S current_error[7] = {0};
-  187  1                              
-  188  1              tPid.current.ObjectValue = objCurrent;                  
-  189  1              tPid.current.actualValue = Pid_CurrentFilter();         
-  190  1              tPid.current.error = tPid.current.ObjectValue - tPid.current.actualValue;
-  191  1              
-  192  1        /* Add a dead zoon to reduce current vibrate. */ 
-  193  1              if(ABS(tPid.current.error) <= 100)
-  194  1              {
-  195  2                      tPid.current.error = 0;
-  196  2              }
-  197  1              else if(ABS(tPid.current.error) > 2000)
-  198  1              {
-  199  2                      tPid.current.error = 2000 * SIGN(tPid.current.error);
-  200  2              }
-  201  1              else
-  202  1              {
-  203  2                      tPid.current.error = tPid.current.error - 100 * SIGN(tPid.current.error);
-  204  2              }
-  205  1      
-  206  1              /* Integral term  damping process,damping factor mean 63/64 = 0.984; */         
-  207  1              if(tPid.current.integral < 0)
-  208  1              {
-  209  2                      u = - tPid.current.integral;
-  210  2                      u = (u >> 6);
-  211  2                      tPid.current.integral = tPid.current.integral + u;
-*** WARNING C192 IN LINE 211 OF src\app\alogrithm\pid.c: '=': value truncated
-  212  2              }
-  213  1              else
-  214  1              {
-  215  2                      u = tPid.current.integral;
-  216  2                      u = (u >> 6);
-  217  2                      tPid.current.integral = tPid.current.integral - u;
-*** WARNING C192 IN LINE 217 OF src\app\alogrithm\pid.c: '=': value truncated
-  218  2              }
-  219  1              
-  220  1              tPid.current.integral = tPid.current.integral + tPid.current.error;
-  221  1              tPid.current.integral = Pid_LimitingAmplitude(tPid.current.integral, 30000);
-  222  1              
-  223  1              /* Set KP  KI  KD */
-  224  1              
-  225  1              /* KP Factor  */
-  226  1      
-  227  1              if(tPid.current.error < 0)
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 5   
+  168  1              tPid.location.incrementValue = Pid_LimitingAmplitude(tPid.location.incrementValue, 4000u);
+  169  1              
+  170  1              return (tPid.location.incrementValue);
+  171  1      }
+  172         
+  173         /***********************************************************************
+  174         *  Name        : Pid_CurrentClosedLoopControl
+  175         *  Description : Brake motor current closed-loop PID control.
+  176         *  Parameter   : object current
+  177         *  Returns     : None
+  178         ***********************************************************************/
+  179         INT16S Pid_CurrentClosedLoopControl(INT16S objCurrent)
+  180         {
+  181  1              INT32U u = 0;
+  182  1              INT16S delta_error = 0;
+  183  1      
+  184  1              static INT16S current_error[7] = {0};
+  185  1                              
+  186  1              tPid.current.ObjectValue = objCurrent;                  
+  187  1              tPid.current.actualValue = Pid_CurrentFilter();         
+  188  1              tPid.current.error = tPid.current.ObjectValue - tPid.current.actualValue;
+  189  1              
+  190  1        /* Add a dead zoon to reduce current vibrate. */ 
+  191  1              if(ABS(tPid.current.error) <= 100)
+  192  1              {
+  193  2                      tPid.current.error = 0;
+  194  2              }
+  195  1              else if(ABS(tPid.current.error) > 2000)
+  196  1              {
+  197  2                      tPid.current.error = 2000 * SIGN(tPid.current.error);
+  198  2              }
+  199  1              else
+  200  1              {
+  201  2                      tPid.current.error = tPid.current.error - 100 * SIGN(tPid.current.error);
+  202  2              }
+  203  1      
+  204  1              /* Integral term  damping process,damping factor mean 63/64 = 0.984; */         
+  205  1              if(tPid.current.integral < 0)
+  206  1              {
+  207  2                      tPid.current.integral += (-tPid.current.integral) >> 6U; // polyspace test by gzz 2020.12.30
+  208  2              }
+  209  1              else
+  210  1              {
+  211  2                      u = tPid.current.integral;
+  212  2                      u = (u >> 6);
+  213  2                      tPid.current.integral = tPid.current.integral - u;
+*** WARNING C192 IN LINE 213 OF src\app\alogrithm\pid.c: '=': value truncated
+  214  2              }
+  215  1              
+  216  1              tPid.current.integral = tPid.current.integral + tPid.current.error;
+  217  1              tPid.current.integral = Pid_LimitingAmplitude(tPid.current.integral, 30000);
+  218  1              
+  219  1              /* Set KP  KI  KD */
+  220  1              
+  221  1              /* KP Factor  */
+  222  1      
+  223  1              if(tPid.current.error < 0)
+  224  1              {
+  225  2                      u = - tPid.current.error;
+  226  2                      u = u * gRTE_currentKp / 100;
+  227  2                      tPid.current.term_Kp = -u;
+*** WARNING C115 IN LINE 227 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 5   
 
-  228  1              {
-  229  2                      u = - tPid.current.error;
-  230  2                      u = u * gRTE_currentKp / 100;
-  231  2                      tPid.current.term_Kp = -u;
-*** WARNING C115 IN LINE 231 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-*** WARNING C192 IN LINE 231 OF src\app\alogrithm\pid.c: '=': value truncated
-  232  2              }
-  233  1              else
-  234  1              {
-  235  2                      u = tPid.current.error;         
-  236  2                      u = u * gRTE_currentKp / 100;
-  237  2                      tPid.current.term_Kp = u ;
-*** WARNING C192 IN LINE 237 OF src\app\alogrithm\pid.c: '=': value truncated
-  238  2              }
-  239  1              
-  240  1      
-  241  1              /* KI Factor  */
-  242  1              if(tPid.current.integral < 0)
-  243  1              {
-  244  2                      u = - tPid.current.integral;
-  245  2                      u = u * gRTE_currentKi / 100;
-  246  2                      tPid.current.term_Ki = -u;          
-*** WARNING C115 IN LINE 246 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-*** WARNING C192 IN LINE 246 OF src\app\alogrithm\pid.c: '=': value truncated
-  247  2              }
-  248  1              else
-  249  1              {
-  250  2                      u = tPid.current.integral;
-  251  2                      u = u * gRTE_currentKi / 100;
-  252  2                      tPid.current.term_Ki  = u;    
-*** WARNING C192 IN LINE 252 OF src\app\alogrithm\pid.c: '=': value truncated
-  253  2              }
-  254  1              
-  255  1              
-  256  1              /* KD Factor  */
-  257  1              /*==========================================================================
-  258  1               * Estimated y_dot = (-7y1 - 5y2 -3y3 - y4 + y5 + 3y6 + 5y7 + 7y8) / (84 Ts)
-  259  1               *==========================================================================*/
-  260  1              delta_error = 7 * (tPid.current.error - current_error[0]) + 5 * (current_error[6] - current_error[1])
-  261  1                            + 3 * (current_error[5] - current_error[2]) + (current_error[4] - current_error[3]);
-  262  1              /* Update diviation value. */       
-  263  1              current_error[0] = current_error[1];
-  264  1              current_error[1] = current_error[2];
-  265  1              current_error[2] = current_error[3];
-  266  1              current_error[3] = current_error[4];
-  267  1              current_error[4] = current_error[5];
-  268  1              current_error[5] = current_error[6];
-  269  1              current_error[6] = tPid.current.error;
-  270  1                      
-  271  1              if(delta_error < 0)
-  272  1              {
-  273  2                      u = -delta_error;
-  274  2                      u = u * gRTE_currentKd / 100;
-  275  2                      tPid.current.term_Kd = - u;
-*** WARNING C115 IN LINE 275 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-*** WARNING C192 IN LINE 275 OF src\app\alogrithm\pid.c: '=': value truncated
-  276  2              }
-  277  1              else
-  278  1              {
-  279  2                      u = delta_error;
-  280  2                      u = u * gRTE_currentKd / 100;
-  281  2                      tPid.current.term_Kd = u;
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 6   
+*** WARNING C192 IN LINE 227 OF src\app\alogrithm\pid.c: '=': value truncated
+  228  2              }
+  229  1              else
+  230  1              {
+  231  2                      u = tPid.current.error;         
+  232  2                      u = u * gRTE_currentKp / 100;
+  233  2                      tPid.current.term_Kp = u ;
+*** WARNING C192 IN LINE 233 OF src\app\alogrithm\pid.c: '=': value truncated
+  234  2              }
+  235  1              
+  236  1      
+  237  1              /* KI Factor  */
+  238  1              if(tPid.current.integral < 0)
+  239  1              {
+  240  2                      u = - tPid.current.integral;
+  241  2                      u = u * gRTE_currentKi / 100;
+  242  2                      tPid.current.term_Ki = -u;          
+*** WARNING C115 IN LINE 242 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 242 OF src\app\alogrithm\pid.c: '=': value truncated
+  243  2              }
+  244  1              else
+  245  1              {
+  246  2                      u = tPid.current.integral;
+  247  2                      u = u * gRTE_currentKi / 100;
+  248  2                      tPid.current.term_Ki  = u;    
+*** WARNING C192 IN LINE 248 OF src\app\alogrithm\pid.c: '=': value truncated
+  249  2              }
+  250  1              
+  251  1              
+  252  1              /* KD Factor  */
+  253  1              /*==========================================================================
+  254  1               * Estimated y_dot = (-7y1 - 5y2 -3y3 - y4 + y5 + 3y6 + 5y7 + 7y8) / (84 Ts)
+  255  1               *==========================================================================*/
+  256  1              delta_error = 7 * (tPid.current.error - current_error[0]) + 5 * (current_error[6] - current_error[1])
+  257  1                            + 3 * (current_error[5] - current_error[2]) + (current_error[4] - current_error[3]);
+  258  1              /* Update diviation value. */       
+  259  1              current_error[0] = current_error[1];
+  260  1              current_error[1] = current_error[2];
+  261  1              current_error[2] = current_error[3];
+  262  1              current_error[3] = current_error[4];
+  263  1              current_error[4] = current_error[5];
+  264  1              current_error[5] = current_error[6];
+  265  1              current_error[6] = tPid.current.error;
+  266  1                      
+  267  1              if(delta_error < 0)
+  268  1              {
+  269  2                      u = -delta_error;
+  270  2                      u = u * gRTE_currentKd / 100;
+  271  2                      tPid.current.term_Kd = - u;
+*** WARNING C115 IN LINE 271 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+*** WARNING C192 IN LINE 271 OF src\app\alogrithm\pid.c: '=': value truncated
+  272  2              }
+  273  1              else
+  274  1              {
+  275  2                      u = delta_error;
+  276  2                      u = u * gRTE_currentKd / 100;
+  277  2                      tPid.current.term_Kd = u;
+*** WARNING C192 IN LINE 277 OF src\app\alogrithm\pid.c: '=': value truncated
+  278  2              }
+  279  1      
+  280  1              
+  281  1              /* PID term limit amplitude */
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 6   
 
-*** WARNING C192 IN LINE 281 OF src\app\alogrithm\pid.c: '=': value truncated
-  282  2              }
-  283  1      
-  284  1              
-  285  1              /* PID term limit amplitude */
-  286  1              tPid.current.term_Kp = Pid_LimitingAmplitude(tPid.current.term_Kp, 1600u);
-  287  1              tPid.current.term_Ki = Pid_LimitingAmplitude(tPid.current.term_Ki, 1200u);
-  288  1              tPid.current.term_Kd = Pid_LimitingAmplitude(tPid.current.term_Kd, 300u);
-  289  1              
-  290  1              tPid.current.incrementValue = tPid.current.term_Kp + tPid.current.term_Ki + tPid.current.term_Kd;
-  291  1              tPid.current.incrementValue = Pid_LimitingAmplitude(tPid.current.incrementValue, MAXIMUM_OUTPUT_THRESHOLD
+  282  1              tPid.current.term_Kp = Pid_LimitingAmplitude(tPid.current.term_Kp, 1600u);
+  283  1              tPid.current.term_Ki = Pid_LimitingAmplitude(tPid.current.term_Ki, 1200u);
+  284  1              tPid.current.term_Kd = Pid_LimitingAmplitude(tPid.current.term_Kd, 300u);
+  285  1              
+  286  1              tPid.current.incrementValue = tPid.current.term_Kp + tPid.current.term_Ki + tPid.current.term_Kd;
+  287  1              tPid.current.incrementValue = Pid_LimitingAmplitude(tPid.current.incrementValue, MAXIMUM_OUTPUT_THRESHOLD
              -);
-  292  1      
-  293  1              /* PWM output. */
-  294  1              return tPid.current.incrementValue;
-  295  1      }
-  296         
-  297         
-  298         
-  299         /***********************************************************************
-  300         *  Name        : Pid_OnlyLocationClosedLoopControl
-  301         *  Description : Brake main cylinder location closed-loop PID control.
-  302         *  Parameter   : object location
-  303         *  Returns     : None
-  304         ***********************************************************************/
-  305         INT16S Pid_OnlyLocationClosedLoopControl(INT16U objLocation)
-  306         {
-  307  1              INT16U u = 0;
-  308  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
-  309  1              
-  310  1              /* Set location PID control object value. */
-  311  1              tPid.onlyLocation.ObjectValue = objLocation ;
-  312  1              tPid.onlyLocation.actualValue = ptr_adc->mainCylinderLocation1;
-  313  1              tPid.onlyLocation.error = tPid.onlyLocation.ObjectValue - tPid.onlyLocation.actualValue;
+  288  1      
+  289  1              /* PWM output. */
+  290  1              return tPid.current.incrementValue;
+  291  1      }
+  292         
+  293         
+  294         
+  295         /***********************************************************************
+  296         *  Name        : Pid_OnlyLocationClosedLoopControl
+  297         *  Description : Brake main cylinder location closed-loop PID control.
+  298         *  Parameter   : object location
+  299         *  Returns     : None
+  300         ***********************************************************************/
+  301         INT16S Pid_OnlyLocationClosedLoopControl(INT16U objLocation)
+  302         {
+  303  1              INT16U u = 0;
+  304  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  305  1              
+  306  1              /* Set location PID control object value. */
+  307  1              tPid.onlyLocation.ObjectValue = objLocation ;
+  308  1              tPid.onlyLocation.actualValue = ptr_adc->mainCylinderLocation1;
+  309  1              tPid.onlyLocation.error = tPid.onlyLocation.ObjectValue - tPid.onlyLocation.actualValue;
+  310  1              
+  311  1              /*------------Integral term damping process,damping factor = 63/64--------*/
+  312  1              /*----Customary Integral damping factor is 0.994,when objLocation >=1mm---*/
+  313  1              /*--------------damping factor is 0.95,when objLocation == 1mm------------*/
   314  1              
-  315  1              /*------------Integral term damping process,damping factor = 63/64--------*/
-  316  1              /*----Customary Integral damping factor is 0.994,when objLocation >=1mm---*/
-  317  1              /*--------------damping factor is 0.95,when objLocation == 1mm------------*/
-  318  1              
-  319  1              if(tPid.onlyLocation.integral < 0)
+  315  1              if(tPid.onlyLocation.integral < 0)
+  316  1              {
+  317  2                      tPid.onlyLocation.integral += (-tPid.onlyLocation.integral) >> 6U; // polyspace test by gzz 2020.12.30
+  318  2              }
+  319  1              else
   320  1              {
-  321  2                      u = - tPid.onlyLocation.integral;
+  321  2                      u = tPid.onlyLocation.integral;
   322  2                      u = (u >> 6);
-  323  2                      tPid.onlyLocation.integral = tPid.onlyLocation.integral + u;
+  323  2                      tPid.onlyLocation.integral = tPid.onlyLocation.integral - u;
   324  2              }
-  325  1              else
-  326  1              {
-  327  2                      u = tPid.onlyLocation.integral;
-  328  2                      u = (u >> 6);
-  329  2                      tPid.onlyLocation.integral = tPid.onlyLocation.integral - u;
-  330  2              }
+  325  1              
+  326  1              tPid.onlyLocation.integral = tPid.onlyLocation.integral + tPid.onlyLocation.error;
+  327  1              tPid.onlyLocation.integral = Pid_LimitingAmplitude(tPid.onlyLocation.integral, 30000);
+  328  1              
+  329  1              
+  330  1              /* Set KP  KI  KD */
   331  1              
-  332  1              tPid.onlyLocation.integral = tPid.onlyLocation.integral + tPid.onlyLocation.error;
-  333  1              tPid.onlyLocation.integral = Pid_LimitingAmplitude(tPid.onlyLocation.integral, 30000);
-  334  1              
-  335  1              
-  336  1              /* Set KP  KI  KD */
-  337  1              
-  338  1              /* KP Factor  */
-  339  1              if(tPid.onlyLocation.error < 0)
+  332  1              /* KP Factor  */
+  333  1              if(tPid.onlyLocation.error < 0)
+  334  1              {
+  335  2                      u = - tPid.onlyLocation.error;
+  336  2                      u = u * (INT32U)gRTE_onlyPositionKp / 100;
+*** WARNING C192 IN LINE 336 OF src\app\alogrithm\pid.c: '=': value truncated
+  337  2                      tPid.onlyLocation.term_Kp = -u;
+*** WARNING C115 IN LINE 337 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  338  2              }
+  339  1              else
   340  1              {
-  341  2                      u = - tPid.onlyLocation.error;
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 7   
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 7   
 
+  341  2                      u = tPid.onlyLocation.error;    
   342  2                      u = u * (INT32U)gRTE_onlyPositionKp / 100;
 *** WARNING C192 IN LINE 342 OF src\app\alogrithm\pid.c: '=': value truncated
-  343  2                      tPid.onlyLocation.term_Kp = -u;
-*** WARNING C115 IN LINE 343 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  343  2                      tPid.onlyLocation.term_Kp = u ;
   344  2              }
-  345  1              else
-  346  1              {
-  347  2                      u = tPid.onlyLocation.error;    
-  348  2                      u = u * (INT32U)gRTE_onlyPositionKp / 100;
-*** WARNING C192 IN LINE 348 OF src\app\alogrithm\pid.c: '=': value truncated
-  349  2                      tPid.onlyLocation.term_Kp = u ;
-  350  2              }
-  351  1              
-  352  1              /* KI Factor  */
-  353  1              if(tPid.onlyLocation.integral < 0)
+  345  1              
+  346  1              /* KI Factor  */
+  347  1              if(tPid.onlyLocation.integral < 0)
+  348  1              {
+  349  2                      u = - tPid.onlyLocation.integral;
+  350  2                      u = u * (INT32U)gRTE_onlyPositionKi / 100;
+*** WARNING C192 IN LINE 350 OF src\app\alogrithm\pid.c: '=': value truncated
+  351  2                      tPid.onlyLocation.term_Ki = -u;          
+*** WARNING C115 IN LINE 351 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  352  2              }
+  353  1              else
   354  1              {
-  355  2                      u = - tPid.onlyLocation.integral;
+  355  2                      u = tPid.onlyLocation.integral;
   356  2                      u = u * (INT32U)gRTE_onlyPositionKi / 100;
 *** WARNING C192 IN LINE 356 OF src\app\alogrithm\pid.c: '=': value truncated
-  357  2                      tPid.onlyLocation.term_Ki = -u;          
-*** WARNING C115 IN LINE 357 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  357  2                      tPid.onlyLocation.term_Ki = u;    
   358  2              }
-  359  1              else
-  360  1              {
-  361  2                      u = tPid.onlyLocation.integral;
-  362  2                      u = u * (INT32U)gRTE_onlyPositionKi / 100;
-*** WARNING C192 IN LINE 362 OF src\app\alogrithm\pid.c: '=': value truncated
-  363  2                      tPid.onlyLocation.term_Ki = u;    
-  364  2              }
-  365  1              
-  366  1              /* PID term limit amplitude */
-  367  1              tPid.onlyLocation.term_Kp = Pid_LimitingAmplitude(tPid.onlyLocation.term_Kp, 1600u);
-  368  1              tPid.onlyLocation.term_Ki = Pid_LimitingAmplitude(tPid.onlyLocation.term_Ki, 1200u);
-  369  1              tPid.onlyLocation.term_Kd = Pid_LimitingAmplitude(tPid.onlyLocation.term_Kd, 300u);
-  370  1              
-  371  1              /* Update diviation value. */   
-  372  1              tPid.onlyLocation.errorPre = tPid.onlyLocation.error;
-  373  1              tPid.onlyLocation.incrementValue = tPid.onlyLocation.term_Kp + tPid.onlyLocation.term_Ki + tPid.onlyLocat
+  359  1              
+  360  1              /* PID term limit amplitude */
+  361  1              tPid.onlyLocation.term_Kp = Pid_LimitingAmplitude(tPid.onlyLocation.term_Kp, 1600u);
+  362  1              tPid.onlyLocation.term_Ki = Pid_LimitingAmplitude(tPid.onlyLocation.term_Ki, 1200u);
+  363  1              tPid.onlyLocation.term_Kd = Pid_LimitingAmplitude(tPid.onlyLocation.term_Kd, 300u);
+  364  1              
+  365  1              /* Update diviation value. */   
+  366  1              tPid.onlyLocation.errorPre = tPid.onlyLocation.error;
+  367  1              tPid.onlyLocation.incrementValue = tPid.onlyLocation.term_Kp + tPid.onlyLocation.term_Ki + tPid.onlyLocat
              -ion.term_Kd;
-  374  1              tPid.onlyLocation.incrementValue = Pid_LimitingAmplitude(tPid.onlyLocation.incrementValue, MAXIMUM_OUTPUT
+  368  1              tPid.onlyLocation.incrementValue = Pid_LimitingAmplitude(tPid.onlyLocation.incrementValue, MAXIMUM_OUTPUT
              -_THRESHOLD);
-  375  1      
-  376  1              Pwm_Control(tPid.onlyLocation.incrementValue);
-  377  1              
-  378  1              return tPid.onlyLocation.incrementValue;
-  379  1      }
-  380         
-  381         /***********************************************************************
-  382         *  Name        : Pid_PressureClosedLoopControl
-  383         *  Description : Brake main cylinder pressure closed-loop PID control.
-  384         *  Parameter   : object pressure
-  385         *  Returns     : None
-  386         ***********************************************************************/
-  387         INT16S Pid_PressureClosedLoopControl(INT16U objPressure)
-  388         {
-  389  1              INT16U u = 0;
-  390  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
-  391  1      
-  392  1              /* Set pressure PID control object value. */
-  393  1              tPid.pressure.ObjectValue = objPressure / 100;
-  394  1      #if 0
+  369  1      
+  370  1              Pwm_Control(tPid.onlyLocation.incrementValue);
+  371  1              
+  372  1              return tPid.onlyLocation.incrementValue;
+  373  1      }
+  374         
+  375         /***********************************************************************
+  376         *  Name        : Pid_PressureClosedLoopControl
+  377         *  Description : Brake main cylinder pressure closed-loop PID control.
+  378         *  Parameter   : object pressure
+  379         *  Returns     : None
+  380         ***********************************************************************/
+  381         INT16S Pid_PressureClosedLoopControl(INT16U objPressure)
+  382         {
+  383  1              INT16U u = 0;
+  384  1              const T_ADC_APP *ptr_adc = AdcApp_SampleData();
+  385  1      
+  386  1              /* Set pressure PID control object value. */
+  387  1              tPid.pressure.ObjectValue = objPressure / 100;
+  388  1      #if 0
                       tPid.pressure.actualValue = ptr_adc->mainCylinderPressure / 100;
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 8   
-
               #else
-  397  1              tPid.pressure.actualValue = g_wireControlActualPressure;
-  398  1      #endif
-  399  1              tPid.pressure.error = tPid.pressure.ObjectValue - tPid.pressure.actualValue;
-  400  1              
-  401  1              /*------------Integral term damping process,damping factor = 127/128--------*/
-  402  1              /*----Customary Integral damping factor is 0.994,when objLocation >=1mm---*/
-  403  1              /*--------------damping factor is 0.95,when objLocation == 1mm------------*/
-  404  1              
-  405  1              if(tPid.pressure.integral < 0)
-  406  1              {
-  407  2                      u = - tPid.pressure.integral;
-  408  2                      u = (u >> 7);           //  mean: u = -63/64 * tPid.pressure.integral;
-  409  2                      tPid.pressure.integral = tPid.pressure.integral + u;
-  410  2              }
-  411  1              else
-  412  1              {
-  413  2                      u = tPid.pressure.integral;
-  414  2                      u = (u >> 7);
-  415  2                      tPid.pressure.integral = tPid.pressure.integral - u;
-  416  2              }       
-  417  1              
-  418  1              tPid.pressure.integral = tPid.pressure.integral + tPid.pressure.error;
-  419  1              tPid.pressure.integral = Pid_LimitingAmplitude(tPid.pressure.integral, 30000);
-  420  1              
-  421  1              /* Set KP  KI  KD */
-  422  1              
-  423  1              /* KP Factor  */
-  424  1              
-  425  1              if(tPid.pressure.error < 0)
-  426  1              {
-  427  2                      u = - tPid.pressure.error;
-  428  2                      u = u * (INT32U)gRTE_pressureKp / 100;          
-*** WARNING C192 IN LINE 428 OF src\app\alogrithm\pid.c: '=': value truncated
-  429  2                      tPid.pressure.term_Kp = -u;
-*** WARNING C115 IN LINE 429 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-  430  2              }
-  431  1              else
-  432  1              {
-  433  2                      u = tPid.pressure.error;
-  434  2                      u = u * (INT32U)gRTE_pressureKp / 100;
-*** WARNING C192 IN LINE 434 OF src\app\alogrithm\pid.c: '=': value truncated
-  435  2                      tPid.pressure.term_Kp = u ;
+  391  1              tPid.pressure.actualValue = g_wireControlActualPressure;
+  392  1      #endif
+  393  1              tPid.pressure.error = tPid.pressure.ObjectValue - tPid.pressure.actualValue;
+  394  1              tPid.pressure.error = Pid_LimitingAmplitude(tPid.pressure.error, 20);
+  395  1              
+  396  1              /* Residual pressure judgment */
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 8   
+
+  397  1              if(tPid.pressure.error <= -4)
+  398  1              {
+  399  2                      residualPressureReleaseTimeCnt = 0;
+  400  2                      
+  401  2                      if(residualPressureTimeCnt > 1000)
+  402  2                      {
+  403  3                              g_residualPressureFlag = TRUE;
+  404  3                      }
+  405  2                      else
+  406  2                      {
+  407  3                              residualPressureTimeCnt++;
+  408  3                      }
+  409  2              }
+  410  1              else if(tPid.pressure.error > 0)
+  411  1              {
+  412  2                      residualPressureTimeCnt = 0;
+  413  2                      
+  414  2                      if(residualPressureReleaseTimeCnt > 200)
+  415  2                      {
+  416  3                              g_residualPressureFlag = FALSE;
+  417  3                      }
+  418  2                      else
+  419  2                      {
+  420  3                              residualPressureReleaseTimeCnt++;
+  421  3                      }
+  422  2              }
+  423  1              
+  424  1              if(ABS(tPid.pressure.error) >= 6)
+  425  1              {
+  426  2                      g_pressureErrorNormalTimeCnt = 0;
+  427  2                      
+  428  2                      if(g_pressureErrorLargeTimeCnt > 1000)
+  429  2                      {
+  430  3                              g_pressureErrorLargeFlag = TRUE;
+  431  3                      }
+  432  2                      else
+  433  2                      {
+  434  3                              g_pressureErrorLargeTimeCnt++;
+  435  3                      }
   436  2              }
-  437  1      
-  438  1              /* KI Factor  */
-  439  1              if(tPid.pressure.integral < 0)
-  440  1              {
-  441  2                      u = - tPid.pressure.integral;
-  442  2                      u = u * (INT32U)gRTE_pressureKi / 100;
-*** WARNING C192 IN LINE 442 OF src\app\alogrithm\pid.c: '=': value truncated
-  443  2                      tPid.pressure.term_Ki = -u;          
-*** WARNING C115 IN LINE 443 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
-  444  2              }
-  445  1              else
-  446  1              {
-  447  2                      u = tPid.pressure.integral;
-  448  2                      u = u * (INT32U)gRTE_pressureKi / 100;
-*** WARNING C192 IN LINE 448 OF src\app\alogrithm\pid.c: '=': value truncated
-  449  2                      tPid.pressure.term_Ki = u;    
-  450  2              }
-  451  1              
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 9   
+  437  1              else
+  438  1              {
+  439  2                      g_pressureErrorLargeTimeCnt = 0;
+  440  2                      
+  441  2                      if(g_pressureErrorNormalTimeCnt > 1000)
+  442  2                      {
+  443  3                              g_pressureErrorLargeFlag = FALSE;
+  444  3                      }
+  445  2                      else
+  446  2                      {
+  447  3                              g_pressureErrorNormalTimeCnt++;
+  448  3                      }
+  449  2              }
+  450  1              
+  451  1              /* Determine whether it is oscillating */
+  452  1              if((tPid.pressure.error < 0) && (tPid.pressure.errorPre > 0))
+  453  1              {
+  454  2                      stabiliseTimeCnt = 0;
+  455  2                      if(g_topEdgeCnt < 65535)
+  456  2                      {
+  457  3                              g_topEdgeCnt++;
+  458  3                      }
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 9   
 
-  452  1              /* PID term limit amplitude */
-  453  1              tPid.pressure.term_Kp = Pid_LimitingAmplitude(tPid.pressure.term_Kp, 1600u);
-  454  1              tPid.pressure.term_Ki = Pid_LimitingAmplitude(tPid.pressure.term_Ki, 1200u);
-  455  1              tPid.pressure.term_Kd = Pid_LimitingAmplitude(tPid.pressure.term_Kd, 300u);
-  456  1              
-  457  1              /* Update diviation value. */   
-  458  1              tPid.pressure.errorPre = tPid.pressure.error;
-  459  1              tPid.pressure.incrementValue = tPid.pressure.term_Kp + tPid.pressure.term_Ki + tPid.pressure.term_Kd;
-  460  1              tPid.pressure.incrementValue = Pid_LimitingAmplitude(tPid.pressure.incrementValue, MAXIMUM_OUTPUT_THRESHO
-             -LD);
-  461  1                      
-  462  1              Pwm_Control(tPid.pressure.incrementValue);
-  463  1              return tPid.pressure.incrementValue;
-  464  1      }
-  465         
-  466         /***********************************************************************
-  467         *  Name        : Pid_CurrentFilter
-  468         *  Description : Current sampling filter in current closed-loop control.
-  469         *  Parameter   : None
-  470         *  Returns     : None
-  471         ***********************************************************************/
-  472         static INT16S Pid_CurrentFilter(void)
-  473         {
-  474  1              INT8U currentIndex = 0;
-  475  1              INT32S currentFilterArraySum = 0;
-  476  1              
-  477  1              static INT16S currentFilterArray[8] = {0};
-  478  1              static INT16S currentFilterAverage = 0;
-  479  1              const T_ADC_APP *ptr_adcApp = AdcApp_SampleData();      
-  480  1                      
-  481  1              for(currentIndex = 0; currentIndex < 7; currentIndex++)
-  482  1              {
-  483  2                      currentFilterArray[currentIndex] = currentFilterArray[currentIndex + 1];
-  484  2                      currentFilterArraySum = currentFilterArraySum + currentFilterArray[currentIndex];
-  485  2              }
-  486  1      
-  487  1              if(ptr_adcApp->brakeMotorCurrent > currentFilterArray[7] + 50)
+  459  2              }
+  460  1              else if((tPid.pressure.error > 0) && (tPid.pressure.errorPre < 0))
+  461  1              {
+  462  2                      stabiliseTimeCnt = 0;
+  463  2                      if(g_bottomEdgeCnt < 65535)
+  464  2                      {
+  465  3                              g_bottomEdgeCnt++;
+  466  3                      }
+  467  2              }
+  468  1              else
+  469  1              {
+  470  2                      if(stabiliseTimeCnt > 1000)
+  471  2                      {
+  472  3                              g_topEdgeCnt = 0;
+  473  3                              g_bottomEdgeCnt = 0;
+  474  3                              g_systemAbnormalFlag = FALSE;
+  475  3                      }
+  476  2                      else
+  477  2                      {
+  478  3                              stabiliseTimeCnt++;
+  479  3                      }
+  480  2              }
+  481  1                      
+  482  1              
+  483  1              /*------------Integral term damping process,damping factor = 127/128--------*/
+  484  1              /*----Customary Integral damping factor is 0.994,when objLocation >=1mm---*/
+  485  1              /*--------------damping factor is 0.95,when objLocation == 1mm------------*/
+  486  1              
+  487  1              if(tPid.pressure.integral < 0)
   488  1              {
-  489  2                      currentFilterArray[7] = currentFilterArray[7] + 50;
-  490  2              }
-  491  1              else if(ptr_adcApp->brakeMotorCurrent < currentFilterArray[7] - 50)
-  492  1              {
-  493  2                      currentFilterArray[7] = currentFilterArray[7] - 50;
-  494  2              }
-  495  1              else
-  496  1              {
-  497  2                      currentFilterArray[7] = ptr_adcApp->brakeMotorCurrent;
-  498  2              }
-  499  1      
-  500  1              currentFilterArraySum = currentFilterArraySum + currentFilterArray[7];
-  501  1              currentFilterAverage = (INT16S)(currentFilterArraySum / 8);     
-  502  1      
-  503  1              return currentFilterAverage;
-  504  1      }
-  505         
-  506         
-  507         /***********************************************************************
-  508         *  Name        : Pid_LimitingAmplitude
-  509         *  Description : Limiting output value amplitude
-  510         *  Parameter   : inValue
-  511         *  Returns     : OutValue
-  512         ***********************************************************************/
-C166 COMPILER V7.57.0, PID                                                                 12/25/2020 20:36:03 PAGE 10  
+  489  2                      //  mean: u = -63/64 * tPid.pressure.integral;
+  490  2                      tPid.pressure.integral += (-tPid.pressure.integral) >> 7U; // polyspace test by gzz 2020.12.30
+  491  2              }
+  492  1              else
+  493  1              {
+  494  2                      u = tPid.pressure.integral;
+  495  2                      u = (u >> 7);
+  496  2                      tPid.pressure.integral = tPid.pressure.integral - u;
+  497  2              }       
+  498  1              
+  499  1              tPid.pressure.integral = tPid.pressure.integral + tPid.pressure.error;
+  500  1              tPid.pressure.integral = Pid_LimitingAmplitude(tPid.pressure.integral, 25000);
+  501  1              
+  502  1              /* Set KP  KI  KD */
+  503  1              
+  504  1              /* KP Factor  */
+  505  1              
+  506  1              if(tPid.pressure.error < 0)
+  507  1              {
+  508  2                      u = - tPid.pressure.error;
+  509  2                      u = u * (INT32U)gRTE_pressureKp / 100;          
+*** WARNING C192 IN LINE 509 OF src\app\alogrithm\pid.c: '=': value truncated
+  510  2                      tPid.pressure.term_Kp = -u;
+*** WARNING C115 IN LINE 510 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  511  2              }
+  512  1              else
+  513  1              {
+  514  2                      u = tPid.pressure.error;
+  515  2                      u = u * (INT32U)gRTE_pressureKp / 100;
+*** WARNING C192 IN LINE 515 OF src\app\alogrithm\pid.c: '=': value truncated
+  516  2                      tPid.pressure.term_Kp = u ;
+  517  2              }
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 10  
 
-  513         static INT16S Pid_LimitingAmplitude(INT16S inValue, INT16U thresholdValue)
-  514         {
-  515  1              INT16S outValue;
-  516  1      
-  517  1              if (abs(inValue) > thresholdValue)
-  518  1              {
-  519  2                      outValue = thresholdValue * SIGN(inValue);
-  520  2              }
-  521  1              else
-  522  1              {
-  523  2                      outValue = inValue;
-  524  2              }
-  525  1              
-  526  1              return outValue;
-  527  1      }
-  528         
-  529         
-  530         
-  531         /***********************************************************************
-  532         *  Name        : Pid_AlogrithmData
-  533         *  Description : PID control alogrithm data
-  534         *  Parameter   : None
-  535         *  Returns     : PID control alogrithm data structure access address
-  536         ***********************************************************************/
-  537         T_PID* Pid_AlogrithmData(void)
-  538         {
-  539  1              return (&tPid);
-  540  1      }       
-  541         
-  542         /* _END_OF_PID_ */
+  518  1      
+  519  1              /* KI Factor  */
+  520  1              if(tPid.pressure.integral < 0)
+  521  1              {
+  522  2                      u = - tPid.pressure.integral;
+  523  2                      u = u * (INT32U)gRTE_pressureKi / 100;
+*** WARNING C192 IN LINE 523 OF src\app\alogrithm\pid.c: '=': value truncated
+  524  2                      tPid.pressure.term_Ki = -u;          
+*** WARNING C115 IN LINE 524 OF src\app\alogrithm\pid.c: '-' applied to unsigned type, result still unsigned
+  525  2              }
+  526  1              else
+  527  1              {
+  528  2                      u = tPid.pressure.integral;
+  529  2                      u = u * (INT32U)gRTE_pressureKi / 100;
+*** WARNING C192 IN LINE 529 OF src\app\alogrithm\pid.c: '=': value truncated
+  530  2                      tPid.pressure.term_Ki = u;    
+  531  2              }
+  532  1              
+  533  1              
+  534  1              /* PID term limit amplitude */
+  535  1              tPid.pressure.term_Kp = Pid_LimitingAmplitude(tPid.pressure.term_Kp, 1600); // updated 20210108 pm; 1600u
+             - -> 1000u
+  536  1              tPid.pressure.term_Ki = Pid_LimitingAmplitude(tPid.pressure.term_Ki, 1400); // updated 20210108 pm; 1200u
+             - -> 800u
+  537  1              tPid.pressure.term_Kd = Pid_LimitingAmplitude(tPid.pressure.term_Kd, 300u);
+  538  1              
+  539  1              /* Update diviation value. */   
+  540  1              tPid.pressure.errorPre = tPid.pressure.error;
+  541  1              tPid.pressure.incrementValue = tPid.pressure.term_Kp + tPid.pressure.term_Ki + tPid.pressure.term_Kd;
+  542  1              tPid.pressure.incrementValue = Pid_LimitingAmplitude(tPid.pressure.incrementValue, MAXIMUM_OUTPUT_THRESHO
+             -LD);
+  543  1                      
+  544  1              Pwm_Control(tPid.pressure.incrementValue);
+  545  1              return tPid.pressure.incrementValue;
+  546  1      }
+  547         
+  548         /***********************************************************************
+  549         *  Name        : Pid_CurrentFilter
+  550         *  Description : Current sampling filter in current closed-loop control.
+  551         *  Parameter   : None
+  552         *  Returns     : None
+  553         ***********************************************************************/
+  554         static INT16S Pid_CurrentFilter(void)
+  555         {
+  556  1              INT8U currentIndex = 0;
+  557  1              INT32S currentFilterArraySum = 0;
+  558  1              
+  559  1              static INT16S currentFilterArray[8] = {0};
+  560  1              static INT16S currentFilterAverage = 0;
+  561  1              const T_ADC_APP *ptr_adcApp = AdcApp_SampleData();      
+  562  1                      
+  563  1              for(currentIndex = 0; currentIndex < 7; currentIndex++)
+  564  1              {
+  565  2                      currentFilterArray[currentIndex] = currentFilterArray[currentIndex + 1];
+  566  2                      currentFilterArraySum = currentFilterArraySum + currentFilterArray[currentIndex];
+  567  2              }
+  568  1      
+  569  1              if(ptr_adcApp->brakeMotorCurrent > currentFilterArray[7] + 50)
+  570  1              {
+  571  2                      currentFilterArray[7] = currentFilterArray[7] + 50;
+  572  2              }
+  573  1              else if(ptr_adcApp->brakeMotorCurrent < currentFilterArray[7] - 50)
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 11  
+
+  574  1              {
+  575  2                      currentFilterArray[7] = currentFilterArray[7] - 50;
+  576  2              }
+  577  1              else
+  578  1              {
+  579  2                      currentFilterArray[7] = ptr_adcApp->brakeMotorCurrent;
+  580  2              }
+  581  1      
+  582  1              currentFilterArraySum = currentFilterArraySum + currentFilterArray[7];
+  583  1              currentFilterAverage = (INT16S)(currentFilterArraySum / 8);     
+  584  1      
+  585  1              return currentFilterAverage;
+  586  1      }
+  587         
+  588         
+  589         /***********************************************************************
+  590         *  Name        : Pid_LimitingAmplitude
+  591         *  Description : Limiting output value amplitude
+  592         *  Parameter   : inValue
+  593         *  Returns     : OutValue
+  594         ***********************************************************************/
+  595         static INT16S Pid_LimitingAmplitude(INT16S inValue, INT16U thresholdValue)
+  596         {
+  597  1              INT16S outValue;
+  598  1      
+  599  1              if (abs(inValue) > thresholdValue)
+  600  1              {
+  601  2                      outValue = thresholdValue * SIGN(inValue);
+  602  2              }
+  603  1              else
+  604  1              {
+  605  2                      outValue = inValue;
+  606  2              }
+  607  1              
+  608  1              return outValue;
+  609  1      }
+  610         
+  611         
+  612         
+  613         /***********************************************************************
+  614         *  Name        : Pid_AlogrithmData
+  615         *  Description : PID control alogrithm data
+  616         *  Parameter   : None
+  617         *  Returns     : PID control alogrithm data structure access address
+  618         ***********************************************************************/
+  619         T_PID* Pid_AlogrithmData(void)
+  620         {
+  621  1              return (&tPid);
+  622  1      }       
+  623         
+  624         /* _END_OF_PID_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        2814     --------
+  CODE SIZE        =        3058     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -617,6 +702,8 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   NEAR-DATA SIZE   =           2     --------
   FAR-DATA SIZE    =         102     --------
   XHUGE-DATA SIZE  =    --------     --------
+C166 COMPILER V7.57.0, PID                                                                 01/20/2021 09:50:44 PAGE 12  
+
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
@@ -626,4 +713,4 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  32 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  31 WARNING(S),  0 ERROR(S)

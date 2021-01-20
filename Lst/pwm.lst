@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 1   
+C166 COMPILER V7.57.0, PWM                                                                 01/20/2021 09:50:51 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE PWM
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\pwm.c MODV2 LA
    50  1              return;
    51  1      }
    52         
-C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 2   
+C166 COMPILER V7.57.0, PWM                                                                 01/20/2021 09:50:51 PAGE 2   
 
    53         /***********************************************************************
    54         *  Name        : Pwm_DeInit
@@ -105,123 +105,131 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\pwm.c MODV2 LA
    91  1      
    92  1      #if 1
    93  1              if((TRUE != g_pvTestFlag)
-   94  1                      && (TRUE != FLTDAct_ptr->fixedDecelerationFlg)
-   95  1                      && (((BoosterBrakeMode == BrakeSysMode) && (ptr_Booster->pedalRate <= 0) && (ptr_Booster->brakePedalLoca
-             -tion < 100))
-   96  1                              || ((WireCtrlBrakeMode == BrakeSysMode) && (0 == g_wireControlObjPressure)))
-   97  1                      && ((ptr_Booster->mainCylinderLocation <= 200) && (ptr_Booster->cylinderRate <= 0)))
-   98  1              {
-   99  2                      motorDuty = PWM_AMPLITUDE_DEFAULT;
-  100  2      
-  101  2                      ptr_Pid->current.integral = 0;  
-  102  2                      ptr_Pid->onlyLocation.integral = 0;             
-  103  2              }
-  104  1              else
-  105  1      #endif
-  106  1              {
-  107  2                      Pwm_pwmOutFilter(&pwmValue);
-  108  2                      
-  109  2                      if (abs(pwmValue) <= 10)
-  110  2                      {
-  111  3                              motorDuty = PWM_AMPLITUDE_DEFAULT;
-  112  3                      }
-  113  2                      else
-C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 3   
+   94  1                      && (((BoosterBrakeMode == BrakeSysMode) 
+   95  1                              && (ptr_Booster->pedalRate <= 0) 
+   96  1                              && (ptr_Booster->brakePedalLocation < 100) 
+   97  1                              && (TRUE != FLTDAct_ptr->fixedDecelerationFlg) 
+   98  1                              && (ptr_Booster->mainCylinderLocation <= 200) 
+   99  1                              && (ptr_Booster->cylinderRate <= 0))
+  100  1                      || ((WireCtrlBrakeMode == BrakeSysMode) 
+  101  1                              && (FALSE == g_cylinderExhaustEnFlag)
+  102  1                              && ((TRUE == g_brakeReleaseFlag) || ((0 == g_wireControlObjPressure) && (g_wireControlActualPressure < 
+             -4)))))
+  103  1              )
+  104  1              {
+  105  2                      motorDuty = PWM_AMPLITUDE_DEFAULT;
+  106  2      
+  107  2                      ptr_Pid->current.integral = 0;  
+  108  2                      ptr_Pid->onlyLocation.integral = 0;             
+  109  2                      ptr_Pid->pressure.integral = 0;         
+  110  2              }
+  111  1              else
+  112  1      #endif
+  113  1              {
+C166 COMPILER V7.57.0, PWM                                                                 01/20/2021 09:50:51 PAGE 3   
 
-  114  2                      {
-  115  3                              motorDuty = pwmValue + PWM_AMPLITUDE_DEFAULT;
-  116  3      
-  117  3                              if (motorDuty <= PWM_AMPLITUDE_LOWER)
-  118  3                              {
-  119  4                                      motorDuty = PWM_AMPLITUDE_LOWER;
-  120  4                              }
-  121  3                              else if (motorDuty >= PWM_AMPLITUDE_UPPER)
-  122  3                              {
-  123  4                                      motorDuty = PWM_AMPLITUDE_UPPER;
-  124  4                              }
-  125  3                              else
-  126  3                              {
-  127  4                                      /* NOP */
-  128  4                              }
-  129  3                      }
-  130  2              }
-  131  1              
-  132  1              tPwm.motorCtrl = motorDuty;
-  133  1      }
-  134         
-  135         
-  136         /***********************************************************************
-  137         *  Name        : Pwm_ControlOutput
-  138         *  Description : 
-  139         *  Parameter   : None
-  140         *  Returns     : None
-  141         ***********************************************************************/
-  142         static void Pwm_ControlOutput(void)
-  143         {
-  144  1              INT32U temp = 0;
-  145  1              
-  146  1              temp = ((INT32U)tPwm.motorCtrl * 2000u) >> 12u;
-  147  1              
-  148  1      #if (0 == HARDWARE_VERSION)
+  114  2                      Pwm_pwmOutFilter(&pwmValue);
+  115  2                      
+  116  2                      if (abs(pwmValue) <= 10)
+  117  2                      {
+  118  3                              motorDuty = PWM_AMPLITUDE_DEFAULT;
+  119  3                      }
+  120  2                      else
+  121  2                      {
+  122  3                              motorDuty = pwmValue + PWM_AMPLITUDE_DEFAULT;
+  123  3      
+  124  3                              if (motorDuty <= PWM_AMPLITUDE_LOWER)
+  125  3                              {
+  126  4                                      motorDuty = PWM_AMPLITUDE_LOWER;
+  127  4                              }
+  128  3                              else if (motorDuty >= PWM_AMPLITUDE_UPPER)
+  129  3                              {
+  130  4                                      motorDuty = PWM_AMPLITUDE_UPPER;
+  131  4                              }
+  132  3                              else
+  133  3                              {
+  134  4                                      /* NOP */
+  135  4                              }
+  136  3                      }
+  137  2              }
+  138  1              
+  139  1              tPwm.motorCtrl = motorDuty;
+  140  1      }
+  141         
+  142         
+  143         /***********************************************************************
+  144         *  Name        : Pwm_ControlOutput
+  145         *  Description : 
+  146         *  Parameter   : None
+  147         *  Returns     : None
+  148         ***********************************************************************/
+  149         static void Pwm_ControlOutput(void)
+  150         {
+  151  1              INT32U temp = 0;
+  152  1              
+  153  1              temp = ((INT32U)tPwm.motorCtrl * 2000u) >> 12u;
+  154  1              
+  155  1      #if (0 == HARDWARE_VERSION)
                       tPwm.channelDutyA = (INT16U)temp;
                       tPwm.channelDutyB = 2000u - tPwm.channelDutyA;
               #else
-  152  1              tPwm.channelDutyB = (INT16U)temp;
-  153  1              tPwm.channelDutyA = 2000u - tPwm.channelDutyB;
-  154  1      #endif
-  155  1      
-  156  1              return;
-  157  1      }
-  158         
-  159         /***********************************************************************
-  160         *  Name        : FunctionPWMOutFilter
-  161         *  Description : PWM OUT value Filter.
-  162         *  Parameter   : NONE
-  163         *  Returns     : NONE
-  164         ***********************************************************************/
-  165         static void Pwm_pwmOutFilter(INT16S* pwmInputValue)
-  166         {       
-  167  1              INT8U PwmIndex = 0;
-  168  1              INT16S PwmFilterArraySum = 0;
-  169  1              
-  170  1              static INT16S PwmFilterArray[8] = {0};
-  171  1      
-  172  1              PwmFilterArray[0] = PwmFilterArray[1];
-  173  1              PwmFilterArray[1] = PwmFilterArray[2];
-  174  1              PwmFilterArray[2] = PwmFilterArray[3];
-  175  1              PwmFilterArray[3] = PwmFilterArray[4];
-C166 COMPILER V7.57.0, PWM                                                                 12/25/2020 20:36:10 PAGE 4   
+  159  1              tPwm.channelDutyB = (INT16U)temp;
+  160  1              tPwm.channelDutyA = 2000u - tPwm.channelDutyB;
+  161  1      #endif
+  162  1      
+  163  1              return;
+  164  1      }
+  165         
+  166         /***********************************************************************
+  167         *  Name        : FunctionPWMOutFilter
+  168         *  Description : PWM OUT value Filter.
+  169         *  Parameter   : NONE
+  170         *  Returns     : NONE
+  171         ***********************************************************************/
+  172         static void Pwm_pwmOutFilter(INT16S* pwmInputValue)
+  173         {       
+  174  1              INT8U PwmIndex = 0;
+  175  1              INT16S PwmFilterArraySum = 0;
+C166 COMPILER V7.57.0, PWM                                                                 01/20/2021 09:50:51 PAGE 4   
 
-  176  1              PwmFilterArray[4] = PwmFilterArray[5];
-  177  1              PwmFilterArray[5] = PwmFilterArray[6];  
-  178  1              PwmFilterArray[6] = PwmFilterArray[7];
-  179  1              PwmFilterArray[7] = *pwmInputValue;     
-  180  1                      
-  181  1              for(PwmIndex = 0; PwmIndex < 7; PwmIndex++)
-  182  1              {
-  183  2                      PwmFilterArray[PwmIndex] = PwmFilterArray[PwmIndex + 1];
-  184  2                      PwmFilterArraySum = PwmFilterArraySum + PwmFilterArray[PwmIndex];
-  185  2              }       
-  186  1              
-  187  1          *pwmInputValue = PwmFilterArraySum / 8;             
-  188  1      }
-  189         
-  190         /***********************************************************************
-  191         *  Name        : Pwm_ControlData
-  192         *  Description : PWM module interface
-  193         *  Parameter   : None
-  194         *  Returns     : PWM data structure access address
-  195         ***********************************************************************/
-  196         const T_PWM* Pwm_ControlData(void)
-  197         {
-  198  1              return (&tPwm);
-  199  1      }
-  200         
-  201         /* _END_OF_PWM_IF_ */
+  176  1              
+  177  1              static INT16S PwmFilterArray[8] = {0};
+  178  1      
+  179  1              PwmFilterArray[0] = PwmFilterArray[1];
+  180  1              PwmFilterArray[1] = PwmFilterArray[2];
+  181  1              PwmFilterArray[2] = PwmFilterArray[3];
+  182  1              PwmFilterArray[3] = PwmFilterArray[4];
+  183  1              PwmFilterArray[4] = PwmFilterArray[5];
+  184  1              PwmFilterArray[5] = PwmFilterArray[6];  
+  185  1              PwmFilterArray[6] = PwmFilterArray[7];
+  186  1              PwmFilterArray[7] = *pwmInputValue;     
+  187  1                      
+  188  1              for(PwmIndex = 0; PwmIndex < 7; PwmIndex++)
+  189  1              {
+  190  2                      PwmFilterArray[PwmIndex] = PwmFilterArray[PwmIndex + 1];
+  191  2                      PwmFilterArraySum = PwmFilterArraySum + PwmFilterArray[PwmIndex];
+  192  2              }       
+  193  1              PwmFilterArraySum = PwmFilterArraySum + PwmFilterArray[7];
+  194  1              
+  195  1          *pwmInputValue = PwmFilterArraySum / 8;             
+  196  1      }
+  197         
+  198         /***********************************************************************
+  199         *  Name        : Pwm_ControlData
+  200         *  Description : PWM module interface
+  201         *  Parameter   : None
+  202         *  Returns     : PWM data structure access address
+  203         ***********************************************************************/
+  204         const T_PWM* Pwm_ControlData(void)
+  205         {
+  206  1              return (&tPwm);
+  207  1      }
+  208         
+  209         /* _END_OF_PWM_IF_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         452     --------
+  CODE SIZE        =         490     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------

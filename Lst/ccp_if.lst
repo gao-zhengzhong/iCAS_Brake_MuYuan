@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 1   
+C166 COMPILER V7.57.0, CCP_IF                                                              01/20/2021 09:50:49 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE CCP_IF
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\ccp_if.c MODV2
    49         
    50         // -----------------------------------------------------------------------------
    51         // Define
-C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 2   
+C166 COMPILER V7.57.0, CCP_IF                                                              01/20/2021 09:50:49 PAGE 2   
 
    52         // -----------------------------------------------------------------------------
    53         BYTE ccpDisableNormalOperation(MTABYTEPTR a, WORD s)
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\ccp_if.c MODV2
   108         *********************************************************************************************************
   109         */
   110         CCP_DWORD ccpGetSeed(CCP_BYTE resourceMask)
-C166 COMPILER V7.57.0, CCP_IF                                                              12/25/2020 20:36:09 PAGE 3   
+C166 COMPILER V7.57.0, CCP_IF                                                              01/20/2021 09:50:49 PAGE 3   
 
   111         {
   112  1      

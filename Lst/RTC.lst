@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 1   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE RTC
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
    50         // @Defines
    51         //****************************************************************************
    52         
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 2   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 2   
 
    53         // USER CODE BEGIN (RTC_General,4)
    54         
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
   112         
   113         //****************************************************************************
   114         // @Function      void RTC_vInit(void) 
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 3   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 3   
 
   115         //
   116         //----------------------------------------------------------------------------
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
   174  1        RTC_T14REL     =  0xFF06;      // load T14 count/reload register
   175  1        RTC_RTCL       =  0x0000;      // load RTC low register
   176  1        RTC_RELL       =  0x0000;      // load RTC reload low register
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 4   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 4   
 
   177  1        RTC_RTCH       =  0x0000;      // load RTC high register
   178  1        RTC_RELH       =  0x0000;      // load RTC reload high register
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
   236         //----------------------------------------------------------------------------
   237         // @Returnvalue   None
   238         //
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 5   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 5   
 
   239         //----------------------------------------------------------------------------
   240         // @Parameters    None
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
   298  1      
   299  1        if(RTC_ISNC_T14IR)             // if counter T14 overflow
   300  1        {
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 6   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 6   
 
   301  2      
   302  2          // USER CODE BEGIN (RTC,3)
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\RTC.c MODV2 LARGE B
   360         
   361         
   362         
-C166 COMPILER V7.57.0, RTC                                                                 12/25/2020 20:35:58 PAGE 7   
+C166 COMPILER V7.57.0, RTC                                                                 01/20/2021 09:50:40 PAGE 7   
 
   363         // USER CODE BEGIN (RTC_General,10)
   364         

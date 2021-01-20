@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 1   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE ADC_IF
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
    50         ADC_IF_STAT void AdcIf_BrakeMainCylinderLocationSensor2(void);
    51         ADC_IF_STAT void AdcIf_BrakeMotorCurrentSensor(void);
    52         ADC_IF_STAT void AdcIf_EnvironmentTemperatureSensor(void);
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 2   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 2   
 
    53         ADC_IF_STAT void AdcIf_BrakeMainCylinderPressureSensor(void);
    54         ADC_IF_STAT void AdcIf_ReserveSensor1(void);
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   112  3                                      tAdcIf.vehiclePowerVoltage_Adc = g_adcSimulateData;
   113  3                                      break;
   114  3                              case 1:
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 3   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 3   
 
   115  3                                      tAdcIf.brakeMotorVlinkSensorVoltage_Adc = g_adcSimulateData;
   116  3                                      break;
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   173  1      }
   174         
   175         
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 4   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 4   
 
   176         
   177         /***********************************************************************
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   231         
   232         /***********************************************************************
   233         *  Name        : AdcIf_BrakePedalLocationSensorVoltage
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 5   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 5   
 
   234         *  Description : Brake pedal location sensor power voltage ADC value
   235         *  Parameter   : None
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   289         *  Returns     : None
   290         ***********************************************************************/
   291         ADC_IF_STAT void AdcIf_BrakeMainCylinderLocationSensor1(void)
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 6   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 6   
 
   292         {
   293  1              tAdcIf.brakeMainCylinderLocationSensor1_Adc = AdcIf_SignalSample(ADC_CORE_BRAKE_MAIN_CYLINDER_LOCATION_1,
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   346  1              return;
   347  1      }
   348         
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 7   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 7   
 
   349         
   350         /***********************************************************************
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   408  4                                      
   409  4                                      case 4:
   410  4                                      case 5:
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 8   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 8   
 
   411  4                                      case 8:
   412  4                                      case 13:
@@ -510,7 +510,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\interaction\adc_if.c MODV2
   470         *  Description : ADC sample module interface data
   471         *  Parameter   : None
   472         *  Returns     : ADC sample data structure access address
-C166 COMPILER V7.57.0, ADC_IF                                                              12/25/2020 20:36:08 PAGE 9   
+C166 COMPILER V7.57.0, ADC_IF                                                              01/20/2021 09:50:49 PAGE 9   
 
   473         ***********************************************************************/
   474         const T_ADC_IF* AdcIf_InterfaceData(void)

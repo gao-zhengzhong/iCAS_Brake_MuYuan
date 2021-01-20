@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, TASK4                                                               12/25/2020 20:36:13 PAGE 1   
+C166 COMPILER V7.57.0, TASK4                                                               01/20/2021 09:50:53 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE TASK4
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\task\Task4.c MODV2 LAR
    50         *       @param[in]      void
    51         *       @return     void
    52         *       @note       在GPT1.c中GPT1_viTmr4()函数中调用
-C166 COMPILER V7.57.0, TASK4                                                               12/25/2020 20:36:13 PAGE 2   
+C166 COMPILER V7.57.0, TASK4                                                               01/20/2021 09:50:53 PAGE 2   
 
    53         *       @Data       2019-3-12
    54         ****************************************************************************************/

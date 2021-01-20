@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 1   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE ADC_SAMPLE
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
    50         static void AdcApp_SampleMainCylinderLocation2(void);
    51         
    52         static void AdcApp_SampleBrakeMotorCurrent(void);
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 2   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 2   
 
    53         static void AdcApp_SampleMainCylinderPressure(void);
    54         static void AdcApp_SampleEnvironmentTemperature(void);
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   112         ***********************************************************************/
   113         static void AdcApp_SampleVehiclePowerVoltage(void)
   114         {
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 3   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 3   
 
   115  1              INT32U tempVehiclePowerVoltage;
   116  1              const T_ADC_IF *ptr_AdcIf = AdcIf_InterfaceData();
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   174  1              
   175  1              tAdcSample.motorPhaseVoltage_Adc[1] = ptr_AdcIf->brakeMotorBPhaseSensorVoltage_Adc;     
   176  1              
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 4   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 4   
 
   177  1              /* Brake motor B phase voltage ADC value switch to real voltage value */        
   178  1              tempMotorBPhaseVoltage = (INT32U)tAdcSample.motorPhaseVoltage_Adc[1] * 20000u;
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   236  1              tAdcApp.mainCylinderPressureVoltage = (INT16U)(tempPressureVoltage >> 10);
   237  1              return;         
   238  1      }
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 5   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 5   
 
   239         
   240         /***********************************************************************
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   296  1              if (tAdcSample.brakePedalTrip_Adc[1] <= gRTE_pedalInitValue[1])
   297  1              {
   298  2                      tempBrakePedalTrip2 = gRTE_pedalInitValue[1];
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 6   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 6   
 
   299  2              }
   300  1              else
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   356  1      
   357  1              /* TODO: Brake main cylinder location sensor 2 signal ADC value switch to real voltage value */ 
   358  1              tAdcSample.mainCylinderTrip_Adc[1] = ptr_AdcIf->brakeMainCylinderLocationSensor2_Adc;
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 7   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 7   
 
   359  1      
   360  1              tAdcSample.mainCylinderTrip_Adc[1] = ((mainCylinderTrip2_Adc * ADC_FILTER_PARM) + 
@@ -446,7 +446,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   415         *  Parameter   : None
   416         *  Returns     : None
   417         ***********************************************************************/
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 8   
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 8   
 
   418         static void AdcApp_SampleEnvironmentTemperature(void)
   419         {
@@ -472,54 +472,70 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\adc\adc_sample.c MODV2
   439  1      
   440  1              /* TODO: Brake main cylinder sensor ADC value switch to real voltage value */   
   441  1              tAdcSample.mainCylinderPressure_Adc = ptr_AdcIf->brakeMainCylinderPressureSensor_Adc;
-  442  1      
+  442  1              
   443  1              tAdcSample.mainCylinderPressure_Adc = ((mainCylinderPressure_Adc * ADC_FILTER_PARM) + 
   444  1                                                                                         ((INT32U)tAdcSample.mainCylinderPressure_Adc * (100u - ADC_FILTER_PARM))) / 100u;    
 *** WARNING C192 IN LINE 444 OF src\app\adc\adc_sample.c: '=': value truncated
   445  1              mainCylinderPressure_Adc = tAdcSample.mainCylinderPressure_Adc;
   446  1              
   447  1              tempMainCylinderPressure = tAdcSample.mainCylinderPressure_Adc;
-  448  1              tAdcApp.mainCylinderPressure = (INT16U)(tempMainCylinderPressure * 100000u / CYLINDER_PRESSURE_PARAM);
-  449  1              return;
-  450  1      }
-  451         
-  452         /***********************************************************************
-  453         *  Name        : Adc_SampleData
-  454         *  Description : ADC sample module interface
-  455         *  Parameter   : None
-  456         *  Returns     : ADC sample data structure access address
-  457         ***********************************************************************/
-  458         const T_ADC* Adc_SampleData(void)
-  459         {
-  460  1              return (&tAdcSample);
-  461  1      }       
-  462         
-  463         const T_ADC_APP* AdcApp_SampleData(void)
-  464         {
-  465  1              return (&tAdcApp);
-  466  1      }       
-  467         
-  468         /* _END_OF_ADC_SAMPLE_ */
+  448  1              
+  449  1      #if (0 == PRESSURE_SENSOR_TYPE)
+                      tAdcApp.mainCylinderPressure = (INT16U)(tempMainCylinderPressure * 100000u / CYLINDER_PRESSURE_PARAM);
+              #elif (1 == PRESSURE_SENSOR_TYPE)
+  452  1              tAdcApp.pressureVoltage = ((INT32U)tAdcSample.mainCylinderPressure_Adc * 5000) / 1023;
+*** WARNING C192 IN LINE 452 OF src\app\adc\adc_sample.c: '=': value truncated
+  453  1              if((tAdcApp.pressureVoltage < 500) || (tAdcApp.pressureVoltage > 4500))
+  454  1              {
+  455  2                      tAdcApp.mainCylinderPressure = 0;
+  456  2              }
+  457  1              else
+  458  1              {
+  459  2                      tempMainCylinderPressure = tAdcApp.pressureVoltage - 500;
+  460  2                      tAdcApp.mainCylinderPressure = tempMainCylinderPressure * 25 / 4;
+*** WARNING C192 IN LINE 460 OF src\app\adc\adc_sample.c: '=': value truncated
+  461  2              }
+  462  1      #endif
+  463  1              return;
+  464  1      }
+  465         
+  466         /***********************************************************************
+  467         *  Name        : Adc_SampleData
+  468         *  Description : ADC sample module interface
+  469         *  Parameter   : None
+  470         *  Returns     : ADC sample data structure access address
+  471         ***********************************************************************/
+  472         const T_ADC* Adc_SampleData(void)
+  473         {
+  474  1              return (&tAdcSample);
+  475  1      }       
+  476         
+C166 COMPILER V7.57.0, ADC_SAMPLE                                                          01/20/2021 09:50:46 PAGE 9   
+
+  477         const T_ADC_APP* AdcApp_SampleData(void)
+  478         {
+  479  1              return (&tAdcApp);
+  480  1      }       
+  481         
+  482         /* _END_OF_ADC_SAMPLE_ */
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        1460     --------
+  CODE SIZE        =        1532     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
   XHUGE-CONST SIZE =    --------     --------
   NEAR-DATA SIZE   =          12     --------
-  FAR-DATA SIZE    =          64     --------
-C166 COMPILER V7.57.0, ADC_SAMPLE                                                          12/25/2020 20:36:05 PAGE 9   
-
+  FAR-DATA SIZE    =          66     --------
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
   BIT SIZE         =    --------     --------
-  INIT'L SIZE      =          76     --------
+  INIT'L SIZE      =          78     --------
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  6 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  8 WARNING(S),  0 ERROR(S)

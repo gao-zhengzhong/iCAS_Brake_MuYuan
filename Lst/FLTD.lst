@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 1   
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE FLTD
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\diagnostic\FLTD.c MODV
    47         
    48         
    49         /**** Declaration of functions ****/
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 2   
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 2   
 
    50         
    51         static void FLTD_AdcMonitor(void);
@@ -126,1421 +126,1421 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\app\diagnostic\FLTD.c MODV
                       FLTD_PedalInitLocAbnormalDetect();
                       FLTD_PedalReturnAbnormalDetect();
                       FLTD_PedalActionAbnormalDetect();
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 3   
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 3   
 
                       FLTD_CylinderInitLocAbnormalDetect();
-                      FLTD_CurrentInitSigAbnormalDetect();
+                      
               #endif
   115  1              
-  116  1              FLTD_PedalSigCheckErrorDetect();
-  117  1              FLTD_CylinderSigCheckErrorDetect();
-  118  1              FLTD_CylinderSignalAbnormalDetect();
-  119  1              FLTD_VlinkVoltageAbnormalDetect();
-  120  1              FLTD_PredriverFaultDetect();
-  121  1              FLTD_MotorFaultDetect();
-  122  1              
-  123  1              FLTD_FaultActionHandle();
-  124  1      }
-  125         
-  126         
+  116  1              FLTD_CurrentInitSigAbnormalDetect(); //muYuan
+  117  1              
+  118  1              FLTD_PedalSigCheckErrorDetect();
+  119  1              FLTD_CylinderSigCheckErrorDetect();
+  120  1              FLTD_CylinderSignalAbnormalDetect();
+  121  1              FLTD_VlinkVoltageAbnormalDetect();
+  122  1              FLTD_PredriverFaultDetect();
+  123  1              FLTD_MotorFaultDetect();
+  124  1              
+  125  1              FLTD_FaultActionHandle();
+  126  1      }
   127         
-  128         //***************************************************************************************
-  129         // @Function      static void FLTD_AdcMonitor(void) 
-  130         //---------------------------------------------------------------------------------------
-  131         // @Description   AD samples values is divided into five, in order to stop, low,  
-  132         //                                normal, high, over, etc.
-  133         //
-  134         //---------- stop_t ----------------- low_t ------  high_t ------------------- over_t ---
-  135         //             |         |   lowHyst    |                        |        highHyst       |          |   
-  136         //                         |         |                      |                    |                               |                  |
-  137         //     stop        |   low      low/normal  |  normal    |       normal/high     high   |       over
-  138         //---------------------------------------------------------------------------------------
-  139         // @Returnvalue   None
+  128         
+  129         
+  130         //***************************************************************************************
+  131         // @Function      static void FLTD_AdcMonitor(void) 
+  132         //---------------------------------------------------------------------------------------
+  133         // @Description   AD samples values is divided into five, in order to stop, low,  
+  134         //                                normal, high, over, etc.
+  135         //
+  136         //---------- stop_t ----------------- low_t ------  high_t ------------------- over_t ---
+  137         //             |         |   lowHyst    |                        |        highHyst       |          |   
+  138         //                         |         |                      |                    |                               |                  |
+  139         //     stop        |   low      low/normal  |  normal    |       normal/high     high   |       over
   140         //---------------------------------------------------------------------------------------
-  141         // @Parameters    None
+  141         // @Returnvalue   None
   142         //---------------------------------------------------------------------------------------
-  143         // @Date          2019/11/7
-  144         //***************************************************************************************
-  145         static void FLTD_AdcMonitor(void)
-  146         {
-  147  1              FLTD_adcType adcIndex = 0;
-  148  1      
-  149  1              static FLTD_volModeType adcVoltModeTemp[FLTD_ADC_MAX] = {0};
-  150  1              static FLTD_volModeType adcVoltModeStsLast[FLTD_ADC_MAX] = {0};
-  151  1              static FLT_U16 g_u16VoltModeFilterCnt[FLTD_ADC_MAX] = {0};
-  152  1              FLTD_AdcMonitorCfgType* ptrAdcMonitorCfg = NULL;
-  153  1      
-  154  1              /* For the configured AD channel, According to the sample AD value, determine which range it belongs to *
+  143         // @Parameters    None
+  144         //---------------------------------------------------------------------------------------
+  145         // @Date          2019/11/7
+  146         //***************************************************************************************
+  147         static void FLTD_AdcMonitor(void)
+  148         {
+  149  1              FLTD_adcType adcIndex = 0;
+  150  1      
+  151  1              static FLTD_volModeType adcVoltModeTemp[FLTD_ADC_MAX] = {0};
+  152  1              static FLTD_volModeType adcVoltModeStsLast[FLTD_ADC_MAX] = {0};
+  153  1              static FLT_U16 g_u16VoltModeFilterCnt[FLTD_ADC_MAX] = {0};
+  154  1              FLTD_AdcMonitorCfgType* ptrAdcMonitorCfg = NULL;
+  155  1      
+  156  1              /* For the configured AD channel, According to the sample AD value, determine which range it belongs to *
              -/
-  155  1              for (adcIndex = 0; adcIndex < FLTD_ADC_MAX; adcIndex++)
-  156  1              {
-  157  2                      /* If the channel detection condition is not satisfied, skip */
-  158  2                      if(FALSE == FLTD_GetAdcCondition(adcIndex))
-  159  2                      {
-  160  3                              g_u16VoltModeFilterCnt[adcIndex] = 0;
-  161  3                              continue;
-  162  3                      }
-  163  2                      
-  164  2                      ptrAdcMonitorCfg = (FLTD_AdcMonitorCfgType*) &FLTD_AdcMonitorCfg[adcIndex];
+  157  1              for (adcIndex = 0; adcIndex < FLTD_ADC_MAX; adcIndex++)
+  158  1              {
+  159  2                      /* If the channel detection condition is not satisfied, skip */
+  160  2                      if(FALSE == FLTD_GetAdcCondition(adcIndex))
+  161  2                      {
+  162  3                              g_u16VoltModeFilterCnt[adcIndex] = 0;
+  163  3                              continue;
+  164  3                      }
   165  2                      
-  166  2                      if ((*ptrAdcMonitorCfg->adcValue >= ptrAdcMonitorCfg->lowThreshold)
-  167  2                              && (*ptrAdcMonitorCfg->adcValue <= ptrAdcMonitorCfg->highThreshold))/* low ~ high */
-  168  2                      {
-  169  3                              adcVoltModeTemp[adcIndex] = FLTD_VOL_NORMAL;
-  170  3                      }
-  171  2                      else
-  172  2                      {
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 4   
+  166  2                      ptrAdcMonitorCfg = (FLTD_AdcMonitorCfgType*) &FLTD_AdcMonitorCfg[adcIndex];
+  167  2                      
+  168  2                      if ((*ptrAdcMonitorCfg->adcValue >= ptrAdcMonitorCfg->lowThreshold)
+  169  2                              && (*ptrAdcMonitorCfg->adcValue <= ptrAdcMonitorCfg->highThreshold))/* low ~ high */
+  170  2                      {
+  171  3                              adcVoltModeTemp[adcIndex] = FLTD_VOL_NORMAL;
+  172  3                      }
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 4   
 
-  173  3                              if (*ptrAdcMonitorCfg->adcValue > ptrAdcMonitorCfg->highThreshold) /* high ~  */
-  174  3                              {
-  175  4                                      if (*ptrAdcMonitorCfg->adcValue < (ptrAdcMonitorCfg->highThreshold + ptrAdcMonitorCfg->highHyst)) /* h
+  173  2                      else
+  174  2                      {
+  175  3                              if (*ptrAdcMonitorCfg->adcValue > ptrAdcMonitorCfg->highThreshold) /* high ~  */
+  176  3                              {
+  177  4                                      if (*ptrAdcMonitorCfg->adcValue < (ptrAdcMonitorCfg->highThreshold + ptrAdcMonitorCfg->highHyst)) /* h
              -igh ~ (high + high_hyst) */
-  176  4                                      {
-  177  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_HIGH_HYST;
-  178  5                                      }
-  179  4                                      else if (*ptrAdcMonitorCfg->adcValue <= ptrAdcMonitorCfg->overThreshold) /* (high + highHyst) ~ over *
+  178  4                                      {
+  179  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_HIGH_HYST;
+  180  5                                      }
+  181  4                                      else if (*ptrAdcMonitorCfg->adcValue <= ptrAdcMonitorCfg->overThreshold) /* (high + highHyst) ~ over *
              -/
-  180  4                                      {
-  181  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_HIGH;
-  182  5                                      }
-  183  4                                      else                                                                                                                                    /* over ~  */
-  184  4                                      {
-  185  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_OVER;
-  186  5                                      }
-  187  4                              }
-  188  3                              else                                                                                                                            /*  ~ low */
-  189  3                              {
-  190  4                                      if (*ptrAdcMonitorCfg->adcValue > (ptrAdcMonitorCfg->lowThreshold - ptrAdcMonitorCfg->lowHyst)) /* (lo
+  182  4                                      {
+  183  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_HIGH;
+  184  5                                      }
+  185  4                                      else                                                                                                                                    /* over ~  */
+  186  4                                      {
+  187  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_OVER;
+  188  5                                      }
+  189  4                              }
+  190  3                              else                                                                                                                            /*  ~ low */
+  191  3                              {
+  192  4                                      if (*ptrAdcMonitorCfg->adcValue > (ptrAdcMonitorCfg->lowThreshold - ptrAdcMonitorCfg->lowHyst)) /* (lo
              -w - low_hyst) ~ low */
-  191  4                                      {
-  192  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_LOW_HYST;
-  193  5                                      }
-  194  4                                      else if (*ptrAdcMonitorCfg->adcValue >= ptrAdcMonitorCfg->stopThreshold) /* stop ~ (low - lowHyst)*/
-  195  4                                      {
-  196  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_LOW;
-  197  5                                      }
-  198  4                                      else                                                                                                                                    /*  ~ stop */
-  199  4                                      {
-  200  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_STOP;
-  201  5                                      }
-  202  4                              }
-  203  3                      }
-  204  2      
-  205  2                      /* According to the judgment of the above process, filter the judgment result */
-  206  2                      if (adcVoltModeTemp[adcIndex] != adcVoltModeSts[adcIndex])
-  207  2                      {
-  208  3                              if (g_u16VoltModeFilterCnt[adcIndex] < ptrAdcMonitorCfg->filterTime)
-  209  3                              {
-  210  4                                      g_u16VoltModeFilterCnt[adcIndex]++;
-  211  4                              }
-  212  3                              else
-  213  3                              {
-  214  4                                      adcVoltModeSts[adcIndex] = adcVoltModeTemp[adcIndex];
-  215  4                                      g_u16VoltModeFilterCnt[adcIndex] = 0;
-  216  4                              }
-  217  3                      }
-  218  2                      else
-  219  2                      {
-  220  3                              g_u16VoltModeFilterCnt[adcIndex] = 0;
-  221  3                      }
-  222  2      
-  223  2                      /* In both cases in the low or high hysteretic interval, 
-  224  2                      *  the result is normal if the entry is from the normal range;
-  225  2                      *  If the entry is from the corresponding low or high state, 
-  226  2                      *  the low or high state is maintained 
-  227  2                      */
-  228  2                      if (FLTD_VOL_LOW_HYST == adcVoltModeSts[adcIndex])
-  229  2                      {
-  230  3                              if ((FLTD_VOL_LOW == adcVoltModeStsLast[adcIndex])
-  231  3                                      || (FLTD_VOL_STOP == adcVoltModeStsLast[adcIndex]))
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 5   
+  193  4                                      {
+  194  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_LOW_HYST;
+  195  5                                      }
+  196  4                                      else if (*ptrAdcMonitorCfg->adcValue >= ptrAdcMonitorCfg->stopThreshold) /* stop ~ (low - lowHyst)*/
+  197  4                                      {
+  198  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_LOW;
+  199  5                                      }
+  200  4                                      else                                                                                                                                    /*  ~ stop */
+  201  4                                      {
+  202  5                                              adcVoltModeTemp[adcIndex] = FLTD_VOL_STOP;
+  203  5                                      }
+  204  4                              }
+  205  3                      }
+  206  2      
+  207  2                      /* According to the judgment of the above process, filter the judgment result */
+  208  2                      if (adcVoltModeTemp[adcIndex] != adcVoltModeSts[adcIndex])
+  209  2                      {
+  210  3                              if (g_u16VoltModeFilterCnt[adcIndex] < ptrAdcMonitorCfg->filterTime)
+  211  3                              {
+  212  4                                      g_u16VoltModeFilterCnt[adcIndex]++;
+  213  4                              }
+  214  3                              else
+  215  3                              {
+  216  4                                      adcVoltModeSts[adcIndex] = adcVoltModeTemp[adcIndex];
+  217  4                                      g_u16VoltModeFilterCnt[adcIndex] = 0;
+  218  4                              }
+  219  3                      }
+  220  2                      else
+  221  2                      {
+  222  3                              g_u16VoltModeFilterCnt[adcIndex] = 0;
+  223  3                      }
+  224  2      
+  225  2                      /* In both cases in the low or high hysteretic interval, 
+  226  2                      *  the result is normal if the entry is from the normal range;
+  227  2                      *  If the entry is from the corresponding low or high state, 
+  228  2                      *  the low or high state is maintained 
+  229  2                      */
+  230  2                      if (FLTD_VOL_LOW_HYST == adcVoltModeSts[adcIndex])
+  231  2                      {
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 5   
 
-  232  3                              {
-  233  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_LOW;
-  234  4                              }
-  235  3                              else
-  236  3                              {
-  237  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_NORMAL;
-  238  4                              }
-  239  3                      }
-  240  2                      else if (FLTD_VOL_HIGH_HYST == adcVoltModeSts[adcIndex])
-  241  2                      {
-  242  3                              if ((FLTD_VOL_HIGH == adcVoltModeStsLast[adcIndex])
-  243  3                                      || (FLTD_VOL_OVER == adcVoltModeStsLast[adcIndex]))
-  244  3                              {
-  245  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_HIGH;
-  246  4                              }
-  247  3                              else
-  248  3                              {
-  249  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_NORMAL;
-  250  4                              }
-  251  3                      }
-  252  2                      else
-  253  2                      {
-  254  3      
-  255  3                      }
-  256  2      
-  257  2                      //set and clear fault flag
-  258  2                      if(FLTD_VOL_NORMAL == adcVoltModeSts[adcIndex])
-  259  2                      {
-  260  3                              *ptrAdcMonitorCfg->faultFlag[0] = FALSE;
-  261  3                              *ptrAdcMonitorCfg->faultFlag[1] = FALSE;
-  262  3                              *ptrAdcMonitorCfg->faultFlag[2] = FALSE;
-  263  3                              *ptrAdcMonitorCfg->faultFlag[3] = FALSE;
-  264  3                      }
-  265  2                      else
-  266  2                      {
-  267  3                              *ptrAdcMonitorCfg->faultFlag[0] = FALSE;
-  268  3                              *ptrAdcMonitorCfg->faultFlag[1] = FALSE;
-  269  3                              *ptrAdcMonitorCfg->faultFlag[2] = FALSE;
-  270  3                              *ptrAdcMonitorCfg->faultFlag[3] = FALSE;
-  271  3      
-  272  3                              *ptrAdcMonitorCfg->faultFlag[adcVoltModeSts[adcIndex] - 1] = TRUE;
-  273  3                      }
-  274  2      
-  275  2                      adcVoltModeStsLast[adcIndex] = adcVoltModeSts[adcIndex];
-  276  2              }
-  277  1      }
-  278         
-  279         
-  280         //***************************************************************************************
-  281         // @Function      FLTD_volModeType FLTD_GetAdcRangeType(FLTD_adcType adctype) 
-  282         //---------------------------------------------------------------------------------------
-  283         // @Description   Get the range of AD sampling value of each channel.
+  232  3                              if ((FLTD_VOL_LOW == adcVoltModeStsLast[adcIndex])
+  233  3                                      || (FLTD_VOL_STOP == adcVoltModeStsLast[adcIndex]))
+  234  3                              {
+  235  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_LOW;
+  236  4                              }
+  237  3                              else
+  238  3                              {
+  239  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_NORMAL;
+  240  4                              }
+  241  3                      }
+  242  2                      else if (FLTD_VOL_HIGH_HYST == adcVoltModeSts[adcIndex])
+  243  2                      {
+  244  3                              if ((FLTD_VOL_HIGH == adcVoltModeStsLast[adcIndex])
+  245  3                                      || (FLTD_VOL_OVER == adcVoltModeStsLast[adcIndex]))
+  246  3                              {
+  247  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_HIGH;
+  248  4                              }
+  249  3                              else
+  250  3                              {
+  251  4                                      adcVoltModeSts[adcIndex] = FLTD_VOL_NORMAL;
+  252  4                              }
+  253  3                      }
+  254  2                      else
+  255  2                      {
+  256  3      
+  257  3                      }
+  258  2      
+  259  2                      //set and clear fault flag
+  260  2                      if(FLTD_VOL_NORMAL == adcVoltModeSts[adcIndex])
+  261  2                      {
+  262  3                              *ptrAdcMonitorCfg->faultFlag[0] = FALSE;
+  263  3                              *ptrAdcMonitorCfg->faultFlag[1] = FALSE;
+  264  3                              *ptrAdcMonitorCfg->faultFlag[2] = FALSE;
+  265  3                              *ptrAdcMonitorCfg->faultFlag[3] = FALSE;
+  266  3                      }
+  267  2                      else
+  268  2                      {
+  269  3                              *ptrAdcMonitorCfg->faultFlag[0] = FALSE;
+  270  3                              *ptrAdcMonitorCfg->faultFlag[1] = FALSE;
+  271  3                              *ptrAdcMonitorCfg->faultFlag[2] = FALSE;
+  272  3                              *ptrAdcMonitorCfg->faultFlag[3] = FALSE;
+  273  3      
+  274  3                              *ptrAdcMonitorCfg->faultFlag[adcVoltModeSts[adcIndex] - 1] = TRUE;
+  275  3                      }
+  276  2      
+  277  2                      adcVoltModeStsLast[adcIndex] = adcVoltModeSts[adcIndex];
+  278  2              }
+  279  1      }
+  280         
+  281         
+  282         //***************************************************************************************
+  283         // @Function      FLTD_volModeType FLTD_GetAdcRangeType(FLTD_adcType adctype) 
   284         //---------------------------------------------------------------------------------------
-  285         // @Returnvalue   adcVoltModeSts: 
-  286         //                                The range of AD values for a particular channel, In the following
-  287         //                                FLTD_VOL_NORMAL,FLTD_VOL_STOP,FLTD_VOL_LOW,FLTD_VOL_HIGH.
-  288         //---------------------------------------------------------------------------------------
-  289         // @Parameters    adctype:
-  290         //                                Enumeration of each AD channel.
-  291         //---------------------------------------------------------------------------------------
-  292         // @Date          2019/11/7
-  293         //***************************************************************************************
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 6   
+  285         // @Description   Get the range of AD sampling value of each channel.
+  286         //---------------------------------------------------------------------------------------
+  287         // @Returnvalue   adcVoltModeSts: 
+  288         //                                The range of AD values for a particular channel, In the following
+  289         //                                FLTD_VOL_NORMAL,FLTD_VOL_STOP,FLTD_VOL_LOW,FLTD_VOL_HIGH.
+  290         //---------------------------------------------------------------------------------------
+  291         // @Parameters    adctype:
+  292         //                                Enumeration of each AD channel.
+  293         //---------------------------------------------------------------------------------------
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 6   
 
-  294         FLTD_volModeType FLTD_GetAdcRangeType(FLTD_adcType adcType)
-  295         {
-  296  1              return adcVoltModeSts[adcType];
-  297  1      }
-  298         
-  299         
-  300         //***************************************************************************************
-  301         // @Function      static void FLTD_PedalDetectCondigtJudge(void) 
-  302         //---------------------------------------------------------------------------------------
-  303         // @Description   Pedal signal abnormal detection needs to be combined with pedal switch signal.
+  294         // @Date          2019/11/7
+  295         //***************************************************************************************
+  296         FLTD_volModeType FLTD_GetAdcRangeType(FLTD_adcType adcType)
+  297         {
+  298  1              return adcVoltModeSts[adcType];
+  299  1      }
+  300         
+  301         
+  302         //***************************************************************************************
+  303         // @Function      static void FLTD_PedalDetectCondigtJudge(void) 
   304         //---------------------------------------------------------------------------------------
-  305         // @Returnvalue   None
+  305         // @Description   Pedal signal abnormal detection needs to be combined with pedal switch signal.
   306         //---------------------------------------------------------------------------------------
-  307         // @Parameters    None
+  307         // @Returnvalue   None
   308         //---------------------------------------------------------------------------------------
-  309         // @Date          2019/12/27
-  310         //***************************************************************************************
-  311         static void FLTD_PedalDetectCondigtJudge(void)
-  312         {
-  313  1              if((FALSE == g_inBrakeSwValidSts) && (TRUE == u8BrakeSwStsLast))/* brake from valid to invalid, set the p
+  309         // @Parameters    None
+  310         //---------------------------------------------------------------------------------------
+  311         // @Date          2019/12/27
+  312         //***************************************************************************************
+  313         static void FLTD_PedalDetectCondigtJudge(void)
+  314         {
+  315  1              if((FALSE == g_inBrakeSwValidSts) && (TRUE == u8BrakeSwStsLast))/* brake from valid to invalid, set the p
              -edal return flag */
-  314  1              {
-  315  2                      bPedalReturnFlag = TRUE;
-  316  2                      bPedalPushFlag = FALSE;
-  317  2      
-  318  2                      u16PedalReturnMinValue = 0xFFFF;
-  319  2                      u16PedalInitLocMinValue = 0xFFFF;
-  320  2              }
-  321  1              else if((TRUE == g_inBrakeSwValidSts) && (FALSE == u8BrakeSwStsLast))/* brake from invalid to valid, set 
+  316  1              {
+  317  2                      bPedalReturnFlag = TRUE;
+  318  2                      bPedalPushFlag = FALSE;
+  319  2      
+  320  2                      u16PedalReturnMinValue = 0xFFFF;
+  321  2                      u16PedalInitLocMinValue = 0xFFFF;
+  322  2              }
+  323  1              else if((TRUE == g_inBrakeSwValidSts) && (FALSE == u8BrakeSwStsLast))/* brake from invalid to valid, set 
              -the pedal push flag */
-  322  1              {
-  323  2                      bPedalReturnFlag = FALSE;
-  324  2                      bPedalPushFlag = TRUE;
-  325  2      
-  326  2                      u16PedalPushMaxValue = 0;
-  327  2              }
-  328  1              
-  329  1              u8BrakeSwStsLast = g_inBrakeSwValidSts;
-  330  1      }
-  331         
-  332         //***************************************************************************************
-  333         // @Function      static void FLTD_PedalSigCheckErrorDetect(void) 
-  334         //---------------------------------------------------------------------------------------
-  335         // @Description   Pedal two - way signal calibration error detection.
+  324  1              {
+  325  2                      bPedalReturnFlag = FALSE;
+  326  2                      bPedalPushFlag = TRUE;
+  327  2      
+  328  2                      u16PedalPushMaxValue = 0;
+  329  2              }
+  330  1              
+  331  1              u8BrakeSwStsLast = g_inBrakeSwValidSts;
+  332  1      }
+  333         
+  334         //***************************************************************************************
+  335         // @Function      static void FLTD_PedalSigCheckErrorDetect(void) 
   336         //---------------------------------------------------------------------------------------
-  337         // @Returnvalue   None
+  337         // @Description   Pedal two - way signal calibration error detection.
   338         //---------------------------------------------------------------------------------------
-  339         // @Parameters    None
+  339         // @Returnvalue   None
   340         //---------------------------------------------------------------------------------------
-  341         // @Date          2019/12/27
-  342         //***************************************************************************************
-  343         static void FLTD_PedalSigCheckErrorDetect(void)
-  344         {
-  345  1              const T_ADC *adcPtr = Adc_SampleData();
-  346  1              static FLT_U16 u16PedalSignalCheckErrorCnt = 0;
-  347  1              static FLT_U16 u16PedalSignalCheckNormalCnt = 0;
-  348  1              
-  349  1              FLT_U32 u32PedalCheckErrorUpper = 0;
-  350  1              FLT_U32 u32PedalCheckErrorLower = 0;
-  351  1      
-  352  1              /* If the pedal sensor power supply voltage is normal and the signal is not open, 
-  353  1               * judge the calibration of two channel signals */
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 7   
+  341         // @Parameters    None
+  342         //---------------------------------------------------------------------------------------
+  343         // @Date          2019/12/27
+  344         //***************************************************************************************
+  345         static void FLTD_PedalSigCheckErrorDetect(void)
+  346         {
+  347  1              const T_ADC *adcPtr = Adc_SampleData();
+  348  1              static FLT_U16 u16PedalSignalCheckErrorCnt = 0;
+  349  1              static FLT_U16 u16PedalSignalCheckNormalCnt = 0;
+  350  1              
+  351  1              FLT_U32 u32PedalCheckErrorUpper = 0;
+  352  1              FLT_U32 u32PedalCheckErrorLower = 0;
+  353  1      
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 7   
 
-  354  1      
-  355  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
-  356  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1]) 
-  357  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG2]))
-  358  1              {
-  359  2                      /* pedal sensor signal Check failure 
-  360  2                      if((adcPtr->brakePedalTrip_Adc[0] > (2 * (1 + PEDAL_SIGNAL_CHECK_RANG) * adcPtr->brakePedalTrip_Adc[1]))
-  361  2                              || (adcPtr->brakePedalTrip_Adc[0] < (2 * (1 - PEDAL_SIGNAL_CHECK_RANG) * adcPtr->brakePedalTrip_Adc[1])
+  354  1              /* If the pedal sensor power supply voltage is normal and the signal is not open, 
+  355  1               * judge the calibration of two channel signals */
+  356  1      
+  357  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
+  358  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1]) 
+  359  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG2]))
+  360  1              {
+  361  2                      /* pedal sensor signal Check failure 
+  362  2                      if((adcPtr->brakePedalTrip_Adc[0] > (2 * (1 + PEDAL_SIGNAL_CHECK_RANG) * adcPtr->brakePedalTrip_Adc[1]))
+  363  2                              || (adcPtr->brakePedalTrip_Adc[0] < (2 * (1 - PEDAL_SIGNAL_CHECK_RANG) * adcPtr->brakePedalTrip_Adc[1])
              -))
-  362  2                      {
-  363  2                              u16PedalSignalCheckNormalCnt = 0;
-  364  2                              if(u16PedalSignalCheckErrorCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
-  365  2                              {
-  366  2                                      u16PedalSignalCheckErrorCnt++;
-  367  2                              }
-  368  2                              else
-  369  2                              {
-  370  2                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = TRUE;
-  371  2                              }
-  372  2                      }
-  373  2                      */
-  374  2                      
-  375  2                      u32PedalCheckErrorUpper = (((100 + PEDAL_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->brakePedalTrip_Adc[1]) + 2
+  364  2                      {
+  365  2                              u16PedalSignalCheckNormalCnt = 0;
+  366  2                              if(u16PedalSignalCheckErrorCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
+  367  2                              {
+  368  2                                      u16PedalSignalCheckErrorCnt++;
+  369  2                              }
+  370  2                              else
+  371  2                              {
+  372  2                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = TRUE;
+  373  2                              }
+  374  2                      }
+  375  2                      */
+  376  2                      
+  377  2                      u32PedalCheckErrorUpper = (((100 + PEDAL_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->brakePedalTrip_Adc[1]) + 2
              -5) / 50;
-  376  2                      u32PedalCheckErrorLower = (((100 - PEDAL_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->brakePedalTrip_Adc[1]) + 2
+  378  2                      u32PedalCheckErrorLower = (((100 - PEDAL_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->brakePedalTrip_Adc[1]) + 2
              -5) / 50;
-  377  2                      
-  378  2                      if((adcPtr->brakePedalTrip_Adc[0] > u32PedalCheckErrorUpper)
-  379  2                              || (adcPtr->brakePedalTrip_Adc[0] < u32PedalCheckErrorLower))
-  380  2                      {
-  381  3                              u16PedalSignalCheckNormalCnt = 0;
-  382  3                              if(u16PedalSignalCheckErrorCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
-  383  3                              {
-  384  4                                      u16PedalSignalCheckErrorCnt++;
-  385  4                              }
-  386  3                              else
-  387  3                              {
-  388  4                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = TRUE;
-  389  4                              }
-  390  3                      }
-  391  2                      else
-  392  2                      {
-  393  3                              u16PedalSignalCheckErrorCnt = 0;
-  394  3                              if(u16PedalSignalCheckNormalCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
-  395  3                              {
-  396  4                                      u16PedalSignalCheckNormalCnt++;
-  397  4                              }
-  398  3                              else
-  399  3                              {
-  400  4                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = FALSE;
-  401  4                              }
-  402  3                      }       
-  403  2              }
-  404  1              else
-  405  1              {
-  406  2                      u16PedalSignalCheckErrorCnt = 0;
-  407  2                      u16PedalSignalCheckNormalCnt = 0;
-  408  2              }
-  409  1      }
-  410         
-  411         
-  412         //***************************************************************************************
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 8   
+  379  2                      
+  380  2                      if((adcPtr->brakePedalTrip_Adc[0] > u32PedalCheckErrorUpper)
+  381  2                              || (adcPtr->brakePedalTrip_Adc[0] < u32PedalCheckErrorLower))
+  382  2                      {
+  383  3                              u16PedalSignalCheckNormalCnt = 0;
+  384  3                              if(u16PedalSignalCheckErrorCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
+  385  3                              {
+  386  4                                      u16PedalSignalCheckErrorCnt++;
+  387  4                              }
+  388  3                              else
+  389  3                              {
+  390  4                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = TRUE;
+  391  4                              }
+  392  3                      }
+  393  2                      else
+  394  2                      {
+  395  3                              u16PedalSignalCheckErrorCnt = 0;
+  396  3                              if(u16PedalSignalCheckNormalCnt < PEDAL_SIGNAL_CHECK_FAILURE_TIME)
+  397  3                              {
+  398  4                                      u16PedalSignalCheckNormalCnt++;
+  399  4                              }
+  400  3                              else
+  401  3                              {
+  402  4                                      FLTD_fltFlg.pedalSensorCheckErrorFlg = FALSE;
+  403  4                              }
+  404  3                      }       
+  405  2              }
+  406  1              else
+  407  1              {
+  408  2                      u16PedalSignalCheckErrorCnt = 0;
+  409  2                      u16PedalSignalCheckNormalCnt = 0;
+  410  2              }
+  411  1      }
+  412         
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 8   
 
-  413         // @Function      static void FLTD_PedalInitLocAbnormalDetect(void) 
-  414         //---------------------------------------------------------------------------------------
-  415         // @Description   Pedal init location abnormal detection.
+  413         
+  414         //***************************************************************************************
+  415         // @Function      static void FLTD_PedalInitLocAbnormalDetect(void) 
   416         //---------------------------------------------------------------------------------------
-  417         // @Returnvalue   None
+  417         // @Description   Pedal init location abnormal detection.
   418         //---------------------------------------------------------------------------------------
-  419         // @Parameters    None
+  419         // @Returnvalue   None
   420         //---------------------------------------------------------------------------------------
-  421         // @Date          2019/12/27
-  422         //***************************************************************************************
-  423         static void FLTD_PedalInitLocAbnormalDetect(void)
-  424         { 
-  425  1              const T_ADC *adcPtr = Adc_SampleData();
-  426  1              static FLT_U16 u16PedalInitLocDetectDelayCnt = 0;
-  427  1              static FLT_U16 u16PedalInitLocAbnormalCnt = 0;
-  428  1              static FLT_U16 u16PedalInitLocNormalCnt = 0;
-  429  1              
-  430  1              /* The brake pedal is not pressed,
-  431  1               * 1) If the sample value after delay and the rated initial value are greater than a certain value, 
-  432  1               * it is judged as the initial signal abnormal; */
-  433  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
-  434  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
-  435  1                      && (FALSE == g_inBrakeSwValidSts))
-  436  1              {
-  437  2                      /* Delay for a certain time.  */
-  438  2                      if(u16PedalInitLocDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
-  439  2                      {
-  440  3                              u16PedalInitLocDetectDelayCnt++;
-  441  3                              if(adcPtr->brakePedalTrip_Adc[0] < u16PedalInitLocMinValue)
-  442  3                              {
-  443  4                                      u16PedalInitLocMinValue = adcPtr->brakePedalTrip_Adc[0];
-  444  4                              }
-  445  3                      }
-  446  2                      else
-  447  2                      {
-  448  3                              /* detect pedal init location abnormal */
-  449  3                              if(ABSOLUTE(adcPtr->brakePedalTrip_Adc[0], gRTE_pedalInitValue[0]) > PEDAL_INIT_LOCATION_ABNORMAL_RANG)
-  450  3                              {
-  451  4                                      u16PedalInitLocNormalCnt = 0;
-  452  4      
-  453  4                                      if(u16PedalInitLocAbnormalCnt < PEDAL_INIT_LOCATION_ABNORMAL_TIME)
-  454  4                                      {
-  455  5                                              u16PedalInitLocAbnormalCnt++;
-  456  5                                      }
-  457  4                                      else
-  458  4                                      {
-  459  5                                              FLTD_fltFlg.pedalSensorInitAbnormalFlg = TRUE;
-  460  5                                      }
-  461  4                              }
-  462  3                              else
-  463  3                              {
-  464  4                                      u16PedalInitLocAbnormalCnt = 0;
-  465  4      
-  466  4                                      if(u16PedalInitLocNormalCnt < PEDAL_INIT_LOCATION_ABNORMAL_TIME)
-  467  4                                      {
-  468  5                                              u16PedalInitLocNormalCnt++;
-  469  5                                      }
-  470  4                                      else
-  471  4                                      {
-  472  5                                              FLTD_fltFlg.pedalSensorInitAbnormalFlg = FALSE;
-  473  5                                      }
-  474  4                              }
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 9   
+  421         // @Parameters    None
+  422         //---------------------------------------------------------------------------------------
+  423         // @Date          2019/12/27
+  424         //***************************************************************************************
+  425         static void FLTD_PedalInitLocAbnormalDetect(void)
+  426         { 
+  427  1              const T_ADC *adcPtr = Adc_SampleData();
+  428  1              static FLT_U16 u16PedalInitLocDetectDelayCnt = 0;
+  429  1              static FLT_U16 u16PedalInitLocAbnormalCnt = 0;
+  430  1              static FLT_U16 u16PedalInitLocNormalCnt = 0;
+  431  1              
+  432  1              /* The brake pedal is not pressed,
+  433  1               * 1) If the sample value after delay and the rated initial value are greater than a certain value, 
+  434  1               * it is judged as the initial signal abnormal; */
+  435  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
+  436  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
+  437  1                      && (FALSE == g_inBrakeSwValidSts))
+  438  1              {
+  439  2                      /* Delay for a certain time.  */
+  440  2                      if(u16PedalInitLocDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
+  441  2                      {
+  442  3                              u16PedalInitLocDetectDelayCnt++;
+  443  3                              if(adcPtr->brakePedalTrip_Adc[0] < u16PedalInitLocMinValue)
+  444  3                              {
+  445  4                                      u16PedalInitLocMinValue = adcPtr->brakePedalTrip_Adc[0];
+  446  4                              }
+  447  3                      }
+  448  2                      else
+  449  2                      {
+  450  3                              /* detect pedal init location abnormal */
+  451  3                              if(ABSOLUTE(adcPtr->brakePedalTrip_Adc[0], gRTE_pedalInitValue[0]) > PEDAL_INIT_LOCATION_ABNORMAL_RANG)
+  452  3                              {
+  453  4                                      u16PedalInitLocNormalCnt = 0;
+  454  4      
+  455  4                                      if(u16PedalInitLocAbnormalCnt < PEDAL_INIT_LOCATION_ABNORMAL_TIME)
+  456  4                                      {
+  457  5                                              u16PedalInitLocAbnormalCnt++;
+  458  5                                      }
+  459  4                                      else
+  460  4                                      {
+  461  5                                              FLTD_fltFlg.pedalSensorInitAbnormalFlg = TRUE;
+  462  5                                      }
+  463  4                              }
+  464  3                              else
+  465  3                              {
+  466  4                                      u16PedalInitLocAbnormalCnt = 0;
+  467  4      
+  468  4                                      if(u16PedalInitLocNormalCnt < PEDAL_INIT_LOCATION_ABNORMAL_TIME)
+  469  4                                      {
+  470  5                                              u16PedalInitLocNormalCnt++;
+  471  5                                      }
+  472  4                                      else
+  473  4                                      {
+  474  5                                              FLTD_fltFlg.pedalSensorInitAbnormalFlg = FALSE;
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 9   
 
-  475  3                      }       
-  476  2              }
-  477  1              else
-  478  1              {
-  479  2                      u16PedalInitLocDetectDelayCnt = 0;
-  480  2                      u16PedalInitLocAbnormalCnt = 0;
-  481  2                      u16PedalInitLocNormalCnt = 0;
-  482  2              }
-  483  1      }
-  484         
-  485         
-  486         //***************************************************************************************
-  487         // @Function      static void FLTD_PedalReturnAbnormalDetect(void) 
-  488         //---------------------------------------------------------------------------------------
-  489         // @Description   Pedal return to the init location abnormal detection.
+  475  5                                      }
+  476  4                              }
+  477  3                      }       
+  478  2              }
+  479  1              else
+  480  1              {
+  481  2                      u16PedalInitLocDetectDelayCnt = 0;
+  482  2                      u16PedalInitLocAbnormalCnt = 0;
+  483  2                      u16PedalInitLocNormalCnt = 0;
+  484  2              }
+  485  1      }
+  486         
+  487         
+  488         //***************************************************************************************
+  489         // @Function      static void FLTD_PedalReturnAbnormalDetect(void) 
   490         //---------------------------------------------------------------------------------------
-  491         // @Returnvalue   None
+  491         // @Description   Pedal return to the init location abnormal detection.
   492         //---------------------------------------------------------------------------------------
-  493         // @Parameters    None
+  493         // @Returnvalue   None
   494         //---------------------------------------------------------------------------------------
-  495         // @Date          2019/12/27
-  496         //***************************************************************************************
-  497         static void FLTD_PedalReturnAbnormalDetect(void)
-  498         {
-  499  1              const T_ADC *adcPtr = Adc_SampleData();
-  500  1              static FLT_U16 u16PedalReturnDetectDelayCnt = 0;
-  501  1              static FLT_U16 u16PedalReturnAbnormalCnt = 0;
-  502  1              static FLT_U16 u16PedalReturnNormalCnt = 0;
-  503  1              
-  504  1              /* After the pedal switch signal from valid to invalid, that is after the back. 
-  505  1               * 1) If the difference between the minimum value and the initial value is greater than a certain value, 
-  506  1               * it is judged as return anomaly; */
-  507  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
-  508  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
-  509  1                      && (TRUE == bPedalReturnFlag))
-  510  1              {
-  511  2                      /* Delay for a certain time and record the minimum value of the signal.  */
-  512  2                      if(u16PedalReturnDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
-  513  2                      {
-  514  3                              u16PedalReturnDetectDelayCnt++;
-  515  3                              if(adcPtr->brakePedalTrip_Adc[0] < u16PedalReturnMinValue)
-  516  3                              {
-  517  4                                      u16PedalReturnMinValue = adcPtr->brakePedalTrip_Adc[0];
-  518  4                              }
-  519  3                      }
-  520  2                      else
-  521  2                      {
-  522  3                              /* detect pedal return abnormal */
-  523  3                              if(ABSOLUTE(u16PedalReturnMinValue, gRTE_pedalInitValue[0]) > PEDAL_RETURN_ABNORMAL_RANG)
-  524  3                              {
-  525  4                                      u16PedalReturnNormalCnt = 0;
-  526  4                                      if(u16PedalReturnAbnormalCnt < PEDAL_RETURN_ABNORMAL_TIME)
-  527  4                                      {
-  528  5                                              u16PedalReturnAbnormalCnt++;
-  529  5                                      }
-  530  4                                      else
-  531  4                                      {
-  532  5                                              FLTD_fltFlg.pedalSensorReturnAbnormalFlg = TRUE;
-  533  5                                      }
-  534  4                              }
-  535  3                              else
-  536  3                              {
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 10  
+  495         // @Parameters    None
+  496         //---------------------------------------------------------------------------------------
+  497         // @Date          2019/12/27
+  498         //***************************************************************************************
+  499         static void FLTD_PedalReturnAbnormalDetect(void)
+  500         {
+  501  1              const T_ADC *adcPtr = Adc_SampleData();
+  502  1              static FLT_U16 u16PedalReturnDetectDelayCnt = 0;
+  503  1              static FLT_U16 u16PedalReturnAbnormalCnt = 0;
+  504  1              static FLT_U16 u16PedalReturnNormalCnt = 0;
+  505  1              
+  506  1              /* After the pedal switch signal from valid to invalid, that is after the back. 
+  507  1               * 1) If the difference between the minimum value and the initial value is greater than a certain value, 
+  508  1               * it is judged as return anomaly; */
+  509  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
+  510  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
+  511  1                      && (TRUE == bPedalReturnFlag))
+  512  1              {
+  513  2                      /* Delay for a certain time and record the minimum value of the signal.  */
+  514  2                      if(u16PedalReturnDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
+  515  2                      {
+  516  3                              u16PedalReturnDetectDelayCnt++;
+  517  3                              if(adcPtr->brakePedalTrip_Adc[0] < u16PedalReturnMinValue)
+  518  3                              {
+  519  4                                      u16PedalReturnMinValue = adcPtr->brakePedalTrip_Adc[0];
+  520  4                              }
+  521  3                      }
+  522  2                      else
+  523  2                      {
+  524  3                              /* detect pedal return abnormal */
+  525  3                              if(ABSOLUTE(u16PedalReturnMinValue, gRTE_pedalInitValue[0]) > PEDAL_RETURN_ABNORMAL_RANG)
+  526  3                              {
+  527  4                                      u16PedalReturnNormalCnt = 0;
+  528  4                                      if(u16PedalReturnAbnormalCnt < PEDAL_RETURN_ABNORMAL_TIME)
+  529  4                                      {
+  530  5                                              u16PedalReturnAbnormalCnt++;
+  531  5                                      }
+  532  4                                      else
+  533  4                                      {
+  534  5                                              FLTD_fltFlg.pedalSensorReturnAbnormalFlg = TRUE;
+  535  5                                      }
+  536  4                              }
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 10  
 
-  537  4                                      u16PedalReturnAbnormalCnt = 0;
-  538  4                                      if(u16PedalReturnNormalCnt < PEDAL_RETURN_ABNORMAL_TIME)
-  539  4                                      {
-  540  5                                              u16PedalReturnNormalCnt++;
-  541  5                                      }
-  542  4                                      else
-  543  4                                      {
-  544  5                                              FLTD_fltFlg.pedalSensorReturnAbnormalFlg = FALSE;
-  545  5                                      }
-  546  4                              }
-  547  3                      }
-  548  2              }
-  549  1              else
-  550  1              {
-  551  2                      u16PedalReturnDetectDelayCnt = 0;
-  552  2                      u16PedalReturnAbnormalCnt = 0;
-  553  2                      u16PedalReturnNormalCnt = 0;
-  554  2              }
-  555  1      }
-  556         
-  557         
-  558         //***************************************************************************************
-  559         // @Function      static void FLTD_PedalActionAbnormalDetect(void) 
-  560         //---------------------------------------------------------------------------------------
-  561         // @Description   Pedal action abnormal detection. According to the pedal down, 
-  562         //                                      whether there is a significant change in the sample value
-  563         //---------------------------------------------------------------------------------------
-  564         // @Returnvalue   None
+  537  3                              else
+  538  3                              {
+  539  4                                      u16PedalReturnAbnormalCnt = 0;
+  540  4                                      if(u16PedalReturnNormalCnt < PEDAL_RETURN_ABNORMAL_TIME)
+  541  4                                      {
+  542  5                                              u16PedalReturnNormalCnt++;
+  543  5                                      }
+  544  4                                      else
+  545  4                                      {
+  546  5                                              FLTD_fltFlg.pedalSensorReturnAbnormalFlg = FALSE;
+  547  5                                      }
+  548  4                              }
+  549  3                      }
+  550  2              }
+  551  1              else
+  552  1              {
+  553  2                      u16PedalReturnDetectDelayCnt = 0;
+  554  2                      u16PedalReturnAbnormalCnt = 0;
+  555  2                      u16PedalReturnNormalCnt = 0;
+  556  2              }
+  557  1      }
+  558         
+  559         
+  560         //***************************************************************************************
+  561         // @Function      static void FLTD_PedalActionAbnormalDetect(void) 
+  562         //---------------------------------------------------------------------------------------
+  563         // @Description   Pedal action abnormal detection. According to the pedal down, 
+  564         //                                      whether there is a significant change in the sample value
   565         //---------------------------------------------------------------------------------------
-  566         // @Parameters    None
+  566         // @Returnvalue   None
   567         //---------------------------------------------------------------------------------------
-  568         // @Date          2019/12/27
-  569         //***************************************************************************************
-  570         static void FLTD_PedalActionAbnormalDetect(void)
-  571         {
-  572  1              const T_ADC *adcPtr = Adc_SampleData();
-  573  1              static FLT_U16 u16PedalActionDetectDelayCnt = 0;
-  574  1              static FLT_U16 u16PedalSignalNormalCnt = 0;
-  575  1              static FLT_U16 u16PedalSignalAbnormalCnt = 0;
-  576  1              
-  577  1              /* Pedal switch signal from effective to invalid, judging the pedal is down. 
-  578  1               * If the difference between the maximum value and the initial value is less than a certain value, 
-  579  1               * it is judged as signal abnormal */
-  580  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
-  581  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
-  582  1                      && (TRUE == bPedalPushFlag))
-  583  1              {
-  584  2                      /* Delay for a certain time and record the maximum value of the signal.  */
-  585  2                      if(u16PedalActionDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
-  586  2                      {
-  587  3                              u16PedalActionDetectDelayCnt++;
-  588  3                              if(adcPtr->brakePedalTrip_Adc[0] > u16PedalPushMaxValue)
-  589  3                              {
-  590  4                                      u16PedalPushMaxValue = adcPtr->brakePedalTrip_Adc[0];
-  591  4                              }
-  592  3                      }
-  593  2                      else
-  594  2                      {
-  595  3                              /* detect pedal signal abnormal */
-  596  3                              if(ABSOLUTE(u16PedalPushMaxValue, gRTE_pedalInitValue[0]) < PEDAL_SIGNAL_ABNORMAL_RANG)
-  597  3                              {
-  598  4                                      u16PedalSignalNormalCnt = 0;
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 11  
+  568         // @Parameters    None
+  569         //---------------------------------------------------------------------------------------
+  570         // @Date          2019/12/27
+  571         //***************************************************************************************
+  572         static void FLTD_PedalActionAbnormalDetect(void)
+  573         {
+  574  1              const T_ADC *adcPtr = Adc_SampleData();
+  575  1              static FLT_U16 u16PedalActionDetectDelayCnt = 0;
+  576  1              static FLT_U16 u16PedalSignalNormalCnt = 0;
+  577  1              static FLT_U16 u16PedalSignalAbnormalCnt = 0;
+  578  1              
+  579  1              /* Pedal switch signal from effective to invalid, judging the pedal is down. 
+  580  1               * If the difference between the maximum value and the initial value is less than a certain value, 
+  581  1               * it is judged as signal abnormal */
+  582  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
+  583  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_SIG1])
+  584  1                      && (TRUE == bPedalPushFlag))
+  585  1              {
+  586  2                      /* Delay for a certain time and record the maximum value of the signal.  */
+  587  2                      if(u16PedalActionDetectDelayCnt < PEDAL_DETECT_DELAY_TIME)
+  588  2                      {
+  589  3                              u16PedalActionDetectDelayCnt++;
+  590  3                              if(adcPtr->brakePedalTrip_Adc[0] > u16PedalPushMaxValue)
+  591  3                              {
+  592  4                                      u16PedalPushMaxValue = adcPtr->brakePedalTrip_Adc[0];
+  593  4                              }
+  594  3                      }
+  595  2                      else
+  596  2                      {
+  597  3                              /* detect pedal signal abnormal */
+  598  3                              if(ABSOLUTE(u16PedalPushMaxValue, gRTE_pedalInitValue[0]) < PEDAL_SIGNAL_ABNORMAL_RANG)
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 11  
 
-  599  4                                      if(u16PedalSignalAbnormalCnt < PEDAL_SIGNAL_ABNORMAL_TIME)
-  600  4                                      {
-  601  5                                              u16PedalSignalAbnormalCnt++;
-  602  5                                      }
-  603  4                                      else
-  604  4                                      {
-  605  5                                              FLTD_fltFlg.pedalSensorSignalAbnormalFlg = TRUE;
-  606  5                                      }
-  607  4                              }
-  608  3                              else
-  609  3                              {
-  610  4                                      u16PedalSignalAbnormalCnt = 0;
-  611  4                                      if(u16PedalSignalNormalCnt < PEDAL_SIGNAL_ABNORMAL_TIME)
-  612  4                                      {
-  613  5                                              u16PedalSignalNormalCnt++;
-  614  5                                      }
-  615  4                                      else
-  616  4                                      {
-  617  5                                              FLTD_fltFlg.pedalSensorSignalAbnormalFlg = FALSE;
-  618  5                                      }
-  619  4                              }
-  620  3                      }
-  621  2              }
-  622  1              else
-  623  1              {
-  624  2                      u16PedalActionDetectDelayCnt = 0;
-  625  2                      u16PedalSignalNormalCnt = 0;
-  626  2                      u16PedalSignalAbnormalCnt = 0;  
-  627  2              }
-  628  1      }
-  629                 
-  630         
-  631         //***************************************************************************************
-  632         // @Function      static void FLTD_CylinderSigCheckErrorDetect(void) 
-  633         //---------------------------------------------------------------------------------------
-  634         // @Description   Master cylinder two - way signal calibration error detection.
+  599  3                              {
+  600  4                                      u16PedalSignalNormalCnt = 0;
+  601  4                                      if(u16PedalSignalAbnormalCnt < PEDAL_SIGNAL_ABNORMAL_TIME)
+  602  4                                      {
+  603  5                                              u16PedalSignalAbnormalCnt++;
+  604  5                                      }
+  605  4                                      else
+  606  4                                      {
+  607  5                                              FLTD_fltFlg.pedalSensorSignalAbnormalFlg = TRUE;
+  608  5                                      }
+  609  4                              }
+  610  3                              else
+  611  3                              {
+  612  4                                      u16PedalSignalAbnormalCnt = 0;
+  613  4                                      if(u16PedalSignalNormalCnt < PEDAL_SIGNAL_ABNORMAL_TIME)
+  614  4                                      {
+  615  5                                              u16PedalSignalNormalCnt++;
+  616  5                                      }
+  617  4                                      else
+  618  4                                      {
+  619  5                                              FLTD_fltFlg.pedalSensorSignalAbnormalFlg = FALSE;
+  620  5                                      }
+  621  4                              }
+  622  3                      }
+  623  2              }
+  624  1              else
+  625  1              {
+  626  2                      u16PedalActionDetectDelayCnt = 0;
+  627  2                      u16PedalSignalNormalCnt = 0;
+  628  2                      u16PedalSignalAbnormalCnt = 0;  
+  629  2              }
+  630  1      }
+  631                 
+  632         
+  633         //***************************************************************************************
+  634         // @Function      static void FLTD_CylinderSigCheckErrorDetect(void) 
   635         //---------------------------------------------------------------------------------------
-  636         // @Returnvalue   None
+  636         // @Description   Master cylinder two - way signal calibration error detection.
   637         //---------------------------------------------------------------------------------------
-  638         // @Parameters    None
+  638         // @Returnvalue   None
   639         //---------------------------------------------------------------------------------------
-  640         // @Date          2019/12/27
-  641         //***************************************************************************************
-  642         static void FLTD_CylinderSigCheckErrorDetect(void)
-  643         {
-  644  1              const T_ADC *adcPtr = Adc_SampleData();
-  645  1              static FLT_U16 u16CylinderSignalCheckErrorCnt = 0;
-  646  1              static FLT_U16 u16CylinderSignalCheckNormalCnt = 0;
-  647  1      
-  648  1              FLT_U32 u32CylinderCheckErrorUpper = 0;
-  649  1              FLT_U32 u32CylinderCheckErrorLower = 0;
-  650  1              
-  651  1              /* If the cylinder sensor power supply voltage is normal and the signal is not open, 
-  652  1               * judge the calibration of two channel signals */
-  653  1      
-  654  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
-  655  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1]) 
-  656  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG2]))
-  657  1              {
-  658  2                      /* main cylinder sensor signal Check failure 
-  659  2                      if((adcPtr->mainCylinderTrip_Adc[0] > (2 * (1 + CYLINDER_SIGNAL_CHECK_RANG) * adcPtr->mainCylinderTrip_A
-             -dc[1]))
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 12  
+  640         // @Parameters    None
+  641         //---------------------------------------------------------------------------------------
+  642         // @Date          2019/12/27
+  643         //***************************************************************************************
+  644         static void FLTD_CylinderSigCheckErrorDetect(void)
+  645         {
+  646  1              const T_ADC *adcPtr = Adc_SampleData();
+  647  1              static FLT_U16 u16CylinderSignalCheckErrorCnt = 0;
+  648  1              static FLT_U16 u16CylinderSignalCheckNormalCnt = 0;
+  649  1      
+  650  1              FLT_U32 u32CylinderCheckErrorUpper = 0;
+  651  1              FLT_U32 u32CylinderCheckErrorLower = 0;
+  652  1              
+  653  1              /* If the cylinder sensor power supply voltage is normal and the signal is not open, 
+  654  1               * judge the calibration of two channel signals */
+  655  1      
+  656  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
+  657  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1]) 
+  658  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG2]))
+  659  1              {
+  660  2                      /* main cylinder sensor signal Check failure 
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 12  
 
-  660  2                              || (adcPtr->mainCylinderTrip_Adc[0] < (2 * (1 - CYLINDER_SIGNAL_CHECK_RANG) * adcPtr->mainCylinderTrip_
+  661  2                      if((adcPtr->mainCylinderTrip_Adc[0] > (2 * (1 + CYLINDER_SIGNAL_CHECK_RANG) * adcPtr->mainCylinderTrip_A
+             -dc[1]))
+  662  2                              || (adcPtr->mainCylinderTrip_Adc[0] < (2 * (1 - CYLINDER_SIGNAL_CHECK_RANG) * adcPtr->mainCylinderTrip_
              -Adc[1])))
-  661  2                      {
-  662  2                              u16CylinderSignalCheckNormalCnt = 0;
-  663  2                              if(u16CylinderSignalCheckErrorCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
-  664  2                              {
-  665  2                                      u16CylinderSignalCheckErrorCnt++;
-  666  2                              }
-  667  2                              else
-  668  2                              {
-  669  2                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = TRUE;
-  670  2                              }
-  671  2                      }
-  672  2                      */
-  673  2                      
-  674  2                      u32CylinderCheckErrorUpper = (((100 + CYLINDER_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->mainCylinderTrip_Adc
+  663  2                      {
+  664  2                              u16CylinderSignalCheckNormalCnt = 0;
+  665  2                              if(u16CylinderSignalCheckErrorCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
+  666  2                              {
+  667  2                                      u16CylinderSignalCheckErrorCnt++;
+  668  2                              }
+  669  2                              else
+  670  2                              {
+  671  2                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = TRUE;
+  672  2                              }
+  673  2                      }
+  674  2                      */
+  675  2                      
+  676  2                      u32CylinderCheckErrorUpper = (((100 + CYLINDER_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->mainCylinderTrip_Adc
              -[1]) + 25) / 50;
-  675  2                      u32CylinderCheckErrorLower = (((100 - CYLINDER_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->mainCylinderTrip_Adc
+  677  2                      u32CylinderCheckErrorLower = (((100 - CYLINDER_SIGNAL_CHECK_RANG) * (INT32U)adcPtr->mainCylinderTrip_Adc
              -[1]) + 25) / 50;
-  676  2                      
-  677  2                      
-  678  2                      if((adcPtr->mainCylinderTrip_Adc[0] > u32CylinderCheckErrorUpper)
-  679  2                              || (adcPtr->mainCylinderTrip_Adc[0] < u32CylinderCheckErrorLower))
-  680  2                      {
-  681  3                              u16CylinderSignalCheckNormalCnt = 0;
-  682  3                              if(u16CylinderSignalCheckErrorCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
-  683  3                              {
-  684  4                                      u16CylinderSignalCheckErrorCnt++;
-  685  4                              }
-  686  3                              else
-  687  3                              {
-  688  4                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = TRUE;
-  689  4                              }
-  690  3                      }
-  691  2                      else
-  692  2                      {
-  693  3                              u16CylinderSignalCheckErrorCnt = 0;
-  694  3                              if(u16CylinderSignalCheckNormalCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
-  695  3                              {
-  696  4                                      u16CylinderSignalCheckNormalCnt++;
-  697  4                              }
-  698  3                              else
-  699  3                              {
-  700  4                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = FALSE;
-  701  4                              }
-  702  3                      }
-  703  2              }
-  704  1              else
-  705  1              {
-  706  2                      u16CylinderSignalCheckErrorCnt = 0;
-  707  2                      u16CylinderSignalCheckNormalCnt = 0;
-  708  2              }
-  709  1      }
-  710         
-  711         //***************************************************************************************
-  712         // @Function      static void FLTD_CylinderInitLocAbnormalDetect(void) 
-  713         //---------------------------------------------------------------------------------------
-  714         // @Description   Cylinder init location abnormal detection.
+  678  2                      
+  679  2                      
+  680  2                      if((adcPtr->mainCylinderTrip_Adc[0] > u32CylinderCheckErrorUpper)
+  681  2                              || (adcPtr->mainCylinderTrip_Adc[0] < u32CylinderCheckErrorLower))
+  682  2                      {
+  683  3                              u16CylinderSignalCheckNormalCnt = 0;
+  684  3                              if(u16CylinderSignalCheckErrorCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
+  685  3                              {
+  686  4                                      u16CylinderSignalCheckErrorCnt++;
+  687  4                              }
+  688  3                              else
+  689  3                              {
+  690  4                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = TRUE;
+  691  4                              }
+  692  3                      }
+  693  2                      else
+  694  2                      {
+  695  3                              u16CylinderSignalCheckErrorCnt = 0;
+  696  3                              if(u16CylinderSignalCheckNormalCnt < CYLINDER_SIGNAL_CHECK_FAILURE_TIME)
+  697  3                              {
+  698  4                                      u16CylinderSignalCheckNormalCnt++;
+  699  4                              }
+  700  3                              else
+  701  3                              {
+  702  4                                      FLTD_fltFlg.cylinderSensorCheckErrorFlg = FALSE;
+  703  4                              }
+  704  3                      }
+  705  2              }
+  706  1              else
+  707  1              {
+  708  2                      u16CylinderSignalCheckErrorCnt = 0;
+  709  2                      u16CylinderSignalCheckNormalCnt = 0;
+  710  2              }
+  711  1      }
+  712         
+  713         //***************************************************************************************
+  714         // @Function      static void FLTD_CylinderInitLocAbnormalDetect(void) 
   715         //---------------------------------------------------------------------------------------
-  716         // @Returnvalue   None
+  716         // @Description   Cylinder init location abnormal detection.
   717         //---------------------------------------------------------------------------------------
-  718         // @Parameters    None
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 13  
+  718         // @Returnvalue   None
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 13  
 
   719         //---------------------------------------------------------------------------------------
-  720         // @Date          2019/12/27
-  721         //***************************************************************************************
-  722         static void FLTD_CylinderInitLocAbnormalDetect(void)
-  723         {
-  724  1              const T_ADC *adcPtr = Adc_SampleData();
-  725  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
-  726  1              static FLT_U16 u16CylinderInitSignalDetectDelayTimeCnt = 0;
-  727  1              //variables defined to detect cylinder init location abnormal
-  728  1              static FLT_U16 u16CylinderInitLocAbnormalCnt = 0;
-  729  1              static FLT_U16 u16CylinderInitLocNormalCnt = 0;
-  730  1              
-  731  1              /* detect cylinder init signal abnormal.
-  732  1               * The brake pedal is not pressed and there is no external brake request, 
-  733  1               * if the difference between the cylinder signal and the initial signal is greater than a certain value, 
-  734  1               * Judge as abnormal; Otherwise it is normal */
-  735  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
-  736  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1])
-  737  1                      && (FALSE == g_inBrakeSwValidSts)
-  738  1                      && (PWM_AMPLITUDE_DEFAULT == ptr_Pwm->motorCtrl))
-  739  1              {       
-  740  2                      /* Delay for a certain time, waiting for motor action */
-  741  2                      if(u16CylinderInitSignalDetectDelayTimeCnt < CYLINDER_DETECT_DELAY_TIME)
-  742  2                      {
-  743  3                              u16CylinderInitSignalDetectDelayTimeCnt++;
-  744  3                              if(adcPtr->mainCylinderTrip_Adc[0] < u16CylinderReturnMinValue)
-  745  3                              {
-  746  4                                      u16CylinderReturnMinValue = adcPtr->mainCylinderTrip_Adc[0];
-  747  4                              }
-  748  3                      }
-  749  2                      else
-  750  2                      {
-  751  3                              if(ABSOLUTE(adcPtr->mainCylinderTrip_Adc[0], gRTE_cylinderInitValue[0]) > CYLINDER_INIT_LOCATION_ABNORM
+  720         // @Parameters    None
+  721         //---------------------------------------------------------------------------------------
+  722         // @Date          2019/12/27
+  723         //***************************************************************************************
+  724         static void FLTD_CylinderInitLocAbnormalDetect(void)
+  725         {
+  726  1              const T_ADC *adcPtr = Adc_SampleData();
+  727  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
+  728  1              static FLT_U16 u16CylinderInitSignalDetectDelayTimeCnt = 0;
+  729  1              //variables defined to detect cylinder init location abnormal
+  730  1              static FLT_U16 u16CylinderInitLocAbnormalCnt = 0;
+  731  1              static FLT_U16 u16CylinderInitLocNormalCnt = 0;
+  732  1              
+  733  1              /* detect cylinder init signal abnormal.
+  734  1               * The brake pedal is not pressed and there is no external brake request, 
+  735  1               * if the difference between the cylinder signal and the initial signal is greater than a certain value, 
+  736  1               * Judge as abnormal; Otherwise it is normal */
+  737  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
+  738  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1])
+  739  1                      && (FALSE == g_inBrakeSwValidSts)
+  740  1                      && (PWM_AMPLITUDE_DEFAULT == ptr_Pwm->motorCtrl))
+  741  1              {       
+  742  2                      /* Delay for a certain time, waiting for motor action */
+  743  2                      if(u16CylinderInitSignalDetectDelayTimeCnt < CYLINDER_DETECT_DELAY_TIME)
+  744  2                      {
+  745  3                              u16CylinderInitSignalDetectDelayTimeCnt++;
+  746  3                              if(adcPtr->mainCylinderTrip_Adc[0] < u16CylinderReturnMinValue)
+  747  3                              {
+  748  4                                      u16CylinderReturnMinValue = adcPtr->mainCylinderTrip_Adc[0];
+  749  4                              }
+  750  3                      }
+  751  2                      else
+  752  2                      {
+  753  3                              if(ABSOLUTE(adcPtr->mainCylinderTrip_Adc[0], gRTE_cylinderInitValue[0]) > CYLINDER_INIT_LOCATION_ABNORM
              -AL_RANG)
-  752  3                              {
-  753  4                                      u16CylinderInitLocNormalCnt = 0;
-  754  4                                      if(u16CylinderInitLocAbnormalCnt < CYLINDER_INIT_LOCATION_ABNORMAL_TIME)
-  755  4                                      {
-  756  5                                              u16CylinderInitLocAbnormalCnt++;
-  757  5                                      }
-  758  4                                      else
-  759  4                                      {
-  760  5                                              FLTD_fltFlg.cylinderSensorInitAbnormalFlg = TRUE;
-  761  5                                      }
-  762  4                              }
-  763  3                              else
-  764  3                              {
-  765  4                                      u16CylinderInitLocAbnormalCnt = 0;
-  766  4                                      if(u16CylinderInitLocNormalCnt < CYLINDER_INIT_LOCATION_ABNORMAL_TIME)
-  767  4                                      {
-  768  5                                              u16CylinderInitLocNormalCnt++;
-  769  5                                      }
-  770  4                                      else
-  771  4                                      {
-  772  5                                              FLTD_fltFlg.cylinderSensorInitAbnormalFlg = FALSE;
-  773  5                                      }
-  774  4                              }
-  775  3                      }
-  776  2              }
-  777  1              else
-  778  1              {
-  779  2                      u16CylinderInitLocAbnormalCnt = 0;
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 14  
+  754  3                              {
+  755  4                                      u16CylinderInitLocNormalCnt = 0;
+  756  4                                      if(u16CylinderInitLocAbnormalCnt < CYLINDER_INIT_LOCATION_ABNORMAL_TIME)
+  757  4                                      {
+  758  5                                              u16CylinderInitLocAbnormalCnt++;
+  759  5                                      }
+  760  4                                      else
+  761  4                                      {
+  762  5                                              FLTD_fltFlg.cylinderSensorInitAbnormalFlg = TRUE;
+  763  5                                      }
+  764  4                              }
+  765  3                              else
+  766  3                              {
+  767  4                                      u16CylinderInitLocAbnormalCnt = 0;
+  768  4                                      if(u16CylinderInitLocNormalCnt < CYLINDER_INIT_LOCATION_ABNORMAL_TIME)
+  769  4                                      {
+  770  5                                              u16CylinderInitLocNormalCnt++;
+  771  5                                      }
+  772  4                                      else
+  773  4                                      {
+  774  5                                              FLTD_fltFlg.cylinderSensorInitAbnormalFlg = FALSE;
+  775  5                                      }
+  776  4                              }
+  777  3                      }
+  778  2              }
+  779  1              else
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 14  
 
-  780  2                      u16CylinderInitLocNormalCnt = 0;
-  781  2                      u16CylinderInitSignalDetectDelayTimeCnt = 0;
-  782  2                      u16CylinderReturnMinValue = 0xFFFF;
-  783  2              }
-  784  1      }
-  785         
-  786         //***************************************************************************************
-  787         // @Function      static void FLTD_CylinderSignalAbnormalDetect(void) 
-  788         //---------------------------------------------------------------------------------------
-  789         // @Description   Cylinder signal abnormal detection.
+  780  1              {
+  781  2                      u16CylinderInitLocAbnormalCnt = 0;
+  782  2                      u16CylinderInitLocNormalCnt = 0;
+  783  2                      u16CylinderInitSignalDetectDelayTimeCnt = 0;
+  784  2                      u16CylinderReturnMinValue = 0xFFFF;
+  785  2              }
+  786  1      }
+  787         
+  788         //***************************************************************************************
+  789         // @Function      static void FLTD_CylinderSignalAbnormalDetect(void) 
   790         //---------------------------------------------------------------------------------------
-  791         // @Returnvalue   None
+  791         // @Description   Cylinder signal abnormal detection.
   792         //---------------------------------------------------------------------------------------
-  793         // @Parameters    None
+  793         // @Returnvalue   None
   794         //---------------------------------------------------------------------------------------
-  795         // @Date          2019/12/27
-  796         //***************************************************************************************
-  797         static void FLTD_CylinderSignalAbnormalDetect(void)
-  798         {
-  799  1              const T_ADC *adcPtr = Adc_SampleData();
-  800  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
-  801  1              static FLT_U16 u16CylinderSignalDetectDelayTimeCnt = 0;
-  802  1      
-  803  1              //variables defined to detect cylinder signal abnormal
-  804  1              static FLT_U16 u16CylinderSignalAbnormalCnt = 0;
-  805  1              static FLT_U16 u16CylinderSignalNormalCnt = 0;  
-  806  1      
-  807  1              
-  808  1              /* detect cylinder signal abnormal.
-  809  1               * When A certain control quantity is reached, that is, the duty cycle difference of A and B phase reache
+  795         // @Parameters    None
+  796         //---------------------------------------------------------------------------------------
+  797         // @Date          2019/12/27
+  798         //***************************************************************************************
+  799         static void FLTD_CylinderSignalAbnormalDetect(void)
+  800         {
+  801  1              const T_ADC *adcPtr = Adc_SampleData();
+  802  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
+  803  1              static FLT_U16 u16CylinderSignalDetectDelayTimeCnt = 0;
+  804  1      
+  805  1              //variables defined to detect cylinder signal abnormal
+  806  1              static FLT_U16 u16CylinderSignalAbnormalCnt = 0;
+  807  1              static FLT_U16 u16CylinderSignalNormalCnt = 0;  
+  808  1      
+  809  1              
+  810  1              /* detect cylinder signal abnormal.
+  811  1               * When A certain control quantity is reached, that is, the duty cycle difference of A and B phase reache
              -s A certain value,
-  810  1               * The deviation between the master cylinder position and the initial position is less than a certain val
+  812  1               * The deviation between the master cylinder position and the initial position is less than a certain val
              -ue,
-  811  1               * judge the signal anomaly of the master cylinder*/
-  812  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
-  813  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1])
-  814  1                      && (FALSE == FLTD_fltFlg.motorOpenFlg)
-  815  1                      && (ptr_Pwm->motorCtrl > PWM_AMPLITUDE_DEFAULT)
-  816  1                      && ((ptr_Pwm->motorCtrl - PWM_AMPLITUDE_DEFAULT) > CYLINDER_SIGNAL_ABNORMAL_CTRL_THRESHOLD))
-  817  1              {
-  818  2                      /* Delay for a certain time, waiting for motor action */
-  819  2                      if(u16CylinderSignalDetectDelayTimeCnt < CYLINDER_DETECT_DELAY_TIME)
-  820  2                      {
-  821  3                              u16CylinderSignalDetectDelayTimeCnt++;
-  822  3                              if(adcPtr->mainCylinderTrip_Adc[0] > u16CylinderPushMaxValue)
-  823  3                              {
-  824  4                                      u16CylinderPushMaxValue = adcPtr->mainCylinderTrip_Adc[0];
-  825  4                              }
-  826  3                      }
-  827  2                      else
-  828  2                      {
-  829  3                              if(ABSOLUTE(u16CylinderPushMaxValue, gRTE_cylinderInitValue[0]) < CYLINDER_SIGNAL_ABNORMAL_RANG)
-  830  3                              {
-  831  4                                      u16CylinderSignalNormalCnt = 0;
-  832  4                                      if(u16CylinderSignalAbnormalCnt < CYLINDER_SIGNAL_ABNORMAL_TIME)
-  833  4                                      {
-  834  5                                              u16CylinderSignalAbnormalCnt++;
-  835  5                                      }
-  836  4                                      else
-  837  4                                      {
-  838  5                                              FLTD_fltFlg.cylinderSensorSignalAbnormalFlg = TRUE;
-  839  5                                      }
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 15  
+  813  1               * judge the signal anomaly of the master cylinder*/
+  814  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
+  815  1                      && (FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_SIG1])
+  816  1                      && (FALSE == FLTD_fltFlg.motorOpenFlg)
+  817  1                      && (ptr_Pwm->motorCtrl > PWM_AMPLITUDE_DEFAULT)
+  818  1                      && ((ptr_Pwm->motorCtrl - PWM_AMPLITUDE_DEFAULT) > CYLINDER_SIGNAL_ABNORMAL_CTRL_THRESHOLD))
+  819  1              {
+  820  2                      /* Delay for a certain time, waiting for motor action */
+  821  2                      if(u16CylinderSignalDetectDelayTimeCnt < CYLINDER_DETECT_DELAY_TIME)
+  822  2                      {
+  823  3                              u16CylinderSignalDetectDelayTimeCnt++;
+  824  3                              if(adcPtr->mainCylinderTrip_Adc[0] > u16CylinderPushMaxValue)
+  825  3                              {
+  826  4                                      u16CylinderPushMaxValue = adcPtr->mainCylinderTrip_Adc[0];
+  827  4                              }
+  828  3                      }
+  829  2                      else
+  830  2                      {
+  831  3                              if(ABSOLUTE(u16CylinderPushMaxValue, gRTE_cylinderInitValue[0]) < CYLINDER_SIGNAL_ABNORMAL_RANG)
+  832  3                              {
+  833  4                                      u16CylinderSignalNormalCnt = 0;
+  834  4                                      if(u16CylinderSignalAbnormalCnt < CYLINDER_SIGNAL_ABNORMAL_TIME)
+  835  4                                      {
+  836  5                                              u16CylinderSignalAbnormalCnt++;
+  837  5                                      }
+  838  4                                      else
+  839  4                                      {
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 15  
 
-  840  4                              }
-  841  3                              else
-  842  3                              {
-  843  4                                      u16CylinderSignalAbnormalCnt = 0;
-  844  4                                      if(u16CylinderSignalNormalCnt < CYLINDER_SIGNAL_ABNORMAL_TIME)
-  845  4                                      {
-  846  5                                              u16CylinderSignalNormalCnt++;
-  847  5                                      }
-  848  4                                      else
-  849  4                                      {
-  850  5                                              FLTD_fltFlg.cylinderSensorSignalAbnormalFlg = FALSE;
-  851  5                                      }
-  852  4                              }
-  853  3                      }
-  854  2              }
-  855  1              else
-  856  1              {
-  857  2                      u16CylinderSignalAbnormalCnt = 0;
-  858  2                      u16CylinderSignalNormalCnt = 0;
-  859  2                      u16CylinderSignalDetectDelayTimeCnt = 0;
-  860  2                      u16CylinderPushMaxValue = 0u;
-  861  2              }
-  862  1      }
-  863         
-  864         
-  865         //***************************************************************************************
-  866         // @Function      static void FLTD_VlinkVoltageAbnormalDetect(void) 
-  867         //---------------------------------------------------------------------------------------
-  868         // @Description   Motor vlink voltage abnormal detection.
+  840  5                                              FLTD_fltFlg.cylinderSensorSignalAbnormalFlg = TRUE;
+  841  5                                      }
+  842  4                              }
+  843  3                              else
+  844  3                              {
+  845  4                                      u16CylinderSignalAbnormalCnt = 0;
+  846  4                                      if(u16CylinderSignalNormalCnt < CYLINDER_SIGNAL_ABNORMAL_TIME)
+  847  4                                      {
+  848  5                                              u16CylinderSignalNormalCnt++;
+  849  5                                      }
+  850  4                                      else
+  851  4                                      {
+  852  5                                              FLTD_fltFlg.cylinderSensorSignalAbnormalFlg = FALSE;
+  853  5                                      }
+  854  4                              }
+  855  3                      }
+  856  2              }
+  857  1              else
+  858  1              {
+  859  2                      u16CylinderSignalAbnormalCnt = 0;
+  860  2                      u16CylinderSignalNormalCnt = 0;
+  861  2                      u16CylinderSignalDetectDelayTimeCnt = 0;
+  862  2                      u16CylinderPushMaxValue = 0u;
+  863  2              }
+  864  1      }
+  865         
+  866         
+  867         //***************************************************************************************
+  868         // @Function      static void FLTD_VlinkVoltageAbnormalDetect(void) 
   869         //---------------------------------------------------------------------------------------
-  870         // @Returnvalue   None
+  870         // @Description   Motor vlink voltage abnormal detection.
   871         //---------------------------------------------------------------------------------------
-  872         // @Parameters    None
+  872         // @Returnvalue   None
   873         //---------------------------------------------------------------------------------------
-  874         // @Date          2019/12/27
-  875         //***************************************************************************************
-  876         static void FLTD_VlinkVoltageAbnormalDetect(void)
-  877         {
-  878  1              const T_ADC *adcPtr = Adc_SampleData();
-  879  1      
-  880  1              //variables defined to detect vlink voltage fault
-  881  1              static FLT_U16 u16VlinkVoltageHighCnt = 0;
-  882  1              static FLT_U16 u16VlinkVoltageLowCnt = 0;
-  883  1              static FLT_U16 u16VlinkVoltageNormalCnt = 0;
-  884  1              
-  885  1              /* Vlink voltage abnormal. 
-  886  1               * The sample value of vlink is compared with the sample value of power supply voltage 
-  887  1               * to judge the high and low vlink voltage */
-  888  1              if(FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_ECU_VOLTAGE])
-  889  1              {
-  890  2                      if(adcPtr->motorVLinkVoltage_Adc > (adcPtr->powerVoltage_Adc + VLINK_VOLTAGE_ABNORMAL_RANG)) /* vlink vo
+  874         // @Parameters    None
+  875         //---------------------------------------------------------------------------------------
+  876         // @Date          2019/12/27
+  877         //***************************************************************************************
+  878         static void FLTD_VlinkVoltageAbnormalDetect(void)
+  879         {
+  880  1              const T_ADC *adcPtr = Adc_SampleData();
+  881  1      
+  882  1              //variables defined to detect vlink voltage fault
+  883  1              static FLT_U16 u16VlinkVoltageHighCnt = 0;
+  884  1              static FLT_U16 u16VlinkVoltageLowCnt = 0;
+  885  1              static FLT_U16 u16VlinkVoltageNormalCnt = 0;
+  886  1              
+  887  1              /* Vlink voltage abnormal. 
+  888  1               * The sample value of vlink is compared with the sample value of power supply voltage 
+  889  1               * to judge the high and low vlink voltage */
+  890  1              if(FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_ECU_VOLTAGE])
+  891  1              {
+  892  2                      if(adcPtr->motorVLinkVoltage_Adc > (adcPtr->powerVoltage_Adc + VLINK_VOLTAGE_ABNORMAL_RANG)) /* vlink vo
              -ltage too high */
-  891  2                      {
-  892  3                              u16VlinkVoltageLowCnt = 0;
-  893  3                              u16VlinkVoltageNormalCnt = 0;
-  894  3                              
-  895  3                              if(u16VlinkVoltageHighCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
-  896  3                              {
-  897  4                                      u16VlinkVoltageHighCnt++;
-  898  4                              }
-  899  3                              else
-  900  3                              {
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 16  
+  893  2                      {
+  894  3                              u16VlinkVoltageLowCnt = 0;
+  895  3                              u16VlinkVoltageNormalCnt = 0;
+  896  3                              
+  897  3                              if(u16VlinkVoltageHighCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
+  898  3                              {
+  899  4                                      u16VlinkVoltageHighCnt++;
+  900  4                              }
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 16  
 
-  901  4                                      FLTD_fltFlg.motorVlinkVolHighFlg = TRUE;
-  902  4                              }
-  903  3                      }
-  904  2                      else if(adcPtr->motorVLinkVoltage_Adc < (adcPtr->powerVoltage_Adc - VLINK_VOLTAGE_ABNORMAL_RANG)) /* vli
+  901  3                              else
+  902  3                              {
+  903  4                                      FLTD_fltFlg.motorVlinkVolHighFlg = TRUE;
+  904  4                              }
+  905  3                      }
+  906  2                      else if(adcPtr->motorVLinkVoltage_Adc < (adcPtr->powerVoltage_Adc - VLINK_VOLTAGE_ABNORMAL_RANG)) /* vli
              -nk voltage too low */
-  905  2                      {
-  906  3                              u16VlinkVoltageHighCnt = 0;
-  907  3                              u16VlinkVoltageNormalCnt = 0;
-  908  3                              
-  909  3                              if(u16VlinkVoltageLowCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
-  910  3                              {
-  911  4                                      u16VlinkVoltageLowCnt++;
-  912  4                              }
-  913  3                              else
-  914  3                              {
-  915  4                                      FLTD_fltFlg.motorVlinkVolLowFlg = TRUE;
-  916  4                              }
-  917  3                      }
-  918  2                      else /* vlink voltage normal */
-  919  2                      {
-  920  3                              u16VlinkVoltageHighCnt = 0;
-  921  3                              u16VlinkVoltageLowCnt = 0;
-  922  3      
-  923  3                              if(u16VlinkVoltageNormalCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
-  924  3                              {
-  925  4                                      u16VlinkVoltageNormalCnt++;
-  926  4                              }
-  927  3                              else
-  928  3                              {
-  929  4                                      FLTD_fltFlg.motorVlinkVolHighFlg = FALSE;
-  930  4                                      FLTD_fltFlg.motorVlinkVolLowFlg = FALSE;
-  931  4                              }
-  932  3                      }
-  933  2              }
-  934  1              else
-  935  1              {
-  936  2                      u16VlinkVoltageHighCnt = 0;
-  937  2                      u16VlinkVoltageLowCnt = 0;
-  938  2                      u16VlinkVoltageNormalCnt = 0;
-  939  2              }
-  940  1      }
-  941         
-  942         //***************************************************************************************
-  943         // @Function      static void FLTD_CurrentInitSigAbnormalDetect(void) 
-  944         //---------------------------------------------------------------------------------------
-  945         // @Description   Current init signal abnormal detection.
+  907  2                      {
+  908  3                              u16VlinkVoltageHighCnt = 0;
+  909  3                              u16VlinkVoltageNormalCnt = 0;
+  910  3                              
+  911  3                              if(u16VlinkVoltageLowCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
+  912  3                              {
+  913  4                                      u16VlinkVoltageLowCnt++;
+  914  4                              }
+  915  3                              else
+  916  3                              {
+  917  4                                      FLTD_fltFlg.motorVlinkVolLowFlg = TRUE;
+  918  4                              }
+  919  3                      }
+  920  2                      else /* vlink voltage normal */
+  921  2                      {
+  922  3                              u16VlinkVoltageHighCnt = 0;
+  923  3                              u16VlinkVoltageLowCnt = 0;
+  924  3      
+  925  3                              if(u16VlinkVoltageNormalCnt <= VLINK_VOLTAGE_ABNORMAL_TIME)
+  926  3                              {
+  927  4                                      u16VlinkVoltageNormalCnt++;
+  928  4                              }
+  929  3                              else
+  930  3                              {
+  931  4                                      FLTD_fltFlg.motorVlinkVolHighFlg = FALSE;
+  932  4                                      FLTD_fltFlg.motorVlinkVolLowFlg = FALSE;
+  933  4                              }
+  934  3                      }
+  935  2              }
+  936  1              else
+  937  1              {
+  938  2                      u16VlinkVoltageHighCnt = 0;
+  939  2                      u16VlinkVoltageLowCnt = 0;
+  940  2                      u16VlinkVoltageNormalCnt = 0;
+  941  2              }
+  942  1      }
+  943         
+  944         //***************************************************************************************
+  945         // @Function      static void FLTD_CurrentInitSigAbnormalDetect(void) 
   946         //---------------------------------------------------------------------------------------
-  947         // @Returnvalue   None
+  947         // @Description   Current init signal abnormal detection.
   948         //---------------------------------------------------------------------------------------
-  949         // @Parameters    None
+  949         // @Returnvalue   None
   950         //---------------------------------------------------------------------------------------
-  951         // @Date          2019/12/27
-  952         //***************************************************************************************
-  953         static void FLTD_CurrentInitSigAbnormalDetect(void)
-  954         {
-  955  1              const T_ADC *adcPtr = Adc_SampleData();
-  956  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
-  957  1              //variables defined to detect current init signal abnormal
-  958  1              static FLT_U16 u16CurrentInitSignalDetectDelayTimeCnt = 0;
-  959  1              static FLT_U16 u16CurrentInitSignalAbnormalCnt = 0;
-  960  1              static FLT_U16 u16CurrentInitSignalNormalCnt = 0;
-  961  1              static FLT_U16 u16CurrentSigMinValue = 0xFFFF;
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 17  
+  951         // @Parameters    None
+  952         //---------------------------------------------------------------------------------------
+  953         // @Date          2019/12/27
+  954         //***************************************************************************************
+  955         static void FLTD_CurrentInitSigAbnormalDetect(void)
+  956         {
+  957  1              const T_ADC *adcPtr = Adc_SampleData();
+  958  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
+  959  1              //variables defined to detect current init signal abnormal
+  960  1              static FLT_U16 u16CurrentInitSignalDetectDelayTimeCnt = 0;
+  961  1              static FLT_U16 u16CurrentInitSignalAbnormalCnt = 0;
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 17  
 
-  962  1      
-  963  1              
-  964  1              /* detect current init signal abnormal.
-  965  1               * When there is no control quantity, if the difference between the current signal 
-  966  1               * and the initial signal is greater than a certain value, 
-  967  1               * Judge as abnormal; Otherwise it is normal */
-  968  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_CURRENT_SENSOR_SIG])
-  969  1                      && (FALSE == g_inBrakeSwValidSts)
-  970  1                      && (PWM_AMPLITUDE_DEFAULT == ptr_Pwm->motorCtrl))
-  971  1              {
-  972  2                      /* Delay for a certain time, waiting for motor action */
-  973  2                      if(u16CurrentInitSignalDetectDelayTimeCnt < CURRENT_SIGNAL_DELAY_TIME)
-  974  2                      {
-  975  3                              u16CurrentInitSignalDetectDelayTimeCnt++;
-  976  3                              if(adcPtr->motorCurrent_Adc < u16CurrentSigMinValue)
-  977  3                              {
-  978  4                                      u16CurrentSigMinValue = adcPtr->motorCurrent_Adc;
-  979  4                              }
-  980  3                      }
-  981  2                      else
-  982  2                      {
-  983  3                              if(ABSOLUTE(adcPtr->motorCurrent_Adc, MOTOR_CURRENT_THRESHOLD) > CURRENT_INIT_SIGNAL_ABNORMAL_RANG)
-  984  3                              {
-  985  4                                      u16CurrentInitSignalNormalCnt = 0;
-  986  4                                      if(u16CurrentInitSignalAbnormalCnt < CURRENT_INIT_SIGNAL_ABNORMAL_TIME)
-  987  4                                      {
-  988  5                                              u16CurrentInitSignalAbnormalCnt++;
-  989  5                                      }
-  990  4                                      else
-  991  4                                      {
-  992  5                                              FLTD_fltFlg.currentSensorAbnormalFlg = TRUE;
-  993  5                                      }
-  994  4                              }
-  995  3                              else
-  996  3                              {
-  997  4                                      u16CurrentInitSignalAbnormalCnt = 0;
-  998  4                                      if(u16CurrentInitSignalNormalCnt < CURRENT_INIT_SIGNAL_ABNORMAL_TIME)
-  999  4                                      {
- 1000  5                                              u16CurrentInitSignalNormalCnt++;
- 1001  5                                      }
- 1002  4                                      else
- 1003  4                                      {
- 1004  5                                              FLTD_fltFlg.currentSensorAbnormalFlg = FALSE;
- 1005  5                                      }
- 1006  4                              }
- 1007  3                      }
- 1008  2              }
- 1009  1              else
- 1010  1              {
- 1011  2                      u16CurrentInitSignalDetectDelayTimeCnt = 0;
- 1012  2                      u16CurrentInitSignalAbnormalCnt = 0;
- 1013  2                      u16CurrentInitSignalNormalCnt = 0;
- 1014  2                      u16CurrentSigMinValue = 0xFFFF;
- 1015  2              }
- 1016  1      }
- 1017         
- 1018         //***************************************************************************************
- 1019         // @Function      static void FLTD_PredriverFaultDetect(void) 
- 1020         //---------------------------------------------------------------------------------------
- 1021         // @Description   Motor pre-drive fault detection.
+  962  1              static FLT_U16 u16CurrentInitSignalNormalCnt = 0;
+  963  1              static FLT_U16 u16CurrentSigMinValue = 0xFFFF;
+  964  1      
+  965  1              
+  966  1              /* detect current init signal abnormal.
+  967  1               * When there is no control quantity, if the difference between the current signal 
+  968  1               * and the initial signal is greater than a certain value, 
+  969  1               * Judge as abnormal; Otherwise it is normal */
+  970  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_CURRENT_SENSOR_SIG])
+  971  1                      //&& ((FALSE == g_inBrakeSwValidSts) || (WireCtrlBrakeMode == BrakeSysMode)) //muYuan
+  972  1                      && (PWM_AMPLITUDE_DEFAULT == ptr_Pwm->motorCtrl))
+  973  1              {
+  974  2                      /* Delay for a certain time, waiting for motor action */
+  975  2                      if(u16CurrentInitSignalDetectDelayTimeCnt < CURRENT_SIGNAL_DELAY_TIME)
+  976  2                      {
+  977  3                              u16CurrentInitSignalDetectDelayTimeCnt++;
+  978  3                              if(adcPtr->motorCurrent_Adc < u16CurrentSigMinValue)
+  979  3                              {
+  980  4                                      u16CurrentSigMinValue = adcPtr->motorCurrent_Adc;
+  981  4                              }
+  982  3                      }
+  983  2                      else
+  984  2                      {
+  985  3                              if(ABSOLUTE(adcPtr->motorCurrent_Adc, MOTOR_CURRENT_THRESHOLD) > CURRENT_INIT_SIGNAL_ABNORMAL_RANG)
+  986  3                              {
+  987  4                                      u16CurrentInitSignalNormalCnt = 0;
+  988  4                                      if(u16CurrentInitSignalAbnormalCnt < CURRENT_INIT_SIGNAL_ABNORMAL_TIME)
+  989  4                                      {
+  990  5                                              u16CurrentInitSignalAbnormalCnt++;
+  991  5                                      }
+  992  4                                      else
+  993  4                                      {
+  994  5                                              FLTD_fltFlg.currentSensorAbnormalFlg = TRUE;
+  995  5                                      }
+  996  4                              }
+  997  3                              else
+  998  3                              {
+  999  4                                      u16CurrentInitSignalAbnormalCnt = 0;
+ 1000  4                                      if(u16CurrentInitSignalNormalCnt < CURRENT_INIT_SIGNAL_ABNORMAL_TIME)
+ 1001  4                                      {
+ 1002  5                                              u16CurrentInitSignalNormalCnt++;
+ 1003  5                                      }
+ 1004  4                                      else
+ 1005  4                                      {
+ 1006  5                                              FLTD_fltFlg.currentSensorAbnormalFlg = FALSE;
+ 1007  5                                      }
+ 1008  4                              }
+ 1009  3                      }
+ 1010  2              }
+ 1011  1              else
+ 1012  1              {
+ 1013  2                      u16CurrentInitSignalDetectDelayTimeCnt = 0;
+ 1014  2                      u16CurrentInitSignalAbnormalCnt = 0;
+ 1015  2                      u16CurrentInitSignalNormalCnt = 0;
+ 1016  2                      u16CurrentSigMinValue = 0xFFFF;
+ 1017  2              }
+ 1018  1      }
+ 1019         
+ 1020         //***************************************************************************************
+ 1021         // @Function      static void FLTD_PredriverFaultDetect(void) 
  1022         //---------------------------------------------------------------------------------------
- 1023         // @Returnvalue   None
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 18  
+ 1023         // @Description   Motor pre-drive fault detection.
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 18  
 
  1024         //---------------------------------------------------------------------------------------
- 1025         // @Parameters    None
+ 1025         // @Returnvalue   None
  1026         //---------------------------------------------------------------------------------------
- 1027         // @Date          2019/12/27
- 1028         //***************************************************************************************
- 1029         static void FLTD_PredriverFaultDetect(void)
- 1030         {
- 1031  1              //variables defined to detect pre Driver fault
- 1032  1              static FLT_U16 u16PredriverDetectWaitTimeCnt = PREDRIVER_FAULT_DELAY_TIME;      
- 1033  1              static FLT_U16 u16PredriveFaultTimeCnt = 0;
- 1034  1              static FLT_U16 u16PredriveRecoverTimeCnt = 0;
- 1035  1              static FLT_U8 u8PredriveFaultCnt = 0;
- 1036  1              static FLT_BOOL bResetFlag = FALSE;
- 1037  1              
- 1038  1              /* detect predriver fault. 
- 1039  1               * 1) When the detection level of predrive is low, After meeting the time requirement, 
- 1040  1               * reset the predrive, and retest the interval at 200ms with a maximum of 3 times reset. 
- 1041  1               * if it is still low, the fault is judged: 
- 1042  1               * 2) If the level is high enough to meet the time requirement, it is considered normal */
- 1043  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_ECU_VOLTAGE])
- 1044  1                      && (FALSE == FLTD_fltFlg.motorVlinkVolHighFlg)
- 1045  1                      && ((FALSE == FLTD_fltFlg.motorVlinkVolLowFlg)))
- 1046  1              {
- 1047  2                      if(u16PredriverDetectWaitTimeCnt < PREDRIVER_FAULT_DELAY_TIME)
- 1048  2                      {
- 1049  3                              u16PredriverDetectWaitTimeCnt++;
- 1050  3                              
- 1051  3                              if(TRUE == bResetFlag)
- 1052  3                              {
- 1053  4                                      bResetFlag = FALSE;
- 1054  4                                      IO_vSetPin(IO_P0_7); /* open pre driver */
- 1055  4                              }
- 1056  3                      }
- 1057  2                      else
- 1058  2                      {
- 1059  3                              if(0 == g_inPreDriverErrorSts) /* fault */
- 1060  3                              {
- 1061  4                                      u16PredriveRecoverTimeCnt = 0;
- 1062  4                                      
- 1063  4                                      if(u16PredriveFaultTimeCnt < PREDRIVER_FAULT_TIME)
- 1064  4                                      {
- 1065  5                                              u16PredriveFaultTimeCnt++;
- 1066  5                                      }
- 1067  4                                      else
- 1068  4                                      {
- 1069  5                                              if(u8PredriveFaultCnt < PREDRIVER_RESET_COUNT)
- 1070  5                                              {
- 1071  6                                                      u8PredriveFaultCnt++;
- 1072  6                                                      
- 1073  6                                                      IO_vResetPin(IO_P0_7); /* close pre driver */
- 1074  6                                                      bResetFlag = TRUE;
- 1075  6                                                      u16PredriveFaultTimeCnt = 0;
- 1076  6                                                      u16PredriverDetectWaitTimeCnt = 0;
- 1077  6                                              }
- 1078  5                                              else
- 1079  5                                              {
- 1080  6                                                      FLTD_fltFlg.motorPredriveFaultFlg = TRUE;
- 1081  6                                              }
- 1082  5                                      }
- 1083  4                              }
- 1084  3                              else /* normal */
- 1085  3                              {
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 19  
+ 1027         // @Parameters    None
+ 1028         //---------------------------------------------------------------------------------------
+ 1029         // @Date          2019/12/27
+ 1030         //***************************************************************************************
+ 1031         static void FLTD_PredriverFaultDetect(void)
+ 1032         {
+ 1033  1              //variables defined to detect pre Driver fault
+ 1034  1              static FLT_U16 u16PredriverDetectWaitTimeCnt = PREDRIVER_FAULT_DELAY_TIME;      
+ 1035  1              static FLT_U16 u16PredriveFaultTimeCnt = 0;
+ 1036  1              static FLT_U16 u16PredriveRecoverTimeCnt = 0;
+ 1037  1              static FLT_U8 u8PredriveFaultCnt = 0;
+ 1038  1              static FLT_BOOL bResetFlag = FALSE;
+ 1039  1              
+ 1040  1              /* detect predriver fault. 
+ 1041  1               * 1) When the detection level of predrive is low, After meeting the time requirement, 
+ 1042  1               * reset the predrive, and retest the interval at 200ms with a maximum of 3 times reset. 
+ 1043  1               * if it is still low, the fault is judged: 
+ 1044  1               * 2) If the level is high enough to meet the time requirement, it is considered normal */
+ 1045  1              if((FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_ECU_VOLTAGE])
+ 1046  1                      && (FALSE == FLTD_fltFlg.motorVlinkVolHighFlg)
+ 1047  1                      && ((FALSE == FLTD_fltFlg.motorVlinkVolLowFlg)))
+ 1048  1              {
+ 1049  2                      if(u16PredriverDetectWaitTimeCnt < PREDRIVER_FAULT_DELAY_TIME)
+ 1050  2                      {
+ 1051  3                              u16PredriverDetectWaitTimeCnt++;
+ 1052  3                              
+ 1053  3                              if(TRUE == bResetFlag)
+ 1054  3                              {
+ 1055  4                                      bResetFlag = FALSE;
+ 1056  4                                      IO_vSetPin(IO_P0_7); /* open pre driver */
+ 1057  4                              }
+ 1058  3                      }
+ 1059  2                      else
+ 1060  2                      {
+ 1061  3                              if(0 == g_inPreDriverErrorSts) /* fault */
+ 1062  3                              {
+ 1063  4                                      u16PredriveRecoverTimeCnt = 0;
+ 1064  4                                      
+ 1065  4                                      if(u16PredriveFaultTimeCnt < PREDRIVER_FAULT_TIME)
+ 1066  4                                      {
+ 1067  5                                              u16PredriveFaultTimeCnt++;
+ 1068  5                                      }
+ 1069  4                                      else
+ 1070  4                                      {
+ 1071  5                                              if(u8PredriveFaultCnt < PREDRIVER_RESET_COUNT)
+ 1072  5                                              {
+ 1073  6                                                      u8PredriveFaultCnt++;
+ 1074  6                                                      
+ 1075  6                                                      IO_vResetPin(IO_P0_7); /* close pre driver */
+ 1076  6                                                      bResetFlag = TRUE;
+ 1077  6                                                      u16PredriveFaultTimeCnt = 0;
+ 1078  6                                                      u16PredriverDetectWaitTimeCnt = 0;
+ 1079  6                                              }
+ 1080  5                                              else
+ 1081  5                                              {
+ 1082  6                                                      FLTD_fltFlg.motorPredriveFaultFlg = TRUE;
+ 1083  6                                              }
+ 1084  5                                      }
+ 1085  4                              }
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 19  
 
- 1086  4                                      u16PredriveFaultTimeCnt = 0;
- 1087  4      
- 1088  4                                      if(u16PredriveRecoverTimeCnt < PREDRIVER_FAULT_TIME)
- 1089  4                                      {
- 1090  5                                              u16PredriveRecoverTimeCnt++;
- 1091  5                                      }
- 1092  4                                      else
- 1093  4                                      {
- 1094  5                                              FLTD_fltFlg.motorPredriveFaultFlg = FALSE;
- 1095  5      
- 1096  5                                              u8PredriveFaultCnt = 0;
- 1097  5                                              u16PredriverDetectWaitTimeCnt = PREDRIVER_FAULT_DELAY_TIME;
- 1098  5                                      }
- 1099  4                              }
- 1100  3                      }               
- 1101  2              }
- 1102  1              else
- 1103  1              {
- 1104  2                      u16PredriverDetectWaitTimeCnt = 0;      
- 1105  2                      u16PredriveFaultTimeCnt = 0;
- 1106  2                      u16PredriveRecoverTimeCnt = 0;
- 1107  2                      u8PredriveFaultCnt = 0;
- 1108  2              }
- 1109  1      }
- 1110         
- 1111         //***************************************************************************************
- 1112         // @Function      static void FLTD_MotorFaultDetect(void) 
- 1113         //---------------------------------------------------------------------------------------
- 1114         // @Description   Motor open circuit and short circuit fault detection.
+ 1086  3                              else /* normal */
+ 1087  3                              {
+ 1088  4                                      u16PredriveFaultTimeCnt = 0;
+ 1089  4      
+ 1090  4                                      if(u16PredriveRecoverTimeCnt < PREDRIVER_FAULT_TIME)
+ 1091  4                                      {
+ 1092  5                                              u16PredriveRecoverTimeCnt++;
+ 1093  5                                      }
+ 1094  4                                      else
+ 1095  4                                      {
+ 1096  5                                              FLTD_fltFlg.motorPredriveFaultFlg = FALSE;
+ 1097  5      
+ 1098  5                                              u8PredriveFaultCnt = 0;
+ 1099  5                                              u16PredriverDetectWaitTimeCnt = PREDRIVER_FAULT_DELAY_TIME;
+ 1100  5                                      }
+ 1101  4                              }
+ 1102  3                      }               
+ 1103  2              }
+ 1104  1              else
+ 1105  1              {
+ 1106  2                      u16PredriverDetectWaitTimeCnt = 0;      
+ 1107  2                      u16PredriveFaultTimeCnt = 0;
+ 1108  2                      u16PredriveRecoverTimeCnt = 0;
+ 1109  2                      u8PredriveFaultCnt = 0;
+ 1110  2              }
+ 1111  1      }
+ 1112         
+ 1113         //***************************************************************************************
+ 1114         // @Function      static void FLTD_MotorFaultDetect(void) 
  1115         //---------------------------------------------------------------------------------------
- 1116         // @Returnvalue   None
+ 1116         // @Description   Motor open circuit and short circuit fault detection.
  1117         //---------------------------------------------------------------------------------------
- 1118         // @Parameters    None
+ 1118         // @Returnvalue   None
  1119         //---------------------------------------------------------------------------------------
- 1120         // @Date          2019/12/27
- 1121         //***************************************************************************************
- 1122         static void FLTD_MotorFaultDetect(void)
- 1123         {
- 1124  1              const T_ADC_APP *ptr_adcApp = AdcApp_SampleData();
- 1125  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
- 1126  1              //variables defined to detect motor current fault
- 1127  1              static FLT_U16 u16MotorOpenFaultTimeCnt = 0;
- 1128  1              static FLT_U16 u16MotorOpenRecoverTimeCnt = 0;
- 1129  1              static FLT_U16 u16MotorShortFaultTimeCnt = 0;
- 1130  1              static FLT_U16 u16MotorShortRecoverTimeCnt = 0;
- 1131  1              
- 1132  1              /* detect Motor fault.
- 1133  1               * When a certain control quantity is reached, 
- 1134  1               * Judge whether the motor is open or short according to the current */
- 1135  1              if(FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_CURRENT_SENSOR_SIG])
- 1136  1              {
- 1137  2                      if((ptr_Pwm->motorCtrl > PWM_AMPLITUDE_DEFAULT)
- 1138  2                              && ((ptr_Pwm->motorCtrl - PWM_AMPLITUDE_DEFAULT) > MOTOR_OPEN_CTRL_THRESHOLD))
- 1139  2                      {
- 1140  3                              /* motor open fault */
- 1141  3                              if(ptr_adcApp->brakeMotorCurrent < MOTOR_CURRENT_OPEN_THRESHOLD)                        
- 1142  3                              {
- 1143  4                                      u16MotorOpenRecoverTimeCnt = 0;
- 1144  4                                      if(u16MotorOpenFaultTimeCnt < MOTOR_CURRENT_OPEN_TIME)
- 1145  4                                      {
- 1146  5                                              u16MotorOpenFaultTimeCnt++;
- 1147  5                                      }
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 20  
+ 1120         // @Parameters    None
+ 1121         //---------------------------------------------------------------------------------------
+ 1122         // @Date          2019/12/27
+ 1123         //***************************************************************************************
+ 1124         static void FLTD_MotorFaultDetect(void)
+ 1125         {
+ 1126  1              const T_ADC_APP *ptr_adcApp = AdcApp_SampleData();
+ 1127  1              const T_PWM* ptr_Pwm = Pwm_ControlData();
+ 1128  1              //variables defined to detect motor current fault
+ 1129  1              static FLT_U16 u16MotorOpenFaultTimeCnt = 0;
+ 1130  1              static FLT_U16 u16MotorOpenRecoverTimeCnt = 0;
+ 1131  1              static FLT_U16 u16MotorShortFaultTimeCnt = 0;
+ 1132  1              static FLT_U16 u16MotorShortRecoverTimeCnt = 0;
+ 1133  1              
+ 1134  1              /* detect Motor fault.
+ 1135  1               * When a certain control quantity is reached, 
+ 1136  1               * Judge whether the motor is open or short according to the current */
+ 1137  1              if(FLTD_VOL_NORMAL == adcVoltModeSts[FLTD_ADC_CURRENT_SENSOR_SIG])
+ 1138  1              {
+ 1139  2                      if((ptr_Pwm->motorCtrl > PWM_AMPLITUDE_DEFAULT)
+ 1140  2                              && ((ptr_Pwm->motorCtrl - PWM_AMPLITUDE_DEFAULT) > MOTOR_OPEN_CTRL_THRESHOLD))
+ 1141  2                      {
+ 1142  3                              /* motor open fault */
+ 1143  3                              if(ptr_adcApp->brakeMotorCurrent < MOTOR_CURRENT_OPEN_THRESHOLD)                        
+ 1144  3                              {
+ 1145  4                                      u16MotorOpenRecoverTimeCnt = 0;
+ 1146  4                                      if(u16MotorOpenFaultTimeCnt < MOTOR_CURRENT_OPEN_TIME)
+ 1147  4                                      {
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 20  
 
- 1148  4                                      else
- 1149  4                                      {
- 1150  5                                              FLTD_fltFlg.motorOpenFlg = TRUE;
- 1151  5                                      }
- 1152  4                              }
- 1153  3                              else
- 1154  3                              {
- 1155  4                                      u16MotorOpenFaultTimeCnt = 0;
- 1156  4                                      if(u16MotorOpenRecoverTimeCnt < MOTOR_CURRENT_OPEN_TIME)
- 1157  4                                      {
- 1158  5                                              u16MotorOpenRecoverTimeCnt++;
- 1159  5                                      }
- 1160  4                                      else
- 1161  4                                      {
- 1162  5                                              FLTD_fltFlg.motorOpenFlg = FALSE;
- 1163  5                                      }       
- 1164  4                              }
- 1165  3                      }
- 1166  2                      else
- 1167  2                      {
- 1168  3                              u16MotorOpenFaultTimeCnt = 0;
- 1169  3                              u16MotorOpenRecoverTimeCnt = 0;
- 1170  3                      }
- 1171  2      
- 1172  2                      
- 1173  2                      /* motor short fault */
- 1174  2                      if(ptr_adcApp->brakeMotorCurrent > MOTOR_CURRENT_SHORT_THRESHOLD)
- 1175  2                      {
- 1176  3                              u16MotorShortRecoverTimeCnt = 0;
- 1177  3                              if(u16MotorShortFaultTimeCnt < MOTOR_CURRENT_SHORT_TIME)
- 1178  3                              {
- 1179  4                                      u16MotorShortFaultTimeCnt++;
- 1180  4                              }
- 1181  3                              else
- 1182  3                              {
- 1183  4                                      FLTD_fltFlg.motorShortFlg = TRUE;
- 1184  4                              }
- 1185  3                      }
- 1186  2                      else
- 1187  2                      {
- 1188  3                              u16MotorShortFaultTimeCnt = 0;
- 1189  3                              if(u16MotorShortRecoverTimeCnt < MOTOR_CURRENT_SHORT_TIME)
- 1190  3                              {
- 1191  4                                      u16MotorShortRecoverTimeCnt++;
- 1192  4                              }
- 1193  3                              else
- 1194  3                              {
- 1195  4                                      FLTD_fltFlg.motorShortFlg = FALSE;
- 1196  4                              }
- 1197  3                      }       
- 1198  2              }
- 1199  1              else
- 1200  1              {
- 1201  2                      u16MotorOpenFaultTimeCnt = 0;
- 1202  2                      u16MotorOpenRecoverTimeCnt = 0;
- 1203  2                      u16MotorShortFaultTimeCnt = 0;
- 1204  2                      u16MotorShortRecoverTimeCnt = 0;
- 1205  2              }
- 1206  1      }
- 1207         
- 1208         
- 1209         //***************************************************************************************
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 21  
+ 1148  5                                              u16MotorOpenFaultTimeCnt++;
+ 1149  5                                      }
+ 1150  4                                      else
+ 1151  4                                      {
+ 1152  5                                              FLTD_fltFlg.motorOpenFlg = TRUE;
+ 1153  5                                      }
+ 1154  4                              }
+ 1155  3                              else
+ 1156  3                              {
+ 1157  4                                      u16MotorOpenFaultTimeCnt = 0;
+ 1158  4                                      if(u16MotorOpenRecoverTimeCnt < MOTOR_CURRENT_OPEN_TIME)
+ 1159  4                                      {
+ 1160  5                                              u16MotorOpenRecoverTimeCnt++;
+ 1161  5                                      }
+ 1162  4                                      else
+ 1163  4                                      {
+ 1164  5                                              FLTD_fltFlg.motorOpenFlg = FALSE;
+ 1165  5                                      }       
+ 1166  4                              }
+ 1167  3                      }
+ 1168  2                      else
+ 1169  2                      {
+ 1170  3                              u16MotorOpenFaultTimeCnt = 0;
+ 1171  3                              u16MotorOpenRecoverTimeCnt = 0;
+ 1172  3                      }
+ 1173  2      
+ 1174  2                      
+ 1175  2                      /* motor short fault */
+ 1176  2                      if(ptr_adcApp->brakeMotorCurrent > MOTOR_CURRENT_SHORT_THRESHOLD)
+ 1177  2                      {
+ 1178  3                              u16MotorShortRecoverTimeCnt = 0;
+ 1179  3                              if(u16MotorShortFaultTimeCnt < MOTOR_CURRENT_SHORT_TIME)
+ 1180  3                              {
+ 1181  4                                      u16MotorShortFaultTimeCnt++;
+ 1182  4                              }
+ 1183  3                              else
+ 1184  3                              {
+ 1185  4                                      FLTD_fltFlg.motorShortFlg = TRUE;
+ 1186  4                              }
+ 1187  3                      }
+ 1188  2                      else
+ 1189  2                      {
+ 1190  3                              u16MotorShortFaultTimeCnt = 0;
+ 1191  3                              if(u16MotorShortRecoverTimeCnt < MOTOR_CURRENT_SHORT_TIME)
+ 1192  3                              {
+ 1193  4                                      u16MotorShortRecoverTimeCnt++;
+ 1194  4                              }
+ 1195  3                              else
+ 1196  3                              {
+ 1197  4                                      FLTD_fltFlg.motorShortFlg = FALSE;
+ 1198  4                              }
+ 1199  3                      }       
+ 1200  2              }
+ 1201  1              else
+ 1202  1              {
+ 1203  2                      u16MotorOpenFaultTimeCnt = 0;
+ 1204  2                      u16MotorOpenRecoverTimeCnt = 0;
+ 1205  2                      u16MotorShortFaultTimeCnt = 0;
+ 1206  2                      u16MotorShortRecoverTimeCnt = 0;
+ 1207  2              }
+ 1208  1      }
+ 1209         
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 21  
 
- 1210         // @Function      static FLT_BOOL FLTD_GetAdcCondition(FLTD_adcType adcIndex) 
- 1211         //---------------------------------------------------------------------------------------
- 1212         // @Description   Gets whether the AD sample value detection condition are meet. 
+ 1210         
+ 1211         //***************************************************************************************
+ 1212         // @Function      static FLT_BOOL FLTD_GetAdcCondition(FLTD_adcType adcIndex) 
  1213         //---------------------------------------------------------------------------------------
- 1214         // @Returnvalue   adcIndex:
- 1215         //                                              adc sampling channel
- 1216         //---------------------------------------------------------------------------------------
- 1217         // @Parameters    TRUE  : detect conditions meet
- 1218         //                                FALSE : detect conditions not meet
- 1219         //---------------------------------------------------------------------------------------
- 1220         // @Date          2019/12/27
- 1221         //***************************************************************************************
- 1222         static FLT_BOOL FLTD_GetAdcCondition(FLTD_adcType adcIndex)
- 1223         {       
- 1224  1              const T_BOOSTER* ptr_booster = Booster_AlogrithmData();
- 1225  1      
- 1226  1              switch(adcIndex)
- 1227  1              {
- 1228  2                      case FLTD_ADC_ECU_VOLTAGE:
- 1229  2                      {
- 1230  3                              if(ptr_booster->cylinderRate < -20)
- 1231  3                              {
- 1232  4                                      return FALSE;
- 1233  4                              }
- 1234  3                              break;
- 1235  3                      }
- 1236  2                      
- 1237  2                      case FLTD_ADC_ENV_TEMPERATURE:
- 1238  2                      {
- 1239  3                              break;
- 1240  3                      }
- 1241  2                      
- 1242  2                      case FLTD_ADC_PEDAL_SENSOR_VOLTAGE:
- 1243  2                      {
- 1244  3                              break;
- 1245  3                      }
- 1246  2                      
- 1247  2                      case FLTD_ADC_PEDAL_SENSOR_SIG1:
- 1248  2                      case FLTD_ADC_PEDAL_SENSOR_SIG2:
- 1249  2                      {
- 1250  3                              if(FLTD_VOL_NORMAL != adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
- 1251  3                              {
- 1252  4                                      return FALSE;
- 1253  4                              }
- 1254  3                              break;
- 1255  3                      }
- 1256  2                      
- 1257  2                      case FLTD_ADC_MAIN_CYLINDER_VOLTAGE:
- 1258  2                      {
- 1259  3                              break;
- 1260  3                      }
- 1261  2                      
- 1262  2                      case FLTD_ADC_MAIN_CYLINDER_SIG1:
- 1263  2                      case FLTD_ADC_MAIN_CYLINDER_SIG2:
- 1264  2                      {
- 1265  3                              if(FLTD_VOL_NORMAL != adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
- 1266  3                              {
- 1267  4                                      return FALSE;
- 1268  4                              }
- 1269  3                              break;
- 1270  3                      }
- 1271  2                      
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 22  
+ 1214         // @Description   Gets whether the AD sample value detection condition are meet. 
+ 1215         //---------------------------------------------------------------------------------------
+ 1216         // @Returnvalue   adcIndex:
+ 1217         //                                              adc sampling channel
+ 1218         //---------------------------------------------------------------------------------------
+ 1219         // @Parameters    TRUE  : detect conditions meet
+ 1220         //                                FALSE : detect conditions not meet
+ 1221         //---------------------------------------------------------------------------------------
+ 1222         // @Date          2019/12/27
+ 1223         //***************************************************************************************
+ 1224         static FLT_BOOL FLTD_GetAdcCondition(FLTD_adcType adcIndex)
+ 1225         {       
+ 1226  1              const T_BOOSTER* ptr_booster = Booster_AlogrithmData();
+ 1227  1      
+ 1228  1              switch(adcIndex)
+ 1229  1              {
+ 1230  2                      case FLTD_ADC_ECU_VOLTAGE:
+ 1231  2                      {
+ 1232  3                              if(ptr_booster->cylinderRate < -20)
+ 1233  3                              {
+ 1234  4                                      return FALSE;
+ 1235  4                              }
+ 1236  3                              break;
+ 1237  3                      }
+ 1238  2                      
+ 1239  2                      case FLTD_ADC_ENV_TEMPERATURE:
+ 1240  2                      {
+ 1241  3                              break;
+ 1242  3                      }
+ 1243  2                      
+ 1244  2                      case FLTD_ADC_PEDAL_SENSOR_VOLTAGE:
+ 1245  2                      {
+ 1246  3                              break;
+ 1247  3                      }
+ 1248  2                      
+ 1249  2                      case FLTD_ADC_PEDAL_SENSOR_SIG1:
+ 1250  2                      case FLTD_ADC_PEDAL_SENSOR_SIG2:
+ 1251  2                      {
+ 1252  3                              if(FLTD_VOL_NORMAL != adcVoltModeSts[FLTD_ADC_PEDAL_SENSOR_VOLTAGE])
+ 1253  3                              {
+ 1254  4                                      return FALSE;
+ 1255  4                              }
+ 1256  3                              break;
+ 1257  3                      }
+ 1258  2                      
+ 1259  2                      case FLTD_ADC_MAIN_CYLINDER_VOLTAGE:
+ 1260  2                      {
+ 1261  3                              break;
+ 1262  3                      }
+ 1263  2                      
+ 1264  2                      case FLTD_ADC_MAIN_CYLINDER_SIG1:
+ 1265  2                      case FLTD_ADC_MAIN_CYLINDER_SIG2:
+ 1266  2                      {
+ 1267  3                              if(FLTD_VOL_NORMAL != adcVoltModeSts[FLTD_ADC_MAIN_CYLINDER_VOLTAGE])
+ 1268  3                              {
+ 1269  4                                      return FALSE;
+ 1270  4                              }
+ 1271  3                              break;
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 22  
 
- 1272  2                      case FLTD_ADC_CURRENT_SENSOR_SIG:
- 1273  2                      {
- 1274  3                              break;
- 1275  3                      }
- 1276  2                      
- 1277  2                      default:
- 1278  2                              break;
- 1279  2              }
- 1280  1      
- 1281  1              return TRUE;
- 1282  1      }
- 1283         
- 1284         
- 1285         //***************************************************************************************
- 1286         // @Function      static void FLTD_FaultActionHandle(void) 
- 1287         //---------------------------------------------------------------------------------------
- 1288         // @Description   Fault handling function. Set different processing marks according to 
- 1289         //                                      different fault types for upper-layer applications. 
- 1290         //---------------------------------------------------------------------------------------
- 1291         // @Returnvalue   None
+ 1272  3                      }
+ 1273  2                      
+ 1274  2                      case FLTD_ADC_CURRENT_SENSOR_SIG:
+ 1275  2                      {
+ 1276  3                              break;
+ 1277  3                      }
+ 1278  2                      
+ 1279  2                      default:
+ 1280  2                              break;
+ 1281  2              }
+ 1282  1      
+ 1283  1              return TRUE;
+ 1284  1      }
+ 1285         
+ 1286         
+ 1287         //***************************************************************************************
+ 1288         // @Function      static void FLTD_FaultActionHandle(void) 
+ 1289         //---------------------------------------------------------------------------------------
+ 1290         // @Description   Fault handling function. Set different processing marks according to 
+ 1291         //                                      different fault types for upper-layer applications. 
  1292         //---------------------------------------------------------------------------------------
- 1293         // @Parameters    None
+ 1293         // @Returnvalue   None
  1294         //---------------------------------------------------------------------------------------
- 1295         // @Date          2019/12/27
- 1296         //***************************************************************************************
- 1297         static void FLTD_FaultActionHandle(void)
- 1298         {
- 1299  1              /* close predriver */
- 1300  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
- 1301  1                      || (TRUE == FLTD_fltFlg.motorShortFlg)
- 1302  1                      || (TRUE == FLTD_fltFlg.motorPredriveFaultFlg))
- 1303  1              {
- 1304  2                      FLTD_fltActFlg.closePredriverFlg = TRUE;
- 1305  2              }
- 1306  1              else
- 1307  1              {
- 1308  2                      FLTD_fltActFlg.closePredriverFlg = FALSE;
- 1309  2              }
- 1310  1      
- 1311  1              /* close main relay */
- 1312  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
- 1313  1                      || (TRUE == FLTD_fltFlg.motorVlinkVolHighFlg)
- 1314  1                      || (TRUE == FLTD_fltFlg.motorVlinkVolLowFlg))
- 1315  1              {
- 1316  2                      FLTD_fltActFlg.closeMainRelayFlg = TRUE;
- 1317  2              }
- 1318  1              else
- 1319  1              {
- 1320  2                      FLTD_fltActFlg.closeMainRelayFlg = FALSE;
- 1321  2              }
- 1322  1      
- 1323  1              /* close pedal sensor power */
- 1324  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
- 1325  1                      || (TRUE == FLTD_fltFlg.pedalSensorVoltageHighFlg)
- 1326  1                      || (TRUE == FLTD_fltFlg.pedalSensorVoltageLowFlg)
- 1327  1                      || (TRUE == FLTD_fltFlg.pedalSensorShortFlg))
- 1328  1              {
- 1329  2                      FLTD_fltActFlg.closePedalPowerFlg = TRUE;
- 1330  2              }
- 1331  1              else
- 1332  1              {
- 1333  2                      FLTD_fltActFlg.closePedalPowerFlg = FALSE;
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 23  
+ 1295         // @Parameters    None
+ 1296         //---------------------------------------------------------------------------------------
+ 1297         // @Date          2019/12/27
+ 1298         //***************************************************************************************
+ 1299         static void FLTD_FaultActionHandle(void)
+ 1300         {
+ 1301  1              /* close predriver */
+ 1302  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
+ 1303  1                      || (TRUE == FLTD_fltFlg.motorShortFlg)
+ 1304  1                      || (TRUE == FLTD_fltFlg.motorPredriveFaultFlg))
+ 1305  1              {
+ 1306  2                      FLTD_fltActFlg.closePredriverFlg = TRUE;
+ 1307  2              }
+ 1308  1              else
+ 1309  1              {
+ 1310  2                      FLTD_fltActFlg.closePredriverFlg = FALSE;
+ 1311  2              }
+ 1312  1      
+ 1313  1              /* close main relay */
+ 1314  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
+ 1315  1                      || (TRUE == FLTD_fltFlg.motorVlinkVolHighFlg)
+ 1316  1                      || (TRUE == FLTD_fltFlg.motorVlinkVolLowFlg))
+ 1317  1              {
+ 1318  2                      FLTD_fltActFlg.closeMainRelayFlg = TRUE;
+ 1319  2              }
+ 1320  1              else
+ 1321  1              {
+ 1322  2                      FLTD_fltActFlg.closeMainRelayFlg = FALSE;
+ 1323  2              }
+ 1324  1      
+ 1325  1              /* close pedal sensor power */
+ 1326  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
+ 1327  1                      || (TRUE == FLTD_fltFlg.pedalSensorVoltageHighFlg)
+ 1328  1                      || (TRUE == FLTD_fltFlg.pedalSensorVoltageLowFlg)
+ 1329  1                      || (TRUE == FLTD_fltFlg.pedalSensorShortFlg))
+ 1330  1              {
+ 1331  2                      FLTD_fltActFlg.closePedalPowerFlg = TRUE;
+ 1332  2              }
+ 1333  1              else
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 23  
 
- 1334  2              }
- 1335  1      
- 1336  1              /* close cylinder sensor power */
- 1337  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
- 1338  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolHighFlg)
- 1339  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolLowFlg)
- 1340  1                      || (TRUE == FLTD_fltFlg.cylinderSensorShortFlg))
- 1341  1              {
- 1342  2                      FLTD_fltActFlg.closeCylinderPowerFlg = TRUE;
- 1343  2              }
- 1344  1              else
- 1345  1              {
- 1346  2                      FLTD_fltActFlg.closeCylinderPowerFlg = FALSE;
- 1347  2              }
- 1348  1      
- 1349  1      
- 1350  1              /* braking Depends On Current */
- 1351  1              if((TRUE == FLTD_fltFlg.cylinderSensorVolHighFlg)
- 1352  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolLowFlg)
- 1353  1                      || (TRUE == FLTD_fltFlg.cylinderSensorShortFlg)
- 1354  1                      || (TRUE == FLTD_fltFlg.cylinderSensor1OpenFlg)
- 1355  1                      || (TRUE == FLTD_fltFlg.cylinderSensor1OverRangFlg)
- 1356  1              //      || (TRUE == FLTD_fltFlg.cylinderSensor2OpenFlg)
- 1357  1              //      || (TRUE == FLTD_fltFlg.cylinderSensor2OverRangFlg)
- 1358  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorCheckErrorFlg)
- 1359  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorInitAbnormalFlg)
- 1360  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorSignalAbnormalFlg)
- 1361  1              )
- 1362  1              {
- 1363  2                      FLTD_fltActFlg.brakingDependsOnCurrentFlg = TRUE;
- 1364  2              }
- 1365  1              else
- 1366  1              {
- 1367  2                      FLTD_fltActFlg.brakingDependsOnCurrentFlg = FALSE;
- 1368  2              }
- 1369  1      
- 1370  1              /* braking Depends On Cylinder */
- 1371  1              if((TRUE == FLTD_fltFlg.currentSensorOverRangFlg)
- 1372  1                      || (TRUE == FLTD_fltFlg.currentSensorAbnormalFlg))
- 1373  1              {
- 1374  2                      FLTD_fltActFlg.brakingDependsOnCylinderFlg = TRUE;
- 1375  2              }
- 1376  1              else
- 1377  1              {
- 1378  2                      FLTD_fltActFlg.brakingDependsOnCylinderFlg = FALSE;
- 1379  2              }
- 1380  1              
- 1381  1              
- 1382  1              /* fixed Deceleration */
- 1383  1              if(BoosterBrakeMode == BrakeSysMode)
- 1384  1              {
- 1385  2                      if((TRUE == FLTD_fltFlg.pedalSensorVoltageHighFlg)
- 1386  2                              || (TRUE == FLTD_fltFlg.pedalSensorVoltageLowFlg)
- 1387  2                              || (TRUE == FLTD_fltFlg.pedalSensorShortFlg)
- 1388  2                              || (TRUE == FLTD_fltFlg.pedalSensor1OpenFlg)
- 1389  2                              || (TRUE == FLTD_fltFlg.pedalSensor1OverRangFlg)
- 1390  2                      //      || (TRUE == FLTD_fltFlg.pedalSensor2OpenFlg)
- 1391  2                      //      || (TRUE == FLTD_fltFlg.pedalSensor2OverRangFlg)
- 1392  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorCheckErrorFlg)
- 1393  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorInitAbnormalFlg)
- 1394  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorSignalAbnormalFlg)
- 1395  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorReturnAbnormalFlg)
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 24  
+ 1334  1              {
+ 1335  2                      FLTD_fltActFlg.closePedalPowerFlg = FALSE;
+ 1336  2              }
+ 1337  1      
+ 1338  1              /* close cylinder sensor power */
+ 1339  1              if((TRUE == FLTD_fltFlg.ecuVoltageHighFlg)
+ 1340  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolHighFlg)
+ 1341  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolLowFlg)
+ 1342  1                      || (TRUE == FLTD_fltFlg.cylinderSensorShortFlg))
+ 1343  1              {
+ 1344  2                      FLTD_fltActFlg.closeCylinderPowerFlg = TRUE;
+ 1345  2              }
+ 1346  1              else
+ 1347  1              {
+ 1348  2                      FLTD_fltActFlg.closeCylinderPowerFlg = FALSE;
+ 1349  2              }
+ 1350  1      
+ 1351  1      
+ 1352  1              /* braking Depends On Current */
+ 1353  1              if((TRUE == FLTD_fltFlg.cylinderSensorVolHighFlg)
+ 1354  1                      || (TRUE == FLTD_fltFlg.cylinderSensorVolLowFlg)
+ 1355  1                      || (TRUE == FLTD_fltFlg.cylinderSensorShortFlg)
+ 1356  1                      || (TRUE == FLTD_fltFlg.cylinderSensor1OpenFlg)
+ 1357  1                      || (TRUE == FLTD_fltFlg.cylinderSensor1OverRangFlg)
+ 1358  1              //      || (TRUE == FLTD_fltFlg.cylinderSensor2OpenFlg)
+ 1359  1              //      || (TRUE == FLTD_fltFlg.cylinderSensor2OverRangFlg)
+ 1360  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorCheckErrorFlg)
+ 1361  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorInitAbnormalFlg)
+ 1362  1              //      || (TRUE == FLTD_fltFlg.cylinderSensorSignalAbnormalFlg)
+ 1363  1              )
+ 1364  1              {
+ 1365  2                      FLTD_fltActFlg.brakingDependsOnCurrentFlg = TRUE;
+ 1366  2              }
+ 1367  1              else
+ 1368  1              {
+ 1369  2                      FLTD_fltActFlg.brakingDependsOnCurrentFlg = FALSE;
+ 1370  2              }
+ 1371  1      
+ 1372  1              /* braking Depends On Cylinder */
+ 1373  1              if((TRUE == FLTD_fltFlg.currentSensorOverRangFlg)
+ 1374  1                      || (TRUE == FLTD_fltFlg.currentSensorAbnormalFlg))
+ 1375  1              {
+ 1376  2                      FLTD_fltActFlg.brakingDependsOnCylinderFlg = TRUE;
+ 1377  2              }
+ 1378  1              else
+ 1379  1              {
+ 1380  2                      FLTD_fltActFlg.brakingDependsOnCylinderFlg = FALSE;
+ 1381  2              }
+ 1382  1              
+ 1383  1              
+ 1384  1              /* fixed Deceleration */
+ 1385  1              if(BoosterBrakeMode == BrakeSysMode)
+ 1386  1              {
+ 1387  2                      if((TRUE == FLTD_fltFlg.pedalSensorVoltageHighFlg)
+ 1388  2                              || (TRUE == FLTD_fltFlg.pedalSensorVoltageLowFlg)
+ 1389  2                              || (TRUE == FLTD_fltFlg.pedalSensorShortFlg)
+ 1390  2                              || (TRUE == FLTD_fltFlg.pedalSensor1OpenFlg)
+ 1391  2                              || (TRUE == FLTD_fltFlg.pedalSensor1OverRangFlg)
+ 1392  2                      //      || (TRUE == FLTD_fltFlg.pedalSensor2OpenFlg)
+ 1393  2                      //      || (TRUE == FLTD_fltFlg.pedalSensor2OverRangFlg)
+ 1394  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorCheckErrorFlg)
+ 1395  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorInitAbnormalFlg)
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 24  
 
- 1396  2                      )
- 1397  2                      {
- 1398  3                              FLTD_fltActFlg.fixedDecelerationFlg = TRUE;
- 1399  3                      }
- 1400  2                      else
- 1401  2                      {
- 1402  3                              FLTD_fltActFlg.fixedDecelerationFlg = FALSE;
- 1403  3                      }
- 1404  2              }
- 1405  1              else if(WireCtrlBrakeMode == BrakeSysMode)
- 1406  1              {
- 1407  2      #if 0
-                              if((TRUE == FLTD_fltActFlg.brakingDependsOnCurrentFlg)
-                                      && (TRUE == FLTD_fltActFlg.brakingDependsOnCylinderFlg)
+ 1396  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorSignalAbnormalFlg)
+ 1397  2                      //      || (TRUE == FLTD_fltFlg.pedalSensorReturnAbnormalFlg)
+ 1398  2                      )
+ 1399  2                      {
+ 1400  3                              FLTD_fltActFlg.fixedDecelerationFlg = TRUE;
+ 1401  3                      }
+ 1402  2                      else
+ 1403  2                      {
+ 1404  3                              FLTD_fltActFlg.fixedDecelerationFlg = FALSE;
+ 1405  3                      }
+ 1406  2              }
+ 1407  1              else if(WireCtrlBrakeMode == BrakeSysMode)
+ 1408  1              {
+ 1409  2      #if 0
+                              if((TRUE == FLTD_fltActFlg.brakingDependsOnCurrentFlg) //cylinder sensor fault
+                                      && (TRUE == FLTD_fltActFlg.brakingDependsOnCylinderFlg) //current sensor fault
                               )
               #else
- 1412  2                      if(TRUE == FLTD_fltActFlg.brakingDependsOnCylinderFlg)
- 1413  2      #endif
- 1414  2                      {
- 1415  3                              FLTD_fltActFlg.fixedDecelerationFlg = TRUE;
- 1416  3                      }
- 1417  2                      else
- 1418  2                      {
- 1419  3                              FLTD_fltActFlg.fixedDecelerationFlg = FALSE;
- 1420  3                      }
- 1421  2              }       
- 1422  1      }
- 1423         
- 1424         
+ 1414  2                      if(TRUE == FLTD_fltActFlg.brakingDependsOnCylinderFlg) //current sensor fault
+ 1415  2      #endif
+ 1416  2                      {
+ 1417  3                              FLTD_fltActFlg.fixedDecelerationFlg = TRUE;
+ 1418  3                      }
+ 1419  2                      else
+ 1420  2                      {
+ 1421  3                              FLTD_fltActFlg.fixedDecelerationFlg = FALSE;
+ 1422  3                      }
+ 1423  2              }       
+ 1424  1      }
  1425         
- 1426         const FLTD_faultFlagType* FLTD_FltFlgData(void)
- 1427         {
- 1428  1              return (&FLTD_fltFlg);
- 1429  1      }
- 1430         
- 1431         //***************************************************************************************
- 1432         // @Function      const FLTD_faultActType* FLTD_FltActFlgData(void) 
- 1433         //---------------------------------------------------------------------------------------
- 1434         // @Description   Fault action interface.  
+ 1426         
+ 1427         
+ 1428         const FLTD_faultFlagType* FLTD_FltFlgData(void)
+ 1429         {
+ 1430  1              return (&FLTD_fltFlg);
+ 1431  1      }
+ 1432         
+ 1433         //***************************************************************************************
+ 1434         // @Function      const FLTD_faultActType* FLTD_FltActFlgData(void) 
  1435         //---------------------------------------------------------------------------------------
- 1436         // @Returnvalue   fault action structure access address
+ 1436         // @Description   Fault action interface.  
  1437         //---------------------------------------------------------------------------------------
- 1438         // @Parameters    None
+ 1438         // @Returnvalue   fault action structure access address
  1439         //---------------------------------------------------------------------------------------
- 1440         // @Date          2019/12/27
- 1441         //***************************************************************************************
- 1442         const FLTD_faultActType* FLTD_FltActFlgData(void)
- 1443         {
- 1444  1              return (&FLTD_fltActFlg);
- 1445  1      }
- 1446         
-*** WARNING C174 IN LINE 497 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalReturnAbnormalDetect': unreferenced 'static' funct
+ 1440         // @Parameters    None
+ 1441         //---------------------------------------------------------------------------------------
+ 1442         // @Date          2019/12/27
+ 1443         //***************************************************************************************
+ 1444         const FLTD_faultActType* FLTD_FltActFlgData(void)
+ 1445         {
+ 1446  1              return (&FLTD_fltActFlg);
+ 1447  1      }
+ 1448         
+*** WARNING C174 IN LINE 499 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalReturnAbnormalDetect': unreferenced 'static' funct
              -ion
-*** WARNING C174 IN LINE 722 OF src\app\diagnostic\FLTD.c: 'FLTD_CylinderInitLocAbnormalDetect': unreferenced 'static' f
+*** WARNING C174 IN LINE 724 OF src\app\diagnostic\FLTD.c: 'FLTD_CylinderInitLocAbnormalDetect': unreferenced 'static' f
              -unction
-*** WARNING C174 IN LINE 311 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalDetectCondigtJudge': unreferenced 'static' functio
+*** WARNING C174 IN LINE 313 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalDetectCondigtJudge': unreferenced 'static' functio
              -n
-*** WARNING C174 IN LINE 423 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalInitLocAbnormalDetect': unreferenced 'static' func
+*** WARNING C174 IN LINE 425 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalInitLocAbnormalDetect': unreferenced 'static' func
              -tion
-*** WARNING C174 IN LINE 953 OF src\app\diagnostic\FLTD.c: 'FLTD_CurrentInitSigAbnormalDetect': unreferenced 'static' fu
-             -nction
-*** WARNING C174 IN LINE 570 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalActionAbnormalDetect': unreferenced 'static' funct
-C166 COMPILER V7.57.0, FLTD                                                                12/25/2020 20:36:06 PAGE 25  
+*** WARNING C174 IN LINE 572 OF src\app\diagnostic\FLTD.c: 'FLTD_PedalActionAbnormalDetect': unreferenced 'static' funct
+C166 COMPILER V7.57.0, FLTD                                                                01/20/2021 09:50:47 PAGE 25  
 
              -ion
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =        2628     --------
+  CODE SIZE        =        2820     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -1557,4 +1557,4 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
 END OF MODULE INFORMATION.
 
 
-C166 COMPILATION COMPLETE.  6 WARNING(S),  0 ERROR(S)
+C166 COMPILATION COMPLETE.  5 WARNING(S),  0 ERROR(S)

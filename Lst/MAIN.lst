@@ -1,4 +1,4 @@
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 1   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 1   
 
 
 C166 COMPILER V7.57.0, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
    50         // @Defines
    51         //****************************************************************************
    52         
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 2   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 2   
 
    53         // USER CODE BEGIN (MAIN_General,4)
    54         
@@ -126,7 +126,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   112         //----------------------------------------------------------------------------
   113         // @Parameters    None
   114         //
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 3   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 3   
 
   115         //----------------------------------------------------------------------------
   116         // @Date          2020/5/8
@@ -174,9 +174,9 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   158  1        GPT1_vInit();
   159  1        
   160  1      #if(1 == GPT2_TIME_MEASURE_EN)
-                //   initializes the General Purpose Timer Unit (GPT2)
-                GPT2_vInit();         
-              #endif
+  161  1        //   initializes the General Purpose Timer Unit (GPT2)
+  162  1        GPT2_vInit();         
+  163  1      #endif
   164  1      
   165  1      
   166  1        //   initializes the Capture / Compare Unit 61 (CCU61)
@@ -190,7 +190,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   174  1      
   175  1        //   initializes the Real Time Clock (RTC)
   176  1        RTC_vInit();
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 4   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 4   
 
   177  1      
   178  1        CanCom_vInit();
@@ -254,7 +254,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   236  1          uwPASSWORD = (~uwPASSWORD) & 0x00FF;
   237  1      
   238  1          SCU_SLC = 0x9600 | uwPASSWORD;      // command 2
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 5   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 5   
 
   239  1          SCU_SLC = 0x0000;                   // command 3
   240  1      
@@ -318,7 +318,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   298         //
   299         //----------------------------------------------------------------------------
   300         // @Date          2020/5/8
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 6   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 6   
 
   301         //
   302         //****************************************************************************
@@ -382,7 +382,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
   359         //
   360         //----------------------------------------------------------------------------
   361         // @Description   This is the main function.
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 7   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 7   
 
   362         //
   363         //----------------------------------------------------------------------------
@@ -436,7 +436,7 @@ COMPILER INVOKED BY: C:\Keil_v5\C166\BIN\C166.EXE src\driver\MAIN.c MODV2 LARGE 
 
 
 MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
-  CODE SIZE        =         322     --------
+  CODE SIZE        =         326     --------
   NEAR-CONST SIZE  =    --------     --------
   FAR-CONST SIZE   =    --------     --------
   HUGE-CONST SIZE  =    --------     --------
@@ -446,7 +446,7 @@ MODULE INFORMATION:   INITIALIZED  UNINITIALIZED
   XHUGE-DATA SIZE  =    --------     --------
   IDATA-DATA SIZE  =    --------     --------
   SDATA-DATA SIZE  =    --------     --------
-C166 COMPILER V7.57.0, MAIN                                                                12/25/2020 20:36:00 PAGE 8   
+C166 COMPILER V7.57.0, MAIN                                                                01/20/2021 09:50:41 PAGE 8   
 
   BDATA-DATA SIZE  =    --------     --------
   HUGE-DATA SIZE   =    --------     --------
